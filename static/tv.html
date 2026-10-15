@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CastOn TV Console</title>
+    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            user-select: none;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+        .font-outfit {
+            font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+        }
+        body {
+            overflow: hidden;
+            background: linear-gradient(145deg, #0c1427 0%, #1e3a8a 55%, #172554 100%);
+            position: relative;
+        }
+        /* Game Selection Card Styling */
+        .game-card {
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateZ(0);
+        }
+        .game-card.selected {
+            transform: scale(1.05) translateY(-8px);
+            box-shadow: 0 30px 60px -15px rgba(37, 99, 235, 0.45), 0 0 0 4px #f59e0b !important;
+        }
+        .game-card.selected .launch-pill {
+            background: linear-gradient(to right, #f59e0b, #ea580c);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        .pulse-badge {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-white h-screen w-screen flex flex-col justify-between">
+
+    <!-- Fluid Background Waves (Echoing the exact theme: Rose Coral, Golden Amber, Cyan, Royal Blue) -->
+    <svg class="absolute inset-0 w-full h-full pointer-events-none z-0" preserveAspectRatio="none" viewBox="0 0 1200 800">
+        <defs>
+            <linearGradient id="tvRoseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff3366" />
+                <stop offset="60%" stop-color="#e11d48" />
+                <stop offset="100%" stop-color="#be123c" />
+            </linearGradient>
+            <linearGradient id="tvAmberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fbbf24" />
+                <stop offset="60%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#ea580c" />
+            </linearGradient>
+            <linearGradient id="tvCyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.8" />
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.4" />
+            </linearGradient>
+        </defs>
+        <!-- Top-Right Vibrant Organic Curved Wave -->
+        <path d="M 700 0 Q 950 120 1080 320 Q 1200 480 1200 550 L 1200 0 Z" fill="url(#tvRoseGrad)" opacity="0.85" />
+        <!-- Bottom-Left Warm Golden Amber Wave -->
+        <path d="M 0 350 Q 180 480 260 620 Q 320 740 240 800 L 0 800 Z" fill="url(#tvAmberGrad)" opacity="0.85" />
+        <!-- Bottom Sweeping Cyan Swoop -->
+        <path d="M 0 720 Q 350 640 680 710 Q 950 760 1200 700 L 1200 760 Q 920 810 650 770 Q 300 720 0 800 Z" fill="url(#tvCyanGrad)" />
+    </svg>
+
+    <!-- ===================================================================== -->
+    <!-- TOP PERSISTENT CONSOLE HEADER BAR -->
+    <!-- ===================================================================== -->
+    <header class="h-24 px-8 bg-slate-900/60 backdrop-blur-2xl border-b border-white/10 flex items-center justify-between z-30 shrink-0">
+        <!-- CastOn Logo & Tagline -->
+        <div class="flex items-center gap-4">
+            <div class="w-13 h-13 w-[52px] h-[52px] rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-600 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30 border border-blue-400/40 text-white">
+                <i data-lucide="gamepad-2" class="w-7 h-7 stroke-[2.5]"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black font-outfit tracking-tight flex items-center gap-2">
+                    <span>CastOn</span>
+                    <span class="text-xs bg-amber-400/20 text-amber-300 border border-amber-400/40 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider font-sans">
+                        Living Room Console
+                    </span>
+                </h1>
+                <p id="status-subtitle" class="text-xs text-blue-200/80 font-medium">Scan the QR code or enter Room Code on your phone to join</p>
+            </div>
+        </div>
+
+        <!-- Connected Players Live Pill Bar -->
+        <div id="players-bar" class="flex items-center gap-3 overflow-x-auto py-2 px-4 max-w-xl">
+            <div class="text-blue-200/60 text-sm font-medium flex items-center gap-2">
+                <i data-lucide="users" class="w-4 h-4 text-blue-400 animate-pulse"></i>
+                <span>Waiting for players to join...</span>
+            </div>
+        </div>
+
+        <!-- Room Code & QR Card (Crisp White Card) -->
+        <div class="flex items-center gap-4 bg-white text-slate-800 px-4 py-2.5 rounded-2xl shadow-xl border border-white/80">
+            <div class="text-right">
+                <div class="text-[10px] uppercase tracking-widest text-slate-400 font-extrabold">Room Code</div>
+                <div id="top-room-code" class="text-3xl font-black font-outfit text-blue-600 tracking-widest leading-none">----</div>
+                <div id="top-join-url" class="text-[11px] text-slate-500 font-mono mt-0.5 font-bold"></div>
+            </div>
+            <div id="qrcode-mini" class="bg-white p-1 rounded-xl shadow-inner border border-slate-100"></div>
+        </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- MAIN CONSOLE STAGE -->
+    <!-- ===================================================================== -->
+    <main class="flex-1 relative overflow-hidden flex flex-col z-10">
+
+        <!-- LOBBY VIEW: GAME SELECTOR -->
+        <section id="lobby-view" class="flex-1 flex flex-col justify-between p-10">
+            <div class="max-w-6xl mx-auto w-full my-auto">
+                <!-- Section Header -->
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase tracking-wider mb-2">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+                            <span>Multiplayer Party Catalog</span>
+                        </div>
+                        <h2 class="text-4xl font-black font-outfit tracking-tight text-white">Select a Game</h2>
+                    </div>
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-sm text-blue-100 font-semibold">
+                        <span class="text-amber-400">👑</span>
+                        <span>VIP Room Leader uses phone D-Pad & presses <b class="text-emerald-400">A</b> to start</span>
+                    </div>
+                </div>
+
+                <!-- Game Cards Grid: Crisp White Floating Cards inspired by the reference mockup -->
+                <div id="game-grid" class="grid grid-cols-3 gap-8">
+                    
+                    <!-- Game 0: Bumper Brawl -->
+                    <div class="game-card selected rounded-[32px] bg-white text-slate-800 p-7 flex flex-col justify-between h-[360px] cursor-pointer shadow-2xl border-4 border-amber-400 relative overflow-hidden" onclick="launchGame(0)">
+                        <div class="relative z-10">
+                            <!-- Category Badge -->
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
+                                    NEW • ARCADE ACTION
+                                </span>
+                                <span class="text-xs font-bold text-slate-400">1–8 Players</span>
+                            </div>
+                            
+                            <!-- Icon & Title -->
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-rose-500/30">
+                                    <i data-lucide="flame" class="w-7 h-7 stroke-[2.5]"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-black font-outfit text-slate-900 leading-tight">Bumper Brawl</h3>
+                                    <span class="text-xs font-semibold text-rose-500">Fast 60FPS Knockout</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Description -->
+                            <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                                Collect glowing energy orbs and dash into your family members to knock them out of the arena ring!
+                            </p>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="relative z-10 flex items-center justify-between text-xs pt-4 border-t border-slate-100 font-bold">
+                            <span class="text-slate-500 flex items-center gap-1.5">
+                                <i data-lucide="gamepad-2" class="w-4 h-4 text-blue-600"></i>
+                                <span>D-Pad + Dash</span>
+                            </span>
+                            <span class="launch-pill px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 transition flex items-center gap-1">
+                                <span>Press A</span>
+                                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Game 1: Family Trivia Showdown -->
+                    <div class="game-card rounded-[32px] bg-white text-slate-800 p-7 flex flex-col justify-between h-[360px] cursor-pointer shadow-xl border-4 border-transparent relative overflow-hidden" onclick="launchGame(1)">
+                        <div class="relative z-10">
+                            <!-- Category Badge -->
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+                                    PARTY QUIZ BATTLE
+                                </span>
+                                <span class="text-xs font-bold text-slate-400">1–8 Players</span>
+                            </div>
+                            
+                            <!-- Icon & Title -->
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                                    <i data-lucide="brain" class="w-7 h-7 stroke-[2.5]"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-black font-outfit text-slate-900 leading-tight">Family Trivia</h3>
+                                    <span class="text-xs font-semibold text-blue-600">4-Color Phone Buzzer</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Description -->
+                            <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                                Fast-paced quiz battle! Phones transform into 4 colored buzzers. Fastest correct answers earn the biggest point bonus!
+                            </p>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="relative z-10 flex items-center justify-between text-xs pt-4 border-t border-slate-100 font-bold">
+                            <span class="text-slate-500 flex items-center gap-1.5">
+                                <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                                <span>4-Button Buzzer</span>
+                            </span>
+                            <span class="launch-pill px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 transition flex items-center gap-1">
+                                <span>Press A</span>
+                                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Game 2: Sketch & Guess -->
+                    <div class="game-card rounded-[32px] bg-white text-slate-800 p-7 flex flex-col justify-between h-[360px] cursor-pointer shadow-xl border-4 border-transparent relative overflow-hidden" onclick="launchGame(2)">
+                        <div class="relative z-10">
+                            <!-- Category Badge -->
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                    CREATIVE PARTY
+                                </span>
+                                <span class="text-xs font-bold text-slate-400">2–8 Players</span>
+                            </div>
+                            
+                            <!-- Icon & Title -->
+                            <div class="flex items-center gap-4 mb-3">
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+                                    <i data-lucide="palette" class="w-7 h-7 stroke-[2.5]"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-black font-outfit text-slate-900 leading-tight">Sketch & Guess</h3>
+                                    <span class="text-xs font-semibold text-emerald-600">Live Touch Drawing</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Description -->
+                            <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                                One player draws a secret prompt directly on their phone screen while everyone else races to guess live on TV!
+                            </p>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="relative z-10 flex items-center justify-between text-xs pt-4 border-t border-slate-100 font-bold">
+                            <span class="text-slate-500 flex items-center gap-1.5">
+                                <i data-lucide="smartphone" class="w-4 h-4 text-emerald-500"></i>
+                                <span>Touch Pad + Guess</span>
+                            </span>
+                            <span class="launch-pill px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 transition flex items-center gap-1">
+                                <span>Press A</span>
+                                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Footer Tip -->
+            <footer class="text-center text-xs text-blue-200/70 font-medium">
+                Tip: At any time during a game, the VIP player 👑 can tap the <b class="text-amber-400">Lobby</b> button on their controller to return here.
+            </footer>
+        </section>
+
+        <!-- ACTIVE GAME STAGE -->
+        <section id="game-view" class="hidden flex-1 relative w-full h-full">
+            <canvas id="game-canvas" class="w-full h-full block"></canvas>
+            <!-- HTML Overlay for Trivia / Sketch UI -->
+            <div id="game-overlay" class="absolute inset-0 pointer-events-none flex flex-col justify-center items-center p-10"></div>
+        </section>
+
+    </main>
+
+    <!-- TV Console Logic -->
+    <script src="/static/js/console_tv.js"></script>
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
