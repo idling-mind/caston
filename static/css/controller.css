@@ -1,0 +1,623 @@
+/* ==========================================================================
+   CastOn — mobile controller styles
+   Flat surfaces, hairline borders, restrained radii. Designed for thumbs.
+   ========================================================================== */
+
+body.pad {
+    height: 100dvh;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Text entry is the one place touch gestures must behave normally. */
+input,
+textarea {
+    touch-action: auto;
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* ==========================================================================
+   Join screen
+   ========================================================================== */
+
+.join-screen {
+    position: relative;
+    z-index: 1;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+}
+
+/* `margin: auto` centres the group when there is room and collapses to 0 when
+   the content is taller than the screen, so nothing is ever clipped. */
+.join-screen__inner {
+    margin: auto 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.join-screen__foot {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    text-align: center;
+    margin: 0;
+    max-width: 30ch;
+}
+
+.pad-card {
+    width: min(420px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 26px 24px;
+    border-radius: var(--r-lg);
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-pop);
+}
+
+.pad-card__head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--card-line);
+}
+
+.pad-card__head .eyebrow { color: var(--card-ink-2); }
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+
+.field__label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--card-ink-2);
+}
+
+.input {
+    width: 100%;
+    padding: 15px 16px;
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--card-ink) 5%, transparent);
+    border: 1.5px solid var(--card-line);
+    color: var(--card-ink);
+    font-size: 17px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.input::placeholder { color: color-mix(in srgb, var(--card-ink) 35%, transparent); }
+
+.input:focus {
+    border-color: var(--c-blue);
+    background: var(--card);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-blue) 16%, transparent);
+}
+
+.input--code {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    text-transform: uppercase;
+    color: var(--c-blue);
+    padding: 14px 16px;
+}
+
+.input--guess {
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.alert {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--c-rose) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--c-rose) 35%, transparent);
+    color: var(--c-rose-deep);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+}
+
+[data-theme] body.pad .alert { color: var(--c-rose); }
+
+/* ==========================================================================
+   Connected shell
+   ========================================================================== */
+
+.shell {
+    position: relative;
+    z-index: 1;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ---------- Header ------------------------------------------------------ */
+
+.pad-header {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: calc(14px + env(safe-area-inset-top)) 18px 12px;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg-base) 42%, transparent);
+    backdrop-filter: blur(16px);
+}
+
+.pad-header__id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.pad-header__id .avatar { border-color: var(--ring-color, var(--line-strong)); }
+
+.pad-header__name {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.pad-header__name .display {
+    font-size: 19px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pad-header .tag--crown svg { width: 12px; height: 12px; }
+
+.pad-header .btn { padding: 10px 14px; font-size: 11.5px; }
+
+/* ---------- Stat strip -------------------------------------------------- */
+
+.pad-stats { flex: none; padding: 12px 18px 0; }
+
+.pad-stats .stats__value { font-size: 20px; }
+.pad-stats .stats__label { font-size: 9.5px; }
+
+/* ---------- Layout host ------------------------------------------------- */
+
+.layout {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 18px;
+}
+
+.pad-foot {
+    flex: none;
+    margin: 0;
+    padding: 0 18px calc(12px + env(safe-area-inset-bottom));
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-3);
+}
+
+/* ==========================================================================
+   D-Pad + arcade buttons
+   ========================================================================== */
+
+.layout--dpad { justify-content: center; }
+
+/* Everything below is sized off a single custom property so the whole rig
+   scales down cleanly on narrow phones instead of overflowing the viewport. */
+.dpad-rig {
+    --dpad: 202px;
+    --key: 64px;
+    --key-off: 69px;
+    --btn-a: 88px;
+    --btn-b: 68px;
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(16px, 5vw, 34px);
+    flex: 1;
+    max-height: 470px;
+}
+
+/* Secondary D-Pad buttons declared by the TV (e.g. the lobby theme cycle).
+   Floated out of the flex row so the primary rig geometry never shifts. */
+.arcade__shoulders {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.arcade__shoulders.hidden { display: none; }
+
+.dpad {
+    position: relative;
+    width: var(--dpad);
+    height: var(--dpad);
+    flex: none;
+    border-radius: var(--r-xl);
+    background: color-mix(in srgb, var(--bg-base) 34%, transparent);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(14px);
+}
+
+.dpad__key {
+    position: absolute;
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    transition: background 0.08s ease, transform 0.08s ease;
+}
+
+.dpad__key:active {
+    background: var(--c-blue);
+    transform: scale(0.95);
+}
+
+.dpad__key--up,
+.dpad__key--down {
+    left: var(--key-off);
+    width: var(--key);
+    height: var(--key);
+}
+
+.dpad__key--up    { top: 0;    border-radius: var(--r-md) var(--r-md) var(--r-xs) var(--r-xs); }
+.dpad__key--down  { bottom: 0; border-radius: var(--r-xs) var(--r-xs) var(--r-md) var(--r-md); }
+
+.dpad__key--left,
+.dpad__key--right {
+    top: var(--key-off);
+    width: var(--key);
+    height: var(--key);
+}
+
+.dpad__key--left  { left: 0;  border-radius: var(--r-md) var(--r-xs) var(--r-xs) var(--r-md); }
+.dpad__key--right { right: 0; border-radius: var(--r-xs) var(--r-md) var(--r-md) var(--r-xs); }
+
+.dpad__hub {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 42px;
+    height: 42px;
+    transform: translate(-50%, -50%);
+    border-radius: var(--r-xs);
+    background: color-mix(in srgb, var(--card) 18%, transparent);
+    border: 1px solid var(--card-line);
+}
+
+.dpad__arrow {
+    position: absolute;
+    font-size: 15px;
+    line-height: 1;
+    color: color-mix(in srgb, var(--card-ink) 55%, transparent);
+    pointer-events: none;
+    transition: color 0.08s ease;
+}
+
+.dpad__key:active ~ .dpad__arrow { color: #fff; }
+
+.dpad__arrow--up    { left: 50%; top: 3.5%;               transform: translateX(-50%); }
+.dpad__arrow--down  { left: 50%; bottom: 3.5%;            transform: translateX(-50%); }
+.dpad__arrow--left  { top: 50%; left: 3.5%;               transform: translateY(-50%); }
+.dpad__arrow--right { top: 50%; right: 3.5%;              transform: translateY(-50%); }
+
+.arcade {
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 3.4vw, 20px);
+    flex: none;
+}
+
+.arcade__cluster {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transform: translateY(14px);
+}
+
+.arcade__cluster--primary { transform: translateY(-14px); }
+
+.arcade__btn {
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    transition: transform 0.07s ease, box-shadow 0.07s ease, filter 0.07s ease;
+}
+
+/* Scale the rig down before it can overflow a narrow or short viewport. */
+@media (max-width: 430px) {
+    .dpad-rig { --dpad: 176px; --key: 56px; --key-off: 60px; --btn-a: 78px; --btn-b: 60px; }
+    .dpad__hub { width: 36px; height: 36px; }
+    .dpad__arrow { font-size: 13px; }
+}
+
+@media (max-width: 360px) {
+    .dpad-rig { --dpad: 158px; --key: 50px; --key-off: 54px; --btn-a: 70px; --btn-b: 54px; gap: 12px; }
+    .arcade { gap: 10px; }
+}
+
+.arcade__btn--a {
+    width: var(--btn-a, 88px);
+    height: var(--btn-a, 88px);
+    font-size: calc(var(--btn-a, 88px) * 0.39);
+    background: linear-gradient(150deg, #34d399, #059669);
+    border: 2px solid color-mix(in srgb, #34d399 45%, transparent);
+    box-shadow: 0 7px 0 #047857, 0 16px 26px -12px rgba(5, 150, 105, 0.8);
+}
+
+.arcade__btn--b {
+    width: var(--btn-b, 68px);
+    height: var(--btn-b, 68px);
+    font-size: calc(var(--btn-b, 68px) * 0.38);
+    background: linear-gradient(150deg, #fb7185, #e11d48);
+    border: 2px solid color-mix(in srgb, #fb7185 45%, transparent);
+    box-shadow: 0 7px 0 #9f1239, 0 16px 26px -12px rgba(225, 29, 72, 0.8);
+}
+
+.arcade__btn--a:active { transform: translateY(5px); box-shadow: 0 2px 0 #047857; }
+.arcade__btn--b:active { transform: translateY(5px); box-shadow: 0 2px 0 #9f1239; }
+
+.arcade__cap {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: center;
+    max-width: 7ch;
+}
+
+/* Runtime extras: small pill buttons with a third line of label text. */
+.arcade__btn--aux {
+    flex-direction: column;
+    gap: 2px;
+    width: auto;
+    height: auto;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    animation: pop-in 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards;
+}
+
+.arcade__aux-cap {
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+
+.arcade__btn--aux.is-pressed {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    transform: scale(0.95);
+}
+
+.arcade__btn--aux.is-pressed .arcade__aux-cap { color: color-mix(in srgb, var(--accent-ink) 70%, transparent); }
+
+/* ==========================================================================
+   Trivia buzzers
+   ========================================================================== */
+
+.layout--trivia {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+}
+
+.buzzer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    border-radius: var(--r-lg);
+    color: #fff;
+    background: var(--card-accent);
+    border: 1px solid color-mix(in srgb, #fff 26%, transparent);
+    box-shadow: var(--shadow-tile);
+    transition: transform 0.09s ease, filter 0.09s ease;
+}
+
+.buzzer:active { transform: scale(0.96); filter: brightness(1.18); }
+
+.buzzer__key {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-sm);
+    background: rgba(0, 0, 0, 0.22);
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.buzzer__text {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    text-align: center;
+}
+
+/* ==========================================================================
+   Sketch pad
+   ========================================================================== */
+
+.layout--draw { gap: 12px; }
+
+.draw-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-line);
+}
+
+.draw-bar .eyebrow { color: var(--card-ink-2); }
+
+.draw-bar__word {
+    margin: 4px 0 0;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--c-blue);
+    line-height: 1;
+}
+
+.draw-bar .btn { padding: 10px 13px; font-size: 11px; }
+.draw-bar .btn--ghost {
+    border-color: var(--card-line);
+    color: var(--card-ink);
+    background: color-mix(in srgb, var(--card-ink) 6%, transparent);
+}
+
+.draw-pad {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    border-radius: var(--r-md);
+    background: #fff;
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-tile);
+    touch-action: none;
+}
+
+.draw-hint {
+    flex: none;
+    margin: 0;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-3);
+}
+
+/* ==========================================================================
+   Guess input
+   ========================================================================== */
+
+.layout--guess { justify-content: center; }
+
+.guess-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px 22px;
+    border-radius: var(--r-lg);
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-pop);
+}
+
+.guess-card .eyebrow { color: var(--card-ink-2); }
+.guess-card .muted { color: var(--card-ink-2); }
+.guess-card .input { margin-top: 6px; }
+
+.guess-card .btn--solid { margin-top: 4px; }
+
+/* ==========================================================================
+   Short viewports — compact the join form and lay the gamepad out across the
+   full width so each thumb gets an edge, like a real controller.
+   ========================================================================== */
+
+@media (max-height: 680px) {
+    .join-screen__inner { gap: 12px; }
+    .join-screen .pad-card { padding: 18px; gap: 14px; }
+    .join-screen .pad-card__head { padding-bottom: 14px; gap: 12px; }
+    .join-screen .pad-card__head .display { font-size: 21px; }
+    .join-screen .input { padding: 12px 14px; font-size: 16px; }
+    .join-screen .input--code { font-size: 30px; padding: 10px 14px; }
+    .join-screen .btn--lg { padding: 13px 20px; }
+    .join-screen__foot { display: none; }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+    .pad-header { padding-top: calc(10px + env(safe-area-inset-top)); padding-bottom: 8px; }
+    .pad-stats { display: none; }
+
+    /* D-Pad on the left edge, buttons on the right — thumb-reach layout. */
+    .dpad-rig {
+        --dpad: 176px;
+        --key: 56px;
+        --key-off: 60px;
+        --btn-a: 78px;
+        --btn-b: 60px;
+        justify-content: space-between;
+        padding: 0 clamp(20px, 6vw, 56px);
+        max-height: none;
+    }
+
+    .dpad__hub { width: 34px; height: 34px; }
+    .dpad__arrow { font-size: 12px; }
+    .arcade__cap { display: none; }
+    .arcade__cluster { transform: none; }
+    .arcade__cluster--primary { transform: none; }
+
+    .layout--trivia { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+    .layout--guess { padding: 12px 18px; }
+    .guess-card { padding: 18px; gap: 10px; }
+
+    /* Give the sketch pad as much height as possible on a short screen. */
+    .layout--draw { padding: 10px 18px calc(10px + env(safe-area-inset-bottom)); gap: 8px; }
+    .layout--draw .draw-bar { padding: 8px 12px; }
+    .layout--draw .draw-bar__word { font-size: 18px; margin-top: 2px; }
+    .layout--draw .draw-hint,
+    .layout--draw ~ .pad-foot { display: none; }
+}
+
+/* The footer sits outside the layout host, so hide it by page state instead. */
+@media (orientation: landscape) and (max-height: 560px) {
+    body.pad:has(.layout--draw:not(.hidden)) .pad-foot { display: none; }
+}

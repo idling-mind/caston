@@ -1,362 +1,242 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="broadcast">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CastOn Mobile Controller</title>
-    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        * {
-            touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-        }
-        .font-outfit {
-            font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
-        }
-        input {
-            touch-action: auto;
-            user-select: text;
-            -webkit-user-select: text;
-        }
-        /* Fluid theme background matching the design */
-        .theme-bg {
-            background: linear-gradient(155deg, #1d4ed8 0%, #2563eb 40%, #1e40af 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        /* Tactile Arcade 3D Buttons */
-        .arcade-btn-a {
-            box-shadow: 0 8px 0 #047857, 0 16px 25px rgba(16, 185, 129, 0.4);
-            transition: transform 0.08s ease, box-shadow 0.08s ease;
-        }
-        .arcade-btn-a:active {
-            transform: translateY(6px);
-            box-shadow: 0 2px 0 #047857, 0 6px 12px rgba(16, 185, 129, 0.3);
-        }
-        .arcade-btn-b {
-            box-shadow: 0 8px 0 #be123c, 0 16px 25px rgba(244, 63, 94, 0.4);
-            transition: transform 0.08s ease, box-shadow 0.08s ease;
-        }
-        .arcade-btn-b:active {
-            transform: translateY(6px);
-            box-shadow: 0 2px 0 #be123c, 0 6px 12px rgba(244, 63, 94, 0.3);
-        }
-        /* D-Pad Directional Tactile Buttons */
-        .dpad-key {
-            transition: all 0.1s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        }
-        .dpad-key:active {
-            background: #2563eb !important;
-            color: #ffffff !important;
-            transform: scale(0.94);
-            box-shadow: 0 0 15px rgba(37, 99, 235, 0.6) !important;
-        }
-        .dpad-key:active svg {
-            stroke: #ffffff !important;
-        }
-        /* Trivia buzzer cards */
-        .trivia-card {
-            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.25);
-            transition: transform 0.1s ease, filter 0.1s ease;
-        }
-        .trivia-card:active {
-            transform: scale(0.95);
-            filter: brightness(1.15);
-        }
-    </style>
+    <title>CastOn — Controller</title>
+    <link rel="stylesheet" href="/static/css/design.css">
+    <link rel="stylesheet" href="/static/css/controller.css">
 </head>
-<body class="theme-bg text-white h-[100dvh] w-screen overflow-hidden flex flex-col justify-between">
+<body class="pad">
 
-    <!-- Fluid Organic Curved Background Waves (Exact Palette: Rose, Amber, Royal Blue, Cyan) -->
-    <svg class="absolute inset-0 w-full h-full pointer-events-none z-0" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 800">
-        <defs>
-            <linearGradient id="roseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff3366" />
-                <stop offset="60%" stop-color="#e11d48" />
-                <stop offset="100%" stop-color="#be123c" />
-            </linearGradient>
-            <linearGradient id="amberGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#fbbf24" />
-                <stop offset="50%" stop-color="#f59e0b" />
-                <stop offset="100%" stop-color="#ea580c" />
-            </linearGradient>
-            <linearGradient id="cyanWave" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9" />
-                <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.6" />
-            </linearGradient>
-        </defs>
-        <!-- Top-Right Vibrant Rose/Raspberry Organic Shape -->
-        <path d="M 180 0 Q 320 80 370 240 Q 400 340 400 420 L 400 0 Z" fill="url(#roseGradient)" opacity="0.95" />
-        <!-- Bottom-Left Warm Sunset Amber Organic Shape -->
-        <path d="M 0 380 Q 80 440 120 560 Q 170 700 80 800 L 0 800 Z" fill="url(#amberGradient)" opacity="0.95" />
-        <!-- Bottom-Right Amber/Orange Wave -->
-        <path d="M 190 800 Q 260 710 350 740 Q 390 755 400 770 L 400 800 Z" fill="url(#amberGradient)" opacity="0.85" />
-        <!-- Cyan Accent Swoop -->
-        <path d="M 0 680 Q 150 630 260 670 Q 340 700 400 660 L 400 700 Q 280 730 160 700 Q 70 690 0 740 Z" fill="url(#cyanWave)" />
-    </svg>
-
-    <!-- ===================================================================== -->
-    <!-- SCREEN 1: JOIN ROOM SCREEN -->
-    <!-- ===================================================================== -->
-    <div id="join-screen" class="relative z-10 m-auto w-full max-w-sm px-5 py-6">
-        <!-- Floating Clean White Card matching mockup cards -->
-        <div class="bg-white text-slate-800 rounded-[32px] p-7 shadow-2xl border border-white/60 flex flex-col gap-5 backdrop-blur-md">
-            
-            <!-- Card Header Badge & Title -->
-            <div class="text-center">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[11px] font-extrabold uppercase tracking-wider mb-3">
-                    <i data-lucide="gamepad-2" class="w-3.5 h-3.5"></i>
-                    <span>CastOn Game Console</span>
-                </div>
-                <h1 class="text-2xl font-black font-outfit text-slate-900 tracking-tight">Connect Controller</h1>
-                <p class="text-xs text-slate-500 mt-1 font-medium">Enter the 4-letter Room Code from your TV screen</p>
-            </div>
-
-            <!-- Room Code Input -->
-            <div>
-                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5 text-center">Room Code</label>
-                <input id="room-code" type="text" maxlength="4" placeholder="CODE"
-                       class="w-full py-3.5 px-4 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-600 focus:bg-white text-center text-3xl font-black font-outfit uppercase tracking-widest text-blue-600 outline-none transition placeholder:text-slate-300 shadow-inner">
-            </div>
-
-            <!-- Nickname Input -->
-            <div>
-                <label class="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5 text-center">Your Gamer Tag</label>
-                <div class="relative">
-                    <input id="player-name" type="text" maxlength="12" placeholder="Enter Nickname"
-                           class="w-full py-3.5 px-4 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-600 focus:bg-white text-center text-base font-bold text-slate-800 outline-none transition placeholder:text-slate-300">
-                </div>
-            </div>
-
-            <!-- Submit Button with Radiant Gradient -->
-            <button onclick="connectRoom()"
-                    class="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-white font-black text-base font-outfit tracking-wide shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center justify-center gap-2">
-                <span>JOIN GAME</span>
-                <i data-lucide="arrow-right" class="w-5 h-5"></i>
-            </button>
-
-            <!-- Error Banner -->
-            <p id="join-error" class="text-xs font-bold text-rose-500 text-center hidden py-1 px-3 bg-rose-50 rounded-xl border border-rose-200"></p>
-
-            <!-- Quick Console Info Tags -->
-            <div class="flex items-center justify-center gap-4 pt-2 border-t border-slate-100 text-[11px] font-bold text-slate-400">
-                <span class="flex items-center gap-1">
-                    <i data-lucide="tv" class="w-3.5 h-3.5 text-blue-500"></i> TV Console
-                </span>
-                <span class="flex items-center gap-1">
-                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i> Multi-Game
-                </span>
-                <span class="flex items-center gap-1">
-                    <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-500"></i> Zero Lag
-                </span>
-            </div>
-        </div>
+    <div class="app-bg" aria-hidden="true">
+        <svg class="curves" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <linearGradient id="pgA" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color: var(--wave-1)" />
+                    <stop offset="100%" style="stop-color: var(--wave-4)" />
+                </linearGradient>
+                <linearGradient id="pgB" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color: var(--wave-2)" />
+                    <stop offset="100%" style="stop-color: var(--wave-1)" />
+                </linearGradient>
+                <linearGradient id="pgC" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color: var(--wave-3); stop-opacity: 0.7" />
+                    <stop offset="100%" style="stop-color: var(--wave-3); stop-opacity: 0.08" />
+                </linearGradient>
+            </defs>
+            <path d="M 175 0 Q 320 70 372 235 Q 400 340 400 430 L 400 0 Z" fill="url(#pgA)" />
+            <path d="M 0 375 Q 85 435 125 560 Q 175 705 80 800 L 0 800 Z" fill="url(#pgB)" />
+            <path d="M 0 690 Q 150 635 260 672 Q 340 700 400 660 L 400 706 Q 280 736 160 706 Q 70 694 0 748 Z" fill="url(#pgC)" />
+        </svg>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- SCREEN 2: CONNECTED CONTROLLER SHELL -->
+    <!-- SCREEN 1 — JOIN                                                       -->
     <!-- ===================================================================== -->
-    <div id="controller-shell" class="hidden relative z-10 flex-1 flex flex-col justify-between overflow-hidden">
-        
-        <!-- TOP PLAYER PROFILE BAR (Directly matching the "David Courtney" mockup design!) -->
-        <header id="player-header" class="px-5 pt-4 pb-3 bg-blue-900/40 backdrop-blur-xl border-b border-white/15 shrink-0 transition-colors">
-            <!-- Row 1: Avatar, Name & Menu / Lobby button -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div id="player-avatar-box" class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-2xl shadow-inner">
-                        <span id="player-avatar">🦊</span>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 id="player-label" class="text-xl font-extrabold text-white font-outfit tracking-tight leading-none">Player</h2>
-                            <span id="vip-badge" class="hidden inline-flex items-center gap-1 text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
-                                <i data-lucide="crown" class="w-3 h-3 fill-slate-950"></i> VIP HOST
-                            </span>
-                        </div>
-                        <span id="game-status-label" class="text-[11px] font-semibold text-blue-200/90 tracking-wide">Ready for action</span>
-                    </div>
+    <main id="join-screen" class="join-screen">
+      <div class="join-screen__inner">
+        <section class="pad-card">
+            <header class="pad-card__head">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 12h4M8 10v4"/>
+                        <circle cx="15.5" cy="11" r=".8" fill="currentColor"/>
+                        <circle cx="18" cy="13.5" r=".8" fill="currentColor"/>
+                        <rect x="2" y="6" width="20" height="12" rx="5"/>
+                    </svg>
+                </span>
+                <div>
+                    <p class="eyebrow">CastOn controller</p>
+                    <h1 class="display t-lg">Join the room</h1>
                 </div>
-                <!-- Menu / Lobby Button -->
-                <button id="home-btn" onclick="sendHome()" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-95 text-white text-xs font-bold transition backdrop-blur-md border border-white/25 shadow-sm">
-                    <i data-lucide="home" class="w-4 h-4"></i>
-                    <span>Lobby</span>
-                </button>
+            </header>
+
+            <div class="field">
+                <label class="field__label" for="room-code">Room code</label>
+                <input id="room-code" class="input input--code" type="text" inputmode="latin"
+                       autocomplete="off" autocapitalize="characters" spellcheck="false"
+                       maxlength="4" placeholder="ABCD" aria-label="Four letter room code">
             </div>
 
-            <!-- Row 2: 3-Column Stats Row (Matching Level / Points / Rank from the image) -->
-            <div class="grid grid-cols-3 gap-2 mt-3 pt-2.5 border-t border-white/15">
-                <div>
-                    <div class="text-[10px] font-extrabold uppercase tracking-widest text-blue-200/75">ROOM</div>
-                    <div id="stat-room-code" class="text-base font-black text-white font-outfit tracking-wider">----</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-[10px] font-extrabold uppercase tracking-widest text-blue-200/75">ROLE</div>
-                    <div id="stat-status" class="text-base font-black text-amber-300 font-outfit tracking-wide">PLAYER</div>
-                </div>
-                <div class="text-right">
-                    <div class="text-[10px] font-extrabold uppercase tracking-widest text-blue-200/75">POINTS</div>
-                    <div id="stat-score" class="text-base font-black text-white font-outfit tracking-wide">0</div>
+            <div class="field">
+                <label class="field__label" for="player-name">Your name</label>
+                <input id="player-name" class="input" type="text" maxlength="12"
+                       autocomplete="nickname" placeholder="e.g. Nova" aria-label="Your display name">
+            </div>
+
+            <button id="join-btn" class="btn btn--primary btn--block btn--lg" type="button">
+                <span>Connect</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                </svg>
+            </button>
+
+            <p id="join-error" class="alert hidden" role="alert"></p>
+        </section>
+
+        <p class="join-screen__foot">The code is on the TV screen, next to the QR code.</p>
+      </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- SCREEN 2 — CONTROLLER                                                 -->
+    <!-- ===================================================================== -->
+    <div id="controller-shell" class="shell hidden">
+
+        <!-- ---------- Player header ---------- -->
+        <header class="pad-header">
+            <div class="pad-header__id">
+                <span class="avatar" id="player-avatar-box">🦊</span>
+                <div class="pad-header__name">
+                    <span class="row" style="gap:8px">
+                        <span class="display" id="player-label">Player</span>
+                        <span class="tag tag--crown hidden" id="vip-badge">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M2.5 4.5 6 16h12l3.5-11.5-5.75 6.25L12 4 8.25 10.75z"/>
+                            </svg>
+                            Leader
+                        </span>
+                    </span>
+                    <span class="dim t-xs" id="game-status-label">Ready for action</span>
                 </div>
             </div>
+
+            <button id="home-btn" class="btn btn--ghost hidden" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m3 9.5 9-7.5 9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <path d="M9.5 22v-8h5v8"/>
+                </svg>
+                <span>Lobby</span>
+            </button>
         </header>
 
-        <!-- ================================================================= -->
-        <!-- LAYOUT 1: D-PAD + TACTILE ARCADE A/B -->
-        <!-- ================================================================= -->
-        <div id="layout-dpad" class="controller-layout flex-1 flex flex-col justify-between px-5 py-4 overflow-hidden">
-            
-            <div class="flex-1 flex items-center justify-between w-full max-w-md mx-auto my-auto gap-4">
-                
-                <!-- Cross D-Pad on Frosted White Disc -->
-                <div class="relative w-44 h-44 shrink-0 bg-white/15 backdrop-blur-xl rounded-[36px] p-2.5 border border-white/30 shadow-2xl flex items-center justify-center">
-                    <!-- UP Button -->
-                    <button data-btn="UP" class="dpad-btn dpad-key absolute top-2 left-14 w-16 h-14 bg-white text-slate-800 rounded-t-2xl rounded-b-lg flex items-center justify-center">
-                        <i data-lucide="chevron-up" class="w-7 h-7 stroke-[3] text-slate-700"></i>
-                    </button>
-                    <!-- DOWN Button -->
-                    <button data-btn="DOWN" class="dpad-btn dpad-key absolute bottom-2 left-14 w-16 h-14 bg-white text-slate-800 rounded-b-2xl rounded-t-lg flex items-center justify-center">
-                        <i data-lucide="chevron-down" class="w-7 h-7 stroke-[3] text-slate-700"></i>
-                    </button>
-                    <!-- LEFT Button -->
-                    <button data-btn="LEFT" class="dpad-btn dpad-key absolute left-2 top-14 w-14 h-16 bg-white text-slate-800 rounded-l-2xl rounded-r-lg flex items-center justify-center">
-                        <i data-lucide="chevron-left" class="w-7 h-7 stroke-[3] text-slate-700"></i>
-                    </button>
-                    <!-- RIGHT Button -->
-                    <button data-btn="RIGHT" class="dpad-btn dpad-key absolute right-2 top-14 w-14 h-16 bg-white text-slate-800 rounded-r-2xl rounded-l-lg flex items-center justify-center">
-                        <i data-lucide="chevron-right" class="w-7 h-7 stroke-[3] text-slate-700"></i>
-                    </button>
-                    <!-- Center Pivot -->
-                    <div class="w-10 h-10 rounded-full bg-slate-200/90 shadow-inner border border-slate-300 flex items-center justify-center pointer-events-none">
-                        <div class="w-3 h-3 rounded-full bg-slate-400"></div>
-                    </div>
+        <!-- ---------- Stat strip ---------- -->
+        <div class="pad-stats">
+            <div class="stats">
+                <div class="stats__cell">
+                    <div class="stats__label">Room</div>
+                    <div class="stats__value" id="stat-room-code">----</div>
                 </div>
-
-                <!-- Action Buttons: Tactile 3D B & A -->
-                <div class="flex items-center gap-5 pr-2">
-                    <!-- Button B (Rose-Coral) -->
-                    <div class="flex flex-col items-center gap-1.5 translate-y-6">
-                        <button data-btn="B" class="dpad-btn arcade-btn-b w-18 h-18 w-[72px] h-[72px] rounded-full bg-gradient-to-br from-rose-500 to-rose-600 text-white border-2 border-rose-300/40 font-black font-outfit text-3xl flex items-center justify-center cursor-pointer">
-                            B
-                        </button>
-                        <span class="text-[10px] font-extrabold uppercase text-blue-200/80 tracking-wider">Back</span>
-                    </div>
-
-                    <!-- Button A (Emerald-Cyan) -->
-                    <div class="flex flex-col items-center gap-1.5 -translate-y-4">
-                        <button data-btn="A" class="dpad-btn arcade-btn-a w-22 h-22 w-[88px] h-[88px] rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white border-2 border-emerald-300/40 font-black font-outfit text-4xl flex items-center justify-center cursor-pointer">
-                            A
-                        </button>
-                        <span class="text-[10px] font-extrabold uppercase text-emerald-300 tracking-wider">Dash / OK</span>
-                    </div>
+                <div class="stats__cell">
+                    <div class="stats__label">Role</div>
+                    <div class="stats__value" id="stat-role">Player</div>
                 </div>
-
-            </div>
-
-            <!-- Controller Footer Hint -->
-            <div class="text-center py-2 shrink-0">
-                <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-bold border border-white/20 shadow-sm">
-                    <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-300"></i>
-                    <span id="dpad-hint-text">D-Pad: Move / Select • A: Action / Dash</span>
-                </span>
+                <div class="stats__cell">
+                    <div class="stats__label">Points</div>
+                    <div class="stats__value" id="stat-score">0</div>
+                </div>
             </div>
         </div>
 
-        <!-- ================================================================= -->
-        <!-- LAYOUT 2: TRIVIA 4-BUTTON COLOR BUZZER -->
-        <!-- ================================================================= -->
-        <div id="layout-trivia" class="controller-layout hidden flex-1 grid grid-cols-2 gap-4 p-5 max-w-lg mx-auto w-full my-auto">
-            <!-- Choice A: Rose Coral -->
-            <button onclick="sendTrivia(0)" class="trivia-card bg-gradient-to-br from-rose-500 to-rose-600 rounded-[28px] p-5 flex flex-col items-center justify-center gap-2 border-2 border-rose-400/40 text-white">
-                <div class="w-12 h-12 rounded-2xl bg-black/20 flex items-center justify-center text-3xl font-black font-outfit">A</div>
-                <span id="trivia-opt-0" class="text-sm font-extrabold text-center leading-snug">Choice A</span>
-            </button>
+        <!-- =============================================================== -->
+        <!-- LAYOUT: D-PAD + ARCADE BUTTONS                                  -->
+        <!-- =============================================================== -->
+        <section id="layout-dpad" class="layout layout--dpad hidden">
+            <div class="dpad-rig">
 
-            <!-- Choice B: Royal Cobalt Blue -->
-            <button onclick="sendTrivia(1)" class="trivia-card bg-gradient-to-br from-blue-500 to-blue-700 rounded-[28px] p-5 flex flex-col items-center justify-center gap-2 border-2 border-blue-400/40 text-white">
-                <div class="w-12 h-12 rounded-2xl bg-black/20 flex items-center justify-center text-3xl font-black font-outfit">B</div>
-                <span id="trivia-opt-1" class="text-sm font-extrabold text-center leading-snug">Choice B</span>
-            </button>
+                <div class="dpad">
+                    <button class="dpad__key dpad__key--up"    data-btn="UP"    type="button" aria-label="Up"></button>
+                    <button class="dpad__key dpad__key--down"  data-btn="DOWN"  type="button" aria-label="Down"></button>
+                    <button class="dpad__key dpad__key--left"  data-btn="LEFT"  type="button" aria-label="Left"></button>
+                    <button class="dpad__key dpad__key--right" data-btn="RIGHT" type="button" aria-label="Right"></button>
+                    <span class="dpad__hub" aria-hidden="true"></span>
+                    <span class="dpad__arrow dpad__arrow--up"    aria-hidden="true">▲</span>
+                    <span class="dpad__arrow dpad__arrow--down"  aria-hidden="true">▼</span>
+                    <span class="dpad__arrow dpad__arrow--left"  aria-hidden="true">◀</span>
+                    <span class="dpad__arrow dpad__arrow--right" aria-hidden="true">▶</span>
+                </div>
 
-            <!-- Choice C: Golden Amber -->
-            <button onclick="sendTrivia(2)" class="trivia-card bg-gradient-to-br from-amber-400 to-orange-500 rounded-[28px] p-5 flex flex-col items-center justify-center gap-2 border-2 border-amber-300/40 text-slate-950">
-                <div class="w-12 h-12 rounded-2xl bg-black/15 flex items-center justify-center text-3xl font-black font-outfit">C</div>
-                <span id="trivia-opt-2" class="text-sm font-black text-center leading-snug">Choice C</span>
-            </button>
+                <div class="arcade">
+                    <div class="arcade__cluster">
+                        <button class="arcade__btn arcade__btn--b" data-btn="B" type="button">B</button>
+                        <span class="arcade__cap">Back</span>
+                    </div>
+                    <div class="arcade__cluster arcade__cluster--primary">
+                        <button class="arcade__btn arcade__btn--a" data-btn="A" type="button">A</button>
+                        <span class="arcade__cap" id="dpad-hint-text">Action</span>
+                    </div>
+                </div>
 
-            <!-- Choice D: Emerald Teal -->
-            <button onclick="sendTrivia(3)" class="trivia-card bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[28px] p-5 flex flex-col items-center justify-center gap-2 border-2 border-emerald-400/40 text-white">
-                <div class="w-12 h-12 rounded-2xl bg-black/20 flex items-center justify-center text-3xl font-black font-outfit">D</div>
-                <span id="trivia-opt-3" class="text-sm font-extrabold text-center leading-snug">Choice D</span>
-            </button>
-        </div>
+                <div class="arcade__shoulders" id="dpad-extras"></div>
+            </div>
+        </section>
 
-        <!-- ================================================================= -->
-        <!-- LAYOUT 3: SKETCH DRAWING CANVAS -->
-        <!-- ================================================================= -->
-        <div id="layout-draw" class="controller-layout hidden flex-1 flex flex-col p-4 gap-3 max-w-lg mx-auto w-full">
-            <!-- Word HUD Card -->
-            <div class="flex items-center justify-between bg-white text-slate-800 px-5 py-3 rounded-2xl shadow-xl border border-white/80">
+        <!-- =============================================================== -->
+        <!-- LAYOUT: TRIVIA BUZZERS                                          -->
+        <!-- =============================================================== -->
+        <section id="layout-trivia" class="layout layout--trivia hidden">
+            <button class="buzzer" data-choice="0" type="button" style="--card-accent:#f43f5e">
+                <span class="buzzer__key">A</span>
+                <span class="buzzer__text" id="trivia-opt-0">Choice A</span>
+            </button>
+            <button class="buzzer" data-choice="1" type="button" style="--card-accent:#2563eb">
+                <span class="buzzer__key">B</span>
+                <span class="buzzer__text" id="trivia-opt-1">Choice B</span>
+            </button>
+            <button class="buzzer" data-choice="2" type="button" style="--card-accent:#f59e0b">
+                <span class="buzzer__key">C</span>
+                <span class="buzzer__text" id="trivia-opt-2">Choice C</span>
+            </button>
+            <button class="buzzer" data-choice="3" type="button" style="--card-accent:#10b981">
+                <span class="buzzer__key">D</span>
+                <span class="buzzer__text" id="trivia-opt-3">Choice D</span>
+            </button>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- LAYOUT: SKETCH PAD                                              -->
+        <!-- =============================================================== -->
+        <section id="layout-draw" class="layout layout--draw hidden">
+            <div class="draw-bar">
                 <div>
-                    <span class="inline-flex items-center gap-1 text-[10px] uppercase text-blue-600 font-extrabold tracking-wider">
-                        <i data-lucide="palette" class="w-3 h-3"></i> Draw Secret Word
-                    </span>
-                    <span id="secret-word-label" class="text-xl font-black font-outfit text-slate-900 tracking-wider block">----</span>
+                    <p class="eyebrow">Draw this</p>
+                    <p class="draw-bar__word" id="secret-word-label">----</p>
                 </div>
-                <button onclick="clearPad()" class="flex items-center gap-1 px-3.5 py-2 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-md shadow-rose-500/30">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <button class="btn btn--ghost" id="clear-pad" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 6h18"/><path d="M18 6v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
                     <span>Clear</span>
                 </button>
             </div>
 
-            <!-- Crisp White Canvas -->
-            <canvas id="draw-pad" class="flex-1 bg-white rounded-3xl w-full touch-none shadow-2xl border-2 border-white/80"></canvas>
-            
-            <p class="text-center text-[11px] font-bold text-white/80">Draw with your finger — your strokes stream to the TV in real-time!</p>
-        </div>
+            <canvas id="draw-pad" class="draw-pad"></canvas>
 
-        <!-- ================================================================= -->
-        <!-- LAYOUT 4: WORD GUESS INPUT -->
-        <!-- ================================================================= -->
-        <div id="layout-guess" class="controller-layout hidden flex-1 flex flex-col justify-center items-center p-6 gap-4 max-w-md mx-auto w-full">
-            <div class="bg-white text-slate-800 rounded-[32px] p-7 shadow-2xl border border-white/80 w-full flex flex-col gap-4 text-center">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[11px] font-extrabold uppercase tracking-wider mx-auto">
-                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
-                    <span>Guess the Sketch</span>
-                </div>
-                <div>
-                    <h3 class="text-xl font-black font-outfit text-slate-900">Watch the TV Screen</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Type what you think is being drawn!</p>
-                </div>
-                <input id="guess-input" type="text" placeholder="Type your guess..."
-                       class="w-full py-4 px-4 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-600 focus:bg-white text-center text-xl font-black font-outfit uppercase tracking-wider text-slate-900 outline-none transition placeholder:text-slate-300">
-                <button onclick="submitGuess()"
-                        class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-base font-outfit tracking-wide shadow-lg shadow-emerald-500/30 active:scale-95 transition flex items-center justify-center gap-2">
-                    <i data-lucide="send" class="w-4 h-4"></i>
-                    <span>SUBMIT GUESS</span>
+            <p class="draw-hint">Your strokes stream to the TV as you draw.</p>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- LAYOUT: GUESS INPUT                                             -->
+        <!-- =============================================================== -->
+        <section id="layout-guess" class="layout layout--guess hidden">
+            <div class="guess-card">
+                <p class="eyebrow is-accent">Guess the sketch</p>
+                <h2 class="display t-lg">What is it?</h2>
+                <p class="muted t-sm">Watch the TV and type what you see.</p>
+
+                <input id="guess-input" class="input input--guess" type="text" maxlength="24"
+                       autocomplete="off" autocapitalize="characters" spellcheck="false"
+                       placeholder="Your guess" aria-label="Your guess">
+
+                <button id="guess-submit" class="btn btn--solid btn--block btn--lg" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>
+                    </svg>
+                    <span>Submit guess</span>
                 </button>
             </div>
-        </div>
+        </section>
 
+        <p class="pad-foot" id="pad-foot">Keep this page open — it is your controller.</p>
     </div>
 
-    <!-- Controller Client Logic -->
-    <script src="/static/js/controller.js"></script>
-    <script>
-        // Initialize Lucide icons on boot
-        window.addEventListener("DOMContentLoaded", () => {
-            if (window.lucide) lucide.createIcons();
-        });
-    </script>
+    <script src="/static/js/controller-app.js"></script>
 </body>
 </html>

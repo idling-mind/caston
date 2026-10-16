@@ -1,0 +1,679 @@
+/* ==========================================================================
+   CastOn — TV console engine
+   Owns the websocket, room state, theming, the lobby and the game registry.
+   Games live in ./games/*.js and talk to this module through window.CastOn.
+   ========================================================================== */
+(function (w) {
+'use strict';
+
+const CastOn = (w.CastOn = w.CastOn || {});
+const icon = (name, opts) => CastOn.icon(name, opts);
+
+/* ==========================================================================
+   Themes
+   ========================================================================== */
+
+const THEMES = [
+    { id: 'broadcast', label: 'Broadcast', ink: '#0b1533', swatch: 'linear-gradient(135deg,#1b3fb0,#e11d48 70%,#f59e0b)' },
+    { id: 'arcade',    label: 'Arcade',    ink: '#0a0f2e', swatch: 'linear-gradient(135deg,#2f6bff,#ff2e63)' },
+    { id: 'void',      label: 'Void',      ink: '#0b0620', swatch: 'linear-gradient(135deg,#7c3aed,#06b6d4)' },
+    { id: 'sunset',    label: 'Sunset',    ink: '#3a0d18', swatch: 'linear-gradient(135deg,#f0592b,#ffb020)' },
+    { id: 'candy',     label: 'Candy',     ink: '#062430', swatch: 'linear-gradient(135deg,#34d399,#6366f1)' }
+];
+const THEME_KEY = 'caston_theme';
+
+const themeId = () => localStorage.getItem(THEME_KEY) || 'broadcast';
+const themeMeta = (id) => THEMES.find(t => t.id === (id || themeId())) || THEMES[0];
+const themeIndexOf = (id) => Math.max(0, THEMES.findIndex(t => t.id === (id || themeId())));
+
+function applyTheme(id) {
+    localStorage.setItem(THEME_KEY, id);
+    document.documentElement.dataset.theme = id;
+    renderThemeSwitcher();
+    redrawQr();
+}
+
+/* Cycling is the phone-friendly form of the switcher: one D-Pad button
+   steps through the five palettes without a pointer. */
+function cycleTheme(delta) {
+    const next = (themeIndexOf(themeId()) + (delta || 1) + THEMES.length) % THEMES.length;
+    applyTheme(THEMES[next].id);
+    tone(660, 90, 'triangle');
+}
+
+/* ==========================================================================
+   State
+   ========================================================================== */
+
+const DEMO_COUNT = (() => {
+    const raw = new URLSearchParams(location.search).get('demo');
+    if (raw === null) return 0;
+    const n = parseInt(raw, 10);
+    return isNaN(n) ? 1 : Math.max(0, Math.min(8, n));
+})();
+
+const state = {
+    ws: null,
+    code: '----',
+    joinUrl: '',
+    lanIp: '',
+    players: {},
+    vipId: null,
+    mode: 'lobby',
+    selected: 0,
+    game: null
+};
+
+const DEMO_NAMES = ['Nova', 'Rex', 'Juno', 'Pip', 'Ash', 'Mika', 'Zed', 'Wren'];
+const DEMO_COLORS = ['#2563eb', '#f43f5e', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
+const DEMO_FACES = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄', '🦖', '🤖'];
+
+/* ==========================================================================
+   DOM handles
+   ========================================================================== */
+
+const dom = {};
+
+function cacheDom() {
+    dom.canvas = document.getElementById('game-canvas');
+    dom.overlay = document.getElementById('game-overlay');
+    dom.stage = document.querySelector('.stage');
+    dom.lobby = document.getElementById('lobby-view');
+    dom.gameView = document.getElementById('game-view');
+    dom.grid = document.getElementById('game-grid');
+    dom.roster = document.getElementById('roster');
+    dom.rosterCount = document.getElementById('roster-count');
+    dom.strip = document.getElementById('roster-strip');
+    dom.roomKey = document.getElementById('room-key-value');
+    dom.qrHost = document.getElementById('qr-hero');
+    dom.codeSlots = document.getElementById('code-slots');
+    dom.joinUrl = document.getElementById('join-url');
+    dom.themeChip = document.getElementById('theme-chip');
+    dom.themeSwatch = document.getElementById('theme-swatch');
+    dom.themeName = document.getElementById('theme-name');
+    dom.rosterCountSide = document.getElementById('roster-count-side');
+}
+
+/* ==========================================================================
+   Audio — tiny WebAudio blip synth
+   ========================================================================== */
+
+let audioCtx = null;
+
+function tone(freq, ms, type) {
+    try {
+        const AC = w.AudioContext || w.webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtx) audioCtx = new AC();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const dur = (ms || 120) / 1000;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.13, t + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + dur + 0.02);
+    } catch (e) { /* audio is a nicety, never a blocker */ }
+}
+
+function chord(freqs, ms, type) {
+    freqs.forEach((f, i) => setTimeout(() => tone(f, ms, type), i * 50));
+}
+
+/* ==========================================================================
+   Canvas sizing
+   ========================================================================== */
+
+function fitCanvas() {
+    if (!dom.canvas || !dom.stage) return;
+    const dpr = Math.min(w.devicePixelRatio || 1, 2);
+    const rect = dom.stage.getBoundingClientRect();
+    const cw = Math.max(1, Math.floor(rect.width));
+    const ch = Math.max(1, Math.floor(rect.height));
+
+    dom.canvas.width = Math.floor(cw * dpr);
+    dom.canvas.height = Math.floor(ch * dpr);
+    dom.canvas.style.width = cw + 'px';
+    dom.canvas.style.height = ch + 'px';
+
+    CastOn.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    CastOn.view = { w: cw, h: ch, dpr: dpr };
+
+    if (state.game && state.game.onResize) state.game.onResize(CastOn.view);
+}
+
+/* ==========================================================================
+   Controller plumbing
+   ========================================================================== */
+
+function send(msg) {
+    if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        state.ws.send(JSON.stringify(msg));
+    }
+}
+
+function setLayout(layout, layoutState, target) {
+    send({
+        type: 'set_layout',
+        layout: layout,
+        state: layoutState || {},
+        target: target || 'all'
+    });
+}
+
+function toController(target, payload) {
+    send({ type: 'to_controller', target: target || 'all', payload: payload });
+}
+
+function vibrate(target, ms) {
+    toController(target || 'all', { type: 'vibrate', ms: ms || 45 });
+}
+
+/* ==========================================================================
+   Helpers
+   ========================================================================== */
+
+function escapeHtml(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function playerList() {
+    return Object.values(state.players);
+}
+
+/* ==========================================================================
+   Roster
+   ========================================================================== */
+
+function renderStrip() {
+    if (!dom.strip) return;
+    const list = playerList();
+
+    if (!list.length) {
+        if (dom.rosterCount) dom.rosterCount.textContent = 'Waiting';
+        dom.strip.innerHTML = '<span class="tag"><span class="dot is-idle"></span>No players yet</span>';
+        return;
+    }
+
+    if (dom.rosterCount) {
+        dom.rosterCount.textContent = list.length + (list.length === 1 ? ' player' : ' players');
+    }
+
+    dom.strip.innerHTML = list.map(p => `
+        <span class="mini" style="--ring-color:${p.color}">
+            <span class="mini__avatar">${p.avatar}</span>
+            <span class="mini__name">${escapeHtml(p.name)}</span>
+            ${p.is_vip ? '<span class="mini__crown">' + icon('crown') + '</span>' : ''}
+        </span>
+    `).join('');
+}
+
+function renderRoster() {
+    if (!dom.roster) return;
+    const list = playerList();
+    const MAX_PLAYERS = 8;
+
+    if (dom.rosterCount) {
+        dom.rosterCount.textContent = list.length + ' / ' + MAX_PLAYERS;
+    }
+    if (dom.rosterCountSide) {
+        dom.rosterCountSide.textContent = list.length + ' / ' + MAX_PLAYERS;
+    }
+
+    if (!list.length) {
+        dom.roster.innerHTML = `
+            <div class="roster__empty">
+                <span class="roster__bounce"><i></i><i></i><i></i></span>
+                <span>Nobody here yet — scanned phones drop in automatically.</span>
+            </div>`;
+        return;
+    }
+
+    const seats = list.map((p, i) => `
+        <div class="roster__cell" style="--ring-color:${p.color}; animation-delay:${i * 45}ms">
+            <span class="avatar">${p.avatar}</span>
+            <span class="roster__namebar">
+                <span class="roster__name">${escapeHtml(p.name)}</span>
+                <span class="roster__role">${p.is_vip ? 'Leader' : 'Player'}</span>
+            </span>
+            ${p.is_vip ? '<span class="roster__star">' + icon('crown') + '</span>' : ''}
+        </div>`).join('');
+
+    // Show open seats so the capacity is obvious and the panel reads as
+    // intentionally roomy rather than unfinished. Only the current row is
+    // topped up; trimRosterOverflow() removes any that still do not fit.
+    const open = Math.min(MAX_PLAYERS - list.length, 3);
+    const placeholders = open > 0
+        ? Array.from({ length: open }, () => `
+            <div class="roster__cell roster__cell--open">
+                <span class="avatar avatar--dashed">${icon('plus', { stroke: 2.4 })}</span>
+                <span class="roster__namebar">
+                    <span class="roster__name dim">Open seat</span>
+                    <span class="roster__role">Scan the code</span>
+                </span>
+            </div>`).join('')
+        : '';
+
+    dom.roster.innerHTML = seats + placeholders;
+    scheduleRosterTrim();
+}
+
+/* The roster grid's column count is responsive, so how many open seats fit is
+   only knowable after layout. Drop trailing placeholders until the panel no
+   longer scrolls — real players are never removed. Deferred a frame so the
+   panel has settled, and skipped entirely while it is hidden or unsized. */
+let rosterTrimPending = false;
+
+function scheduleRosterTrim() {
+    if (rosterTrimPending) return;
+    rosterTrimPending = true;
+    requestAnimationFrame(() => {
+        rosterTrimPending = false;
+        trimRosterOverflow();
+    });
+}
+
+function trimRosterOverflow() {
+    if (!dom.roster) return;
+    let guard = 0;
+    while (dom.roster.clientHeight > 0 &&
+           dom.roster.scrollHeight > dom.roster.clientHeight + 1 &&
+           guard++ < 8) {
+        const opens = dom.roster.querySelectorAll('.roster__cell--open');
+        if (!opens.length) break;
+        opens[opens.length - 1].remove();
+    }
+}
+
+/* ==========================================================================
+   Lobby tiles
+   ========================================================================== */
+
+function renderLobbyTiles() {
+    if (!dom.grid) return;
+    const isLeader = state.vipId === null || !!state.players[state.vipId];
+
+    dom.grid.innerHTML = CastOn.games.map((g, i) => {
+        const focused = i === state.selected;
+        // Only the room leader can act on the board, so the CTA is phrased
+        // as an instruction for them and as a status for everyone else.
+        const cta = focused
+            ? (isLeader ? 'Press A to play' : 'Leader to start')
+            : 'Move to select';
+
+        return `
+        <button type="button" class="tile${focused ? ' is-focused' : ''}"
+                style="--tile-accent:${g.accent}" data-index="${i}"
+                aria-label="Play ${escapeHtml(g.title)}. ${cta}.">
+            <span class="tile__cover">
+                <span class="tile__eyebrow">${escapeHtml(g.tagline)}</span>
+                <span class="tile__players">${icon('users')}${escapeHtml(g.players)}</span>
+                <span class="tile__art" aria-hidden="true">${icon(g.icon, { stroke: 1.6 })}</span>
+            </span>
+            <span class="tile__body">
+                <span class="tile__title">${escapeHtml(g.title)}</span>
+                <span class="tile__desc">${escapeHtml(g.description)}</span>
+                <span class="tile__foot">
+                    <span class="tile__control">${icon('gamepad')}${escapeHtml(g.control)}</span>
+                    <span class="tile__cta">
+                        ${focused ? '<span class="key">A</span>' : ''}
+                        <span>${cta}</span>
+                    </span>
+                </span>
+            </span>
+        </button>`;
+    }).join('');
+
+    dom.grid.querySelectorAll('.tile').forEach(el => {
+        el.addEventListener('click', () => {
+            state.selected = Number(el.dataset.index);
+            renderLobbyTiles();
+            launchGame(state.selected);
+        });
+    });
+}
+
+function renderAll() {
+    renderStrip();
+    renderRoster();
+    renderLobbyTiles();
+}
+
+function moveSelection(delta) {
+    const n = CastOn.games.length;
+    if (!n) return;
+    state.selected = (state.selected + delta + n) % n;
+    renderLobbyTiles();
+    tone(560, 70, 'sine');
+}
+
+/* ==========================================================================
+   Theme switcher
+   ========================================================================== */
+
+function renderThemeSwitcher() {
+    if (!dom.themeSwatch) return;
+    const meta = themeMeta();
+    dom.themeSwatch.style.background = meta.swatch;
+    if (dom.themeChip) dom.themeChip.setAttribute('aria-label', 'Console theme: ' + meta.label);
+    if (dom.themeName) dom.themeName.textContent = meta.label;
+}
+
+/* ==========================================================================
+   Room code + themed QR
+   ========================================================================== */
+
+function renderCodeSlots() {
+    if (!dom.codeSlots) return;
+    dom.codeSlots.innerHTML = (state.code || '----').split('').map(c => `<span>${c}</span>`).join('');
+}
+
+function redrawQr() {
+    if (!dom.qrHost || !state.joinUrl) return;
+    const meta = themeMeta();
+    const size = dom.qrHost.clientWidth || 236;
+    CastOn.qr.draw(dom.qrHost, state.joinUrl, {
+        size: size,
+        quiet: 2,
+        dark: meta.ink,
+        light: '#ffffff',
+        radius: 0.3,
+        ecc: 'M'
+    });
+}
+
+/* ==========================================================================
+   Lobby <-> game
+   ========================================================================== */
+
+function showLobby() {
+    dom.lobby.classList.remove('hidden');
+    dom.gameView.classList.add('hidden');
+    state.mode = 'lobby';
+    renderLobbyTiles();
+}
+
+/* The lobby D-Pad gains two extra legends so the leader can cycle the theme
+   from the phone — the TV has no pointer, so the old popover was unreachable. */
+function setLobbyLayout() {
+    setLayout('dpad', {
+        title: 'Console lobby',
+        subtitle: 'Leader picks a game',
+        extras: [{ button: 'X', label: 'Theme' }, { button: 'Y', label: 'Theme' }]
+    });
+}
+
+function launchGame(index) {
+    const def = CastOn.games[index];
+    if (!def) return;
+
+    if (state.game && state.game.destroy) state.game.destroy();
+    state.game = null;
+
+    dom.lobby.classList.add('hidden');
+    dom.gameView.classList.remove('hidden');
+    state.mode = def.id;
+    fitCanvas();
+    dom.overlay.innerHTML = '';
+
+    try {
+        state.game = def.create();
+    } catch (err) {
+        console.error('Game failed to start:', def.id, err);
+        dom.overlay.innerHTML =
+            '<div class="float-panel" style="position:static;max-width:460px;margin:auto">' +
+            '<p class="eyebrow">Could not start</p>' +
+            '<h2 class="display t-lg" style="margin-top:6px">' + escapeHtml(def.title) + '</h2>' +
+            '<p class="muted t-sm" style="margin-top:8px">' + escapeHtml(String(err && err.message || err)) + '</p>' +
+            '</div>';
+    }
+}
+
+function returnToLobby() {
+    if (state.game && state.game.destroy) state.game.destroy();
+    state.game = null;
+    dom.overlay.innerHTML = '';
+    if (CastOn.ctx && dom.canvas) {
+        CastOn.ctx.save();
+        CastOn.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        CastOn.ctx.clearRect(0, 0, dom.canvas.width, dom.canvas.height);
+        CastOn.ctx.restore();
+    }
+    showLobby();
+    setLobbyLayout();
+    chord([392, 523, 659], 130, 'triangle');
+}
+
+/* ==========================================================================
+   Input routing
+   ========================================================================== */
+
+function onControllerInput(playerId, data) {
+    if (data.action === 'home' && playerId === state.vipId) {
+        returnToLobby();
+        return;
+    }
+
+    if (state.mode === 'lobby') {
+        if (playerId !== state.vipId) return;
+        if (data.action !== 'btn' || data.state !== 'down') return;
+
+        if (data.button === 'LEFT' || data.button === 'UP') moveSelection(-1);
+        else if (data.button === 'RIGHT' || data.button === 'DOWN') moveSelection(1);
+        else if (data.button === 'X') cycleTheme(-1);
+        else if (data.button === 'Y') cycleTheme(1);
+        else if (data.button === 'A') {
+            chord([660, 880], 120, 'triangle');
+            launchGame(state.selected);
+        }
+        return;
+    }
+
+    if (state.game && state.game.onInput) state.game.onInput(playerId, data);
+}
+
+/* ==========================================================================
+   Websocket
+   ========================================================================== */
+
+function onPlayersSync(msg) {
+    state.vipId = msg.vip_id;
+
+    const incoming = {};
+    msg.players.forEach(p => {
+        incoming[p.id] = Object.assign({}, state.players[p.id] || {}, p);
+    });
+
+    // In preview mode keep locally seeded players the server knows nothing about.
+    Object.keys(state.players).forEach(id => {
+        if (!incoming[id] && state.players[id].__demo) incoming[id] = state.players[id];
+    });
+
+    // Exactly one leader. Seeded players default to is_vip, so clear the crown
+    // from anyone the server has not actually promoted.
+    Object.values(incoming).forEach(p => { p.is_vip = (p.id === state.vipId); });
+
+    state.players = incoming;
+    renderStrip();
+    renderRoster();
+    if (state.game && state.game.onPlayersSync) state.game.onPlayersSync();
+}
+
+function connect() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    let ws;
+    try {
+        ws = new WebSocket(proto + '//' + location.host + '/ws/tv');
+    } catch (e) {
+        return;
+    }
+    state.ws = ws;
+
+    // Publish the lobby layout (with its theme legends) as soon as the socket
+    // is up, so controllers that join later receive it from the server.
+    ws.onopen = () => setLobbyLayout();
+
+    ws.onmessage = (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch (e) { return; }
+
+        if (msg.type === 'room_init') {
+            state.code = msg.code;
+            state.joinUrl = msg.join_url;
+            state.lanIp = msg.lan_ip;
+            if (dom.roomKey) dom.roomKey.textContent = msg.code;
+            if (dom.joinUrl) dom.joinUrl.textContent = msg.lan_ip + '/controller';
+            renderCodeSlots();
+            redrawQr();
+        } else if (msg.type === 'players_sync') {
+            onPlayersSync(msg);
+        } else if (msg.type === 'controller_input') {
+            onControllerInput(msg.player_id, msg.data);
+        }
+    };
+
+    ws.onclose = () => {
+        const sub = document.getElementById('status-subtitle');
+        if (sub) sub.textContent = 'Disconnected';
+    };
+}
+
+/* ==========================================================================
+   Preview mode — seed fake players and map the keyboard onto a controller
+   so the console can be driven from any desktop browser (?demo=N).
+   ========================================================================== */
+
+function seedDemoPlayers(n) {
+    for (let i = 0; i < n; i++) {
+        const id = 'demo_' + i;
+        state.players[id] = {
+            id: id,
+            name: DEMO_NAMES[i % DEMO_NAMES.length],
+            color: DEMO_COLORS[i % DEMO_COLORS.length],
+            avatar: DEMO_FACES[i % DEMO_FACES.length],
+            score: 0,
+            is_vip: i === 0,
+            __demo: true
+        };
+    }
+    if (n) state.vipId = 'demo_0';
+}
+
+function bindPreviewKeyboard() {
+    if (!DEMO_COUNT) return;
+
+    const map = {
+        ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', ArrowUp: 'UP', ArrowDown: 'DOWN',
+        Enter: 'A', ' ': 'A', Backspace: 'B', Escape: 'B',
+        x: 'X', X: 'X', y: 'Y', Y: 'Y'
+    };
+    // The keyboard stands in for the room leader, matching server routing.
+    const activeId = () => state.vipId || Object.keys(state.players)[0];
+
+    w.addEventListener('keydown', (e) => {
+        const btn = map[e.key];
+        if (!btn || e.repeat) return;
+        e.preventDefault();
+
+        if (e.key === 'Escape') { returnToLobby(); return; }
+
+        const id = activeId();
+        if (!id) return;
+        onControllerInput(id, { action: 'btn', button: btn, state: 'down' });
+    });
+
+    w.addEventListener('keyup', (e) => {
+        const btn = map[e.key];
+        if (!btn) return;
+        const id = activeId();
+        if (id) onControllerInput(id, { action: 'btn', button: btn, state: 'up' });
+    });
+
+    // Preview shortcut: number keys jump straight into a game.
+    w.addEventListener('keydown', (e) => {
+        const n = parseInt(e.key, 10);
+        if (isNaN(n) || n < 1 || n > CastOn.games.length) return;
+        state.selected = n - 1;
+        renderLobbyTiles();
+        launchGame(state.selected);
+    });
+}
+
+/* ==========================================================================
+   Public API consumed by the game modules
+   ========================================================================== */
+
+CastOn.state = state;
+CastOn.themes = THEMES;
+Object.defineProperty(CastOn, 'players', { get: () => state.players });
+Object.defineProperty(CastOn, 'vipId', { get: () => state.vipId });
+Object.defineProperty(CastOn, 'joinUrl', { get: () => state.joinUrl });
+
+CastOn.games = [];
+CastOn.registerGame = (def) => CastOn.games.push(def);
+CastOn.launchGame = launchGame;
+CastOn.returnToLobby = returnToLobby;
+CastOn.setLayout = setLayout;
+CastOn.toController = toController;
+CastOn.vibrate = vibrate;
+CastOn.tone = tone;
+CastOn.chord = chord;
+CastOn.escapeHtml = escapeHtml;
+CastOn.themeMeta = themeMeta;
+CastOn.fitCanvas = fitCanvas;
+CastOn.redrawQr = redrawQr;
+CastOn.renderAll = renderAll;
+CastOn.showLobby = showLobby;
+CastOn.hud = (html) => { if (dom.overlay) dom.overlay.innerHTML = html; };
+CastOn.inDemoMode = () => DEMO_COUNT > 0;
+
+/* ==========================================================================
+   Boot
+   ========================================================================== */
+
+function boot() {
+    cacheDom();
+
+    // dom.overlay and friends may be missing if the markup changed.
+    if (!dom.canvas || !dom.overlay) return;
+
+    document.documentElement.dataset.theme = themeId();
+
+    CastOn.canvas = dom.canvas;
+    CastOn.ctx = dom.canvas.getContext('2d');
+    CastOn.overlay = dom.overlay;
+    CastOn.view = { w: 0, h: 0, dpr: 1 };
+
+    renderThemeSwitcher();
+    setLobbyLayout();
+    seedDemoPlayers(DEMO_COUNT);
+    renderAll();
+    fitCanvas();
+    bindPreviewKeyboard();
+    redrawQr();
+
+    w.addEventListener('resize', () => {
+        redrawQr();
+        fitCanvas();
+        // Column count changes with width, so rebuild before re-trimming.
+        renderRoster();
+    });
+
+    connect();
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+
+})(window);

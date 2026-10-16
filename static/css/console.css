@@ -1,0 +1,474 @@
+/* ==========================================================================
+   CastOn — TV Console (big screen) styles
+   ========================================================================== */
+
+body.tv {
+    overflow: hidden;
+}
+
+/* ---------- Header extras ------------------------------------------------ */
+
+.room-key {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--panel-2);
+}
+
+.room-key__label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+
+.room-key__value {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Live player chip strip in the top bar */
+.roster-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, #000 0, #000 86%, transparent 100%);
+}
+
+.mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 5px 13px 5px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ring-color) 14%, var(--panel-2));
+    border: 1px solid color-mix(in srgb, var(--ring-color) 38%, transparent);
+    animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards;
+}
+
+.mini__avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    background: color-mix(in srgb, var(--ring-color) 22%, transparent);
+}
+
+.mini__name {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini__crown { font-size: 11px; }
+
+/* Live theme indicator. The console is steered from a phone, so this is a
+   read-only swatch that names the palette rather than a pointer target. */
+.theme-swatch {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+/* ---------- Lobby ------------------------------------------------------- */
+
+.lobby {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px var(--gutter) 20px;
+    min-height: 0;
+}
+
+.lobby__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    flex: none;
+}
+
+.lobby__title {
+    font-size: clamp(30px, 3vw, 46px);
+    margin-top: 6px;
+}
+
+/* ---------- Room band: join card + roster ------------------------------- */
+
+/* Grows to absorb whatever height the tiles and steps leave behind, so the
+   console fills the screen at any resolution instead of pooling dead space. */
+.room-band {
+    flex: 1 1 auto;
+    min-height: 250px;
+    display: grid;
+    grid-template-columns: minmax(430px, 1fr) minmax(0, 1.35fr);
+    gap: 16px;
+}
+
+.room-band__join,
+.room-band__roster {
+    border-radius: var(--r-lg);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(16px);
+}
+
+.room-band__join {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    padding: 20px 24px;
+}
+
+.room-band__code {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.room-band__roster {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px 20px;
+    min-height: 0;
+}
+
+.room-band__roster .roster {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+    grid-auto-rows: 62px;
+    align-content: start;
+    /* Headroom + a right gutter so the leader star can overhang the pill's top
+       and right edges without being clipped by this scroll container. */
+    padding: 9px 8px 0 0;
+}
+
+.room-band__note {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding-top: 13px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--ink-3);
+}
+
+.room-band__note svg { width: 14px; height: 14px; flex: none; }
+
+/* Tiles size to their natural height; the room band below takes the rest. */
+.lobby .tile-grid {
+    flex: none;
+    grid-auto-rows: auto;
+}
+
+/* Legend sits at the end of the column, never pinned, so slack stays invisible. */
+.lobby > .legend { margin-top: auto; }
+
+/* ---------- How it works strip ----------------------------------------- */
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    flex: none;
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: var(--r-lg);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(16px);
+}
+
+.step__num {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.step__title {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin-bottom: 4px;
+}
+
+.step__text {
+    display: block;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--ink-2);
+}
+
+/* Spacer that soaks up any leftover height so the footer sits at the bottom. */
+.lobby__spacer { flex: 1; min-height: 0; }
+
+.lobby__title-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.lobby__title-row .display {
+    font-size: clamp(30px, 2.8vw, 44px);
+}
+
+.lobby__hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    white-space: nowrap;
+}
+
+.lobby__hint kbd {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: var(--r-xs);
+    background: var(--card);
+    color: var(--card-ink);
+}
+
+.join__url {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    word-break: break-all;
+}
+
+.count-badge {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+}
+
+/* Keyboard shortcut legend at the bottom of the lobby */
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+    font-size: 12px;
+    color: var(--ink-3);
+    flex: none;
+}
+
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend .dim { flex: 1; min-width: 24ch; }
+
+.legend kbd {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink-2);
+}
+
+/* ---------- Game stage -------------------------------------------------- */
+
+.game-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+#game-overlay {
+    position: absolute;
+    inset: 0;
+}
+
+/* Small corner readout shown during gameplay */
+.hud-corner {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    gap: 10px;
+    z-index: 5;
+}
+
+/* ---------- Leaderboards / shared game widgets -------------------------- */
+
+.lb {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.lb__row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: var(--r-sm);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--ring-color, var(--c-blue));
+}
+
+.lb__rank {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-3);
+    text-align: center;
+}
+
+.lb__name {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lb__score {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Progress bar for trivia timer */
+.timer-bar {
+    height: 6px;
+    border-radius: var(--r-xs);
+    background: var(--line);
+    overflow: hidden;
+}
+
+.timer-bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--c-emerald), var(--c-amber) 60%, var(--c-rose));
+    transition: width 0.25s linear;
+}
+
+/* Confetti-free round transition banner */
+.banner {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-radius: var(--r-sm);
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink-2);
+}
+
+/* ==========================================================================
+   Compact lobby — 720p TVs and short windows.
+   Drops the instructional chrome and shrinks the covers so the whole console
+   still fits without scrolling.
+   ========================================================================== */
+
+@media (max-height: 860px) {
+    .lobby { gap: 14px; padding: 18px var(--gutter) 16px; }
+    .lobby__title { font-size: clamp(26px, 2.4vw, 34px); }
+    .lobby .tile-grid { gap: 14px; }
+    .tile__cover { height: 124px; }
+    .tile__art { width: 62px; height: 62px; }
+    .tile__body { padding: 14px 18px 16px; }
+    .tile__title { font-size: 22px; margin-bottom: 7px; }
+    .tile__desc { font-size: 12.5px; }
+    .tile__foot { margin-top: 12px; padding-top: 11px; }
+    .steps { gap: 12px; }
+    .step { padding: 12px 14px; gap: 11px; }
+    .step__num { width: 28px; height: 28px; font-size: 14px; }
+    .step__title { font-size: 14.5px; margin-bottom: 2px; }
+    .step__text { font-size: 11.5px; }
+    .room-band { min-height: 200px; gap: 14px; }
+    .room-band__join { padding: 16px 18px; gap: 18px; }
+    .room-band__roster { padding: 14px 16px; gap: 11px; }
+    .room-band__roster .roster { grid-auto-rows: 56px; grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); }
+    .room-band__note { display: none; }
+    .plate--m { padding: 8px; }
+    .code-slots span { width: 38px; height: 46px; font-size: 23px; }
+}
+
+/* Very short windows: hide the primer so the room band keeps its space. */
+@media (max-height: 760px) {
+    .steps { display: none; }
+    .tile__desc { display: none; }
+    .tile__cover { height: 106px; }
+    .room-band { min-height: 170px; }
+}
+
+@media (max-width: 1100px) {
+    .lobby { overflow-y: auto; }
+    .room-band { grid-template-columns: 1fr; }
+    .room-band__join { justify-content: center; }
+    .steps { grid-template-columns: 1fr; }
+}

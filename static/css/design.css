@@ -1,0 +1,1028 @@
+/* ==========================================================================
+   CastOn — Shared Design System
+   A TV-first party console UI. Flat surfaces, hairline borders, tight radii,
+   and a bold geometric display face. No glassmorphism stacks, no pill-in-pill.
+   ========================================================================== */
+
+@import url("../vendor/fonts/fonts.css");
+
+/* ---------- Reset -------------------------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+img,
+svg,
+canvas {
+    display: block;
+    max-width: 100%;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+input,
+textarea {
+    font: inherit;
+}
+
+/* ==========================================================================
+   1. THEME TOKENS
+   Five broadcast-grade palettes. Mount one on <html data-theme="…">.
+   ========================================================================== */
+
+:root {
+    /* Brand spectrum (shared across themes) */
+    --c-rose: #f43f5e;
+    --c-rose-deep: #be123c;
+    --c-amber: #f59e0b;
+    --c-amber-lift: #fbbf24;
+    --c-cyan: #06b6d4;
+    --c-cyan-lift: #22d3ee;
+    --c-violet: #8b5cf6;
+    --c-emerald: #10b981;
+    --c-blue: #2563eb;
+    --c-indigo: #4f46e5;
+
+    /* Geometry — deliberately restrained. Only avatars go full-round. */
+    --r-xs: 4px;
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 18px;
+
+    /* Rhythm */
+    --gutter: 32px;
+    --gap: 16px;
+
+    /* Default theme colours (overridden per theme below) */
+    --ink: #ffffff;
+    --ink-2: rgba(255, 255, 255, 0.72);
+    --ink-3: rgba(255, 255, 255, 0.46);
+    --line: rgba(255, 255, 255, 0.14);
+    --line-strong: rgba(255, 255, 255, 0.28);
+    --panel: rgba(12, 18, 38, 0.62);
+    --panel-2: rgba(255, 255, 255, 0.06);
+    --card: #ffffff;
+    --card-ink: #101526;
+    --card-ink-2: rgba(16, 21, 38, 0.56);
+    --card-line: rgba(16, 21, 38, 0.1);
+    --accent: var(--c-amber);
+    --accent-ink: #1a1003;
+    --focus: var(--c-amber-lift);
+
+    --shadow-tile: 0 18px 40px -22px rgba(2, 6, 23, 0.85);
+    --shadow-pop: 0 30px 70px -32px rgba(2, 6, 23, 0.9);
+
+    /* Display face for numbers, titles and eyebrows */
+    --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* --- broadcast : deep navy → cobalt (the house default) ------------------ */
+[data-theme="broadcast"] {
+    --bg-base: #060b1d;
+    --bg-a: #122a72;
+    --bg-b: #1b3fb0;
+    --wave-1: #e11d48;
+    --wave-2: #f59e0b;
+    --wave-3: #06b6d4;
+    --wave-4: #8b5cf6;
+    --wave-op: 0.9;
+    --accent: var(--c-amber-lift);
+    --focus: var(--c-amber-lift);
+}
+
+/* --- arcade : vivid cobalt + raspberry, closest to the reference art ----- */
+[data-theme="arcade"] {
+    --bg-base: #050a20;
+    --bg-a: #1d4ed8;
+    --bg-b: #2f6bff;
+    --wave-1: #ff2e63;
+    --wave-2: #ffb020;
+    --wave-3: #2fd0e8;
+    --wave-4: #6d28d9;
+    --wave-op: 0.95;
+    --panel: rgba(4, 10, 34, 0.55);
+    --accent: var(--c-amber-lift);
+    --focus: #ffffff;
+}
+
+/* --- void : near-black, neon edges -------------------------------------- */
+[data-theme="void"] {
+    --bg-base: #04040a;
+    --bg-a: #12123a;
+    --bg-b: #1f1b4d;
+    --wave-1: #7c3aed;
+    --wave-2: #06b6d4;
+    --wave-3: #e11d48;
+    --wave-4: #22d3ee;
+    --wave-op: 0.7;
+    --panel: rgba(6, 6, 20, 0.7);
+    --accent: #7c3aed;
+    --accent-ink: #ffffff;
+    --focus: #a78bfa;
+}
+
+/* --- sunset : warm rose → orange, light surfaces ------------------------ */
+[data-theme="sunset"] {
+    --bg-base: #2a0a18;
+    --bg-a: #b3123f;
+    --bg-b: #f0592b;
+    --wave-1: #ffb020;
+    --wave-2: #ff2e63;
+    --wave-3: #7c2d8f;
+    --wave-4: #ff8a3d;
+    --wave-op: 0.9;
+    --panel: rgba(38, 6, 22, 0.5);
+    --accent: #ffd166;
+    --accent-ink: #301003;
+    --focus: #ffd166;
+}
+
+/* --- candy : cool mint + periwinkle ------------------------------------- */
+[data-theme="candy"] {
+    --bg-base: #071a20;
+    --bg-a: #0e7490;
+    --bg-b: #6366f1;
+    --wave-1: #34d399;
+    --wave-2: #a78bfa;
+    --wave-3: #38bdf8;
+    --wave-4: #f472b6;
+    --wave-op: 0.85;
+    --panel: rgba(6, 24, 34, 0.58);
+    --accent: #5eead4;
+    --accent-ink: #04231f;
+    --focus: #5eead4;
+}
+
+/* ==========================================================================
+   2. APP BACKGROUND
+   Solid gradient base + hand-drawn organic curves echoing broadcast graphics.
+   ========================================================================== */
+
+.app-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(90% 70% at 12% 8%, color-mix(in srgb, var(--bg-b) 55%, transparent) 0%, transparent 60%),
+        linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 52%, var(--bg-base) 100%);
+}
+
+.app-bg::after {
+    /* Fine grid wash keeps large TV panels from reading as flat colour. */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: radial-gradient(120% 100% at 50% 0%, #000 20%, transparent 78%);
+}
+
+.app-bg .curves {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: var(--wave-op, 0.9);
+}
+
+/* ==========================================================================
+   3. TYPOGRAPHY
+   ========================================================================== */
+
+body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+    margin: 0;
+}
+
+.eyebrow {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0;
+}
+
+.eyebrow.is-accent {
+    color: var(--accent);
+}
+
+.numeral {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    line-height: 1;
+}
+
+.t-hero   { font-size: clamp(34px, 3.4vw, 52px); }
+.t-xl     { font-size: clamp(28px, 2.6vw, 40px); }
+.t-lg     { font-size: 26px; }
+.t-md     { font-size: 19px; }
+.t-sm     { font-size: 14px; }
+.t-xs     { font-size: 12px; }
+.muted    { color: var(--ink-2); }
+.dim      { color: var(--ink-3); }
+
+.mono {
+    font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+}
+
+/* ==========================================================================
+   4. LAYOUT PRIMITIVES
+   ========================================================================== */
+
+.console {
+    position: relative;
+    z-index: 1;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--gutter);
+    padding: 20px var(--gutter);
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg-base) 46%, transparent);
+    backdrop-filter: blur(18px);
+}
+
+.topbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.brand-mark {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: linear-gradient(150deg, var(--c-violet), var(--c-blue) 55%, var(--c-cyan));
+    box-shadow: 0 10px 26px -12px var(--c-blue);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.brand-mark svg { width: 24px; height: 24px; }
+
+.brand-name {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0;
+}
+
+.brand-sub {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-top: 4px;
+}
+
+.topbar__mid {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+}
+
+.topbar__end {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: none;
+}
+
+.stage {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   5. SURFACES
+   ========================================================================== */
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    backdrop-filter: blur(16px);
+}
+
+.panel--solid {
+    background: var(--card);
+    color: var(--card-ink);
+    border-color: var(--card-line);
+    backdrop-filter: none;
+}
+
+.panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.panel--solid .panel__head { border-color: var(--card-line); }
+
+.panel__body { padding: 20px; }
+
+.rule {
+    height: 1px;
+    background: var(--line);
+    border: 0;
+    margin: 0;
+}
+
+/* ==========================================================================
+   6. FOCUS / SELECTION — the TV "cursor"
+   ========================================================================== */
+
+.ring {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+}
+
+/* ==========================================================================
+   7. GAME TILES
+   ========================================================================== */
+
+.tile-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    align-content: start;
+}
+
+.tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    padding: 0;
+    border-radius: var(--r-lg);
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-tile);
+    transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.1),
+                box-shadow 0.22s ease;
+    overflow: hidden;
+}
+
+/* Focus is drawn INSIDE the tile. The whole tile is the hit target, so a
+   negative-offset ring would be clipped by the card's own border radius. */
+.tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 3px solid transparent;
+    pointer-events: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    z-index: 4;
+}
+
+/* ---------- Cover art slot -----------------------------------------------
+   Reserved for real key art later. For now it holds an oversized glyph over a
+   accent wash, which carries just as well from three metres away.            */
+
+.tile__cover {
+    position: relative;
+    flex: none;
+    height: 176px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: #fff;
+    background:
+        radial-gradient(130% 120% at 22% 0%, rgba(255, 255, 255, 0.3) 0%, transparent 58%),
+        var(--tile-accent, var(--c-blue));
+}
+
+/* Sweeping curve that echoes the console background inside each cover. */
+.tile__cover::before {
+    content: "";
+    position: absolute;
+    right: -34%;
+    bottom: -62%;
+    width: 82%;
+    padding-bottom: 82%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.tile__cover::after {
+    content: "";
+    position: absolute;
+    right: -6%;
+    bottom: -78%;
+    width: 58%;
+    padding-bottom: 58%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.tile__art {
+    position: relative;
+    z-index: 1;
+    width: 88px;
+    height: 88px;
+    color: rgba(255, 255, 255, 0.95);
+    filter: drop-shadow(0 8px 18px rgba(2, 6, 23, 0.35));
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.tile__art svg { width: 100%; height: 100%; }
+
+.tile.is-focused .tile__art { transform: scale(1.08) rotate(-3deg); }
+
+/* Genre chip sits on the cover, bottom-left. */
+.tile__eyebrow {
+    position: absolute;
+    z-index: 2;
+    left: 14px;
+    bottom: 12px;
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(3, 7, 18, 0.42);
+    backdrop-filter: blur(4px);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Player count sits on the cover, top-right. */
+.tile__players {
+    position: absolute;
+    z-index: 2;
+    right: 14px;
+    top: 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(3, 7, 18, 0.42);
+    backdrop-filter: blur(4px);
+    color: rgba(255, 255, 255, 0.95);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tile__players svg { width: 13px; height: 13px; }
+
+.tile__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 18px 20px 20px;
+    min-height: 0;
+}
+
+.tile__title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.1;
+    margin: 0 0 9px;
+    color: var(--card-ink);
+}
+
+.tile__desc {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--card-ink-2);
+    margin: 0;
+    flex: 1;
+    max-width: 46ch;
+}
+
+.tile__foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 13px;
+    border-top: 1px solid var(--card-line);
+}
+
+.tile__control {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--card-ink-2);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.tile__control svg { width: 14px; height: 14px; flex: none; }
+
+/* Action hint. The tile itself is the button, so this states what will happen
+   rather than duplicating a "Start" control. */
+.tile__cta {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--card-ink-2);
+    white-space: nowrap;
+}
+
+.tile.is-focused .tile__cta { color: var(--card-ink); }
+
+.tile__cta .key {
+    display: grid;
+    place-items: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--tile-accent, var(--c-blue));
+    color: #fff;
+    font-size: 12px;
+}
+
+.tile__cta .key {
+    background: var(--tile-accent, var(--c-blue));
+}
+
+.tile.is-focused {
+    transform: translateY(-7px) scale(1.012);
+    box-shadow: var(--shadow-pop);
+}
+
+.tile.is-focused::after {
+    border-color: var(--focus);
+    box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--focus) 18%, transparent);
+}
+
+/* ==========================================================================
+   8. CHIPS, TAGS & BADGES
+   One rectangle, hairline border. Never nest these.
+   ========================================================================== */
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tag--accent {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    color: var(--ink);
+}
+
+.tag--crown {
+    background: var(--c-amber-lift);
+    border-color: var(--c-amber-lift);
+    color: #22160a;
+}
+
+.tag svg { width: 14px; height: 14px; }
+
+.dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c-emerald);
+    flex: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-emerald) 25%, transparent);
+}
+
+.dot.is-idle {
+    background: var(--ink-3);
+    box-shadow: none;
+}
+
+/* ==========================================================================
+   9. BUTTONS
+   ========================================================================== */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 12px 18px;
+    border-radius: var(--r-sm);
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    transition: transform 0.12s ease, filter 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn:active { transform: translateY(1px) scale(0.995); }
+.btn svg { width: 16px; height: 16px; }
+
+.btn--primary {
+    background: linear-gradient(120deg, var(--c-amber-lift), var(--c-amber) 45%, var(--c-rose));
+    color: #1a1006;
+    box-shadow: 0 14px 30px -16px var(--c-amber);
+}
+
+.btn--solid {
+    background: var(--card-ink);
+    color: #fff;
+}
+
+.btn--ghost {
+    border-color: var(--line-strong);
+    color: var(--ink);
+    background: var(--panel-2);
+}
+
+.btn--block { width: 100%; }
+
+.btn--lg {
+    padding: 15px 22px;
+    font-size: 14px;
+}
+
+/* ==========================================================================
+   10. AVATARS & ROSTER
+   ========================================================================== */
+
+.avatar {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    flex: none;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    line-height: 1;
+    background: var(--panel-2);
+    border: 2px solid var(--ring-color, var(--line-strong));
+}
+
+.avatar--sm { width: 36px; height: 36px; font-size: 17px; }
+.avatar--lg { width: 60px; height: 60px; font-size: 28px; }
+
+.roster {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    align-content: start;
+}
+
+/* Seat pill: one shape, no nesting. A large avatar anchors the left edge and
+   the name reads as plain text to its right. */
+.roster__cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 58px;
+    padding: 5px 30px 5px 5px;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-line);
+    animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1) backwards;
+}
+
+.roster__cell .avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 25px;
+    border-width: 0;
+    background: color-mix(in srgb, var(--ring-color) 22%, transparent);
+}
+
+.roster__namebar {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    padding-right: 6px;
+}
+
+.roster__name {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.roster__role {
+    display: block;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--card-ink-2);
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Leader star pinned to the top-right corner of the seat pill. */
+.roster__star {
+    position: absolute;
+    top: -7px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--c-amber-lift);
+    color: #22160a;
+    border: 2px solid var(--card);
+    font-size: 11px;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(2, 6, 23, 0.28);
+}
+
+.roster__star svg { width: 12px; height: 12px; }
+
+.roster__empty {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px;
+    border-radius: var(--r-md);
+    border: 1.5px dashed var(--line-strong);
+    color: var(--ink-2);
+    font-size: 14px;
+}
+
+/* Empty seat. Reads as capacity, never as broken content. */
+.roster__cell--open {
+    background: color-mix(in srgb, var(--card) 8%, transparent);
+    border-style: dashed;
+    border-color: var(--line-strong);
+    box-shadow: none;
+}
+
+.roster__cell--open .avatar {
+    background: none;
+    border: 1.5px dashed var(--line-strong);
+    color: var(--ink-2);
+}
+
+.roster__cell--open .roster__name { color: var(--ink-2); }
+.roster__cell--open .roster__role { color: var(--ink-3); }
+
+.avatar--dashed {
+    border-style: dashed;
+    border-color: var(--ink-3);
+    color: var(--ink-2);
+    background: none;
+}
+
+.avatar--dashed svg { width: 18px; height: 18px; }
+
+.roster__bounce {
+    display: flex;
+    gap: 5px;
+}
+
+.roster__bounce i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: hop 1.1s ease-in-out infinite;
+}
+
+@keyframes pop-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.96); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes hop {
+    0%, 100% { transform: translateY(0); opacity: 0.5; }
+    50%      { transform: translateY(-7px); opacity: 1; }
+}
+
+/* ==========================================================================
+   11. STAT STRIP  (Level / Points / Rank row from the reference)
+   ========================================================================== */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    border: 1px solid var(--line);
+}
+
+.stats__cell {
+    background: var(--panel-2);
+    padding: 14px 16px;
+}
+
+.stats__label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+}
+
+.stats__value {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   12. JOIN CARD (QR + code)
+   ========================================================================== */
+
+.join {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 24px;
+    align-items: center;
+    padding: 22px;
+    border-radius: var(--r-lg);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(18px);
+}
+
+.plate {
+    position: relative;
+    padding: 12px;
+    border-radius: var(--r-md);
+    background: #fff;
+    box-shadow: 0 24px 50px -28px rgba(2, 6, 23, 0.9);
+    flex: none;
+}
+
+.plate__badge {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: 3px solid #fff;
+    box-shadow: 0 4px 12px rgba(2, 6, 23, 0.25);
+}
+
+.plate__badge svg { width: 16px; height: 16px; }
+
+.plate canvas { border-radius: var(--r-xs); }
+
+.code-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+.code-display--hero { font-size: clamp(44px, 4.4vw, 62px); }
+
+.code-slots {
+    display: flex;
+    gap: 9px;
+}
+
+.code-slots span {
+    width: 42px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-sm);
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* ==========================================================================
+   13. UTILITIES
+   ========================================================================== */
+
+.row { display: flex; align-items: center; }
+.row--between { justify-content: space-between; }
+.row--gap { gap: var(--gap); }
+.col { display: flex; flex-direction: column; }
+.grow { flex: 1; min-width: 0; }
+.wrap { flex-wrap: wrap; }
+.hidden { display: none !important; }
+.sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
