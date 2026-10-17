@@ -546,6 +546,11 @@ function connect() {
         let msg;
         try { msg = JSON.parse(event.data); } catch (e) { return; }
 
+        if (msg.type === 'reload') {
+            location.reload();
+            return;
+        }
+
         if (msg.type === 'room_init') {
             state.code = msg.code;
             state.joinUrl = msg.join_url;

@@ -143,6 +143,10 @@ function joinRoom() {
 
 function handleMessage(msg) {
     switch (msg.type) {
+        case 'reload':
+            location.reload();
+            break;
+
         case 'error':
             if (el.joinBtn) el.joinBtn.disabled = false;
             showError(msg.message || 'Could not join that room.');

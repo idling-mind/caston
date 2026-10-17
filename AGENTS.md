@@ -133,10 +133,15 @@ and scales proportionally across displays and aspect ratios:
 The TV acts as the **authoritative state machine** for every game. Whenever a game starts or changes phase, the TV sends a `set_layout` command through the server to either `"all"` controllers or a specific `player_id`.
 
 Currently supported layouts in `static/controller.html`:
-1. **`dpad`** (`#layout-dpad`): Virtual analog joystick (`UP`, `DOWN`, `LEFT`, `RIGHT`, 360° vector) + Action buttons (`A`, `B`), plus optional shoulder buttons (`X`, `Y`) declared per-state via `setLayout(..., { extras: [{ button: 'X', label: 'Theme' }] })`. Supports simultaneous multi-touch via `setPointerCapture`.
+1. **`dpad`** (`#layout-dpad`): Cross D-Pad (`UP`, `DOWN`, `LEFT`, `RIGHT`) + Action buttons (`A`, `B`), plus optional shoulder buttons (`X`, `Y`) declared per-state via `setLayout(..., { extras: [{ button: 'X', label: 'Theme' }] })`. Supports simultaneous multi-touch via `setPointerCapture`.
 2. **`trivia`** (`#layout-trivia`): 2x2 grid of colored buzzer buttons (`0`, `1`, `2`, `3`) with dynamic option text injected via `state.options`.
 3. **`draw`** (`#layout-draw`): HTML5 `<canvas>` touch drawing pad that normalizes coordinates to `[0.0, 1.0]` and streams stroke vectors in real time, plus a secret word banner and Clear button.
 4. **`guess`** (`#layout-guess`): Text input field + Submit button for word-guessing games.
+
+### 3.4 Dynamic Cache-Busting & Hot Invalidation
+- **Automated Asset Fingerprinting:** Mobile Safari/Chrome and Smart TV WebViews aggressively cache `.js` and `.css` files. `render_html_with_cache_busting()` in `app.py` dynamically injects `?v=<timestamp>` (the latest `mtime` of files in `static/`) into all `href` and `src` asset references. Any changes to game code or styling automatically force all clients to fetch fresh assets.
+- **Strict Anti-Caching Headers:** A FastAPI middleware enforces `Cache-Control: no-cache, no-store, must-revalidate` on HTML entry points (`/tv`, `/controller`, `/`) so browsers never retain stale page shells.
+- **Remote Force Reload (`/api/reload`):** When code updates are deployed, calling `GET /api/reload` broadcasts `{"type": "reload"}` via WebSocket to both the TV and all connected mobile controllers, prompting them to execute `location.reload()` without requiring anyone to touch the TV remote or mobile browser settings.
 
 ---
 
@@ -150,6 +155,7 @@ All WebSocket communication uses JSON payloads.
 | `room_init` | `code`, `join_url`, `lan_ip` | Sent immediately when TV connects so it can render the QR code and room code. |
 | `players_sync` | `players` (Array), `vip_id` | Sent whenever a player joins, reconnects, or leaves. |
 | `controller_input` | `player_id`, `player` (Object), `data` (Object) | Forwarded directly from a mobile controller whenever a player interacts with their screen. |
+| `reload` | None | Instructs the TV browser to immediately refresh and load fresh assets. |
 
 ### 4.2 TV $\rightarrow$ Server (`/ws/tv`)
 | `type` | Payload Fields | Description |
@@ -166,12 +172,12 @@ All WebSocket communication uses JSON payloads.
 | `vibrate` | `ms` (int) | Triggers `navigator.vibrate(ms)` on the mobile device. |
 | `error` | `message` (str) | Displayed on the join screen if room code is invalid. |
 | `room_closed` | None | Alerts the user and reloads the controller page when the TV closes. |
+| `reload` | None | Instructs the mobile phone browser to immediately refresh and load fresh assets. |
 
 ### 4.4 Controller $\rightarrow$ Server (`/ws/controller/{code}`)
 Sent via `sendInput(payload)` in `controller-app.js` and wrapped into `controller_input.data` for the TV:
 - **Lobby Return (VIP only):** `{"action": "home"}`
 - **Gamepad Buttons (`dpad` layout):** `{"action": "btn", "button": "UP|DOWN|LEFT|RIGHT|A|B|X|Y", "state": "down|up"}`
-- **Joystick Vector (`dpad` layout):** `{"action": "joystick", "x": float, "y": float, "active": bool}`
 - **Trivia Selection (`trivia` layout):** `{"action": "trivia_answer", "choice": 0|1|2|3}`
 - **Drawing Stroke (`draw` layout):** `{"action": "draw_stroke", "x0": float, "y0": float, "x1": float, "y1": float, "color": "#hex", "clear": bool}`
 - **Text Guess (`guess` layout):** `{"action": "submit_guess", "text": "USER INPUT"}`

@@ -2,6 +2,8 @@ import sys
 import socket
 import random
 import string
+import time
+import re
 import uvicorn
 from pathlib import Path
 from typing import Dict, Optional
@@ -14,14 +16,48 @@ if sys.platform == "win32":
             sys.stderr.reconfigure(encoding="utf-8")
     except Exception:
         pass
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 app = FastAPI(title="CastOn Game Console Platform")
 
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "static"
+SERVER_START_TIME = int(time.time())
+
+def get_asset_version() -> str:
+    """Returns the latest modification timestamp across static files, or server start time."""
+    try:
+        latest = max(p.stat().st_mtime for p in STATIC_DIR.rglob("*") if p.is_file())
+        return str(int(latest))
+    except Exception:
+        return str(SERVER_START_TIME)
+
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+def render_html_with_cache_busting(filepath: Path) -> HTMLResponse:
+    """Injects dynamic cache-busting query params into all /static/ assets."""
+    content = filepath.read_text(encoding="utf-8")
+    version = get_asset_version()
+    pattern = r'((?:href|src)=["\']/static/[^"\'?#]+)(["\'])'
+    busted = re.sub(pattern, rf'\1?v={version}\2', content)
+    return HTMLResponse(busted, headers=NO_CACHE_HEADERS)
+
+@app.middleware("http")
+async def add_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path in ["/", "/tv", "/controller"]:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    elif request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return response
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -85,11 +121,27 @@ async def root():
 
 @app.get("/tv")
 async def tv_view():
-    return FileResponse(STATIC_DIR / "tv.html")
+    return render_html_with_cache_busting(STATIC_DIR / "tv.html")
 
 @app.get("/controller")
 async def controller_view():
-    return FileResponse(STATIC_DIR / "controller.html")
+    return render_html_with_cache_busting(STATIC_DIR / "controller.html")
+
+@app.get("/api/reload")
+@app.post("/api/reload")
+async def force_reload_all():
+    """Broadcasts a reload command to all connected TVs and mobile controllers."""
+    for room in list(rooms.values()):
+        try:
+            await room.tv_ws.send_json({"type": "reload"})
+        except Exception:
+            pass
+        for c_ws in list(room.controllers.values()):
+            try:
+                await c_ws.send_json({"type": "reload"})
+            except Exception:
+                pass
+    return {"status": "ok", "message": "Reload signal broadcasted to all clients."}
 
 @app.websocket("/ws/tv")
 async def tv_ws_endpoint(ws: WebSocket):
