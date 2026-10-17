@@ -26,7 +26,8 @@ const ROUND_MS = 75000;
 const SUDDEN_DEATH_MS = 15000;
 
 class BumperBrawl {
-    constructor() {
+    constructor(ctx) {
+        this.ctx = ctx || C;
         this.id = 'brawl';
         this.entities = {};
         this.orbs = [];
@@ -441,7 +442,7 @@ C.registerGame({
     description: 'Scoop energy orbs and ram rivals out of the arena ring. Last dash wins the crowd.',
     accent: '#f43f5e',
     icon: 'flame',
-    create: () => new BumperBrawl()
+    create: (ctx) => new BumperBrawl(ctx)
 });
 
 })(window);

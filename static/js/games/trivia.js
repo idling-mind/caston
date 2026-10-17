@@ -47,7 +47,8 @@ function shuffledDeck() {
 }
 
 class FamilyTrivia {
-    constructor() {
+    constructor(ctx) {
+        this.ctx = ctx || C;
         this.id = 'trivia';
         this.scores = {};
         this.answers = {};
@@ -312,7 +313,7 @@ C.registerGame({
     description: 'Fast-paced quiz showdown. Colour-coded buzzers, live scoring, and speed bonuses for the bold.',
     accent: '#2563eb',
     icon: 'brain',
-    create: () => new FamilyTrivia()
+    create: (ctx) => new FamilyTrivia(ctx)
 });
 
 })(window);

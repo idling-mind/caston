@@ -148,6 +148,94 @@ T.results = function (cfg) {
     `;
 };
 
+/**
+ * Standard game clock display component.
+ * @param {number|string} seconds
+ * @param {{isHot?: boolean, label?: string}} [opts]
+ */
+T.clock = function (seconds, opts) {
+    const o = opts || {};
+    const hotClass = o.isHot ? ' is-hot' : '';
+    return `
+        <div class="q-screen__clock">
+            ${o.label ? `<span class="eyebrow">${esc(o.label)}</span>` : ''}
+            <span class="numeral${hotClass}">${esc(String(seconds))}</span>
+        </div>
+    `;
+};
+
+/**
+ * Standard top HUD bar for game stages.
+ * @param {{title?: string, subtitle?: string, kicker?: string, right?: string}} cfg
+ */
+T.hudBanner = function (cfg) {
+    return `
+        <div class="row row--between" style="width:100%;align-items:flex-start;padding:12px var(--gutter);gap:16px;">
+            <div>
+                ${cfg.kicker ? `<p class="eyebrow is-accent">${esc(cfg.kicker)}</p>` : ''}
+                ${cfg.title ? `<h2 class="display t-lg" style="margin-top:2px">${esc(cfg.title)}</h2>` : ''}
+                ${cfg.subtitle ? `<p class="dim t-xs" style="margin-top:4px">${esc(cfg.subtitle)}</p>` : ''}
+            </div>
+            ${cfg.right ? `<div>${cfg.right}</div>` : ''}
+        </div>
+    `;
+};
+
+/**
+ * Standard floating panel / dialog card.
+ * @param {string} contentHtml
+ * @param {{width?: number|string, align?: string}} [opts]
+ */
+T.card = function (contentHtml, opts) {
+    const o = opts || {};
+    const maxW = typeof o.width === 'number' ? o.width + 'px' : (o.width || '520px');
+    return `
+        <div class="scoreboard" style="max-width:${maxW};margin:auto;pointer-events:auto;">
+            ${contentHtml}
+        </div>
+    `;
+};
+
 CastOn.tools = T;
+
+/* ---------- Formal Game Base Class --------------------------------------- */
+
+/**
+ * Base class for all CastOn games. Optional to extend, but serves as the
+ * authoritative reference for the Game Interface Contract.
+ */
+class CastOnGame {
+    /**
+     * @param {object} ctx - Injected GameContext providing all engine services
+     */
+    constructor(ctx) {
+        this.ctx = ctx || CastOn;
+    }
+
+    /**
+     * Called when the TV canvas view changes dimensions or pixel density.
+     * @param {{w: number, h: number, dpr: number, scale: number}} view
+     */
+    onResize(view) {}
+
+    /**
+     * Called whenever a player connects, disconnects, or updates their profile.
+     */
+    onPlayersSync() {}
+
+    /**
+     * Called when a mobile controller sends input (buttons, strokes, answers).
+     * @param {string} playerId
+     * @param {object} data
+     */
+    onInput(playerId, data) {}
+
+    /**
+     * Called when exiting the game. Stop all rAF loops, intervals, and audio here.
+     */
+    destroy() {}
+}
+
+CastOn.Game = CastOnGame;
 
 })(window);

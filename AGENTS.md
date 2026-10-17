@@ -182,107 +182,286 @@ Sent via `sendInput(payload)` in `controller-app.js` and wrapped into `controlle
 - **Drawing Stroke (`draw` layout):** `{"action": "draw_stroke", "x0": float, "y0": float, "x1": float, "y1": float, "color": "#hex", "clear": bool}`
 - **Text Guess (`guess` layout):** `{"action": "submit_guess", "text": "USER INPUT"}`
 
+## 5. Formal Game Interface Specification & Guide for AI Agents
+
+Games are **modular drop-in cartridges**. The TV engine (`static/js/console.js`) owns the
+WebSocket connection, room state, audio context, theming, and the lobby; it knows nothing
+about individual game rules. Each game registers itself with `CastOn.registerGame({...})`,
+and the console automatically adds its tile, navigation, and launch handlers.
+
 ---
 
-## 5. Guide for AI Agents: How to Add a New Game
+### 5.1 The Game Interface Contract (`CastOn.Game`)
 
-Games are **separate files**. The TV engine (`static/js/console.js`) owns the
-websocket, room state, theming and the lobby; it knows nothing about individual
-game rules. Each game registers itself into a registry, and the lobby renders
-one tile per registry entry — there is no fixed game count to update anywhere.
+Every game class must implement this lifecycle interface (either by extending `CastOn.Game`
+or as a standalone class):
 
-### Step 1: Create `static/js/games/mygame.js`
-Wrap the file in an IIFE, pull helpers off `CastOn`, implement the interface
-below, then call `CastOn.registerGame({...})` at the bottom.
+```javascript
+class MyGame extends CastOn.Game {
+    /**
+     * @param {GameContext} ctx - Injected engine services adapter
+     */
+    constructor(ctx) {
+        super(ctx);
+        this.ctx = ctx;
+        this.running = true;
+
+        // 1. Tell phones what layout to display
+        this.ctx.controller.setLayout('dpad', {
+            title: 'My Game',
+            subtitle: 'D-Pad moves · A acts'
+        });
+
+        // 2. Start animation or game loops
+        this.loop = this.loop.bind(this);
+        requestAnimationFrame(this.loop);
+    }
+
+    /**
+     * Called when the TV canvas view changes dimensions or DPR.
+     * @param {{w: number, h: number, dpr: number, scale: number}} view
+     */
+    onResize(view) {
+        // Recalculate any positions derived from view dimensions
+    }
+
+    /**
+     * Called when a player connects, reconnects, leaves, or changes their profile.
+     */
+    onPlayersSync() {
+        // Re-read this.ctx.players and sync internal entities/scores
+    }
+
+    /**
+     * Called whenever a connected mobile controller sends an action.
+     * @param {string} playerId - e.g. "p_1a2b3"
+     * @param {object} data - Normalized input payload from controller
+     */
+    onInput(playerId, data) {
+        if (data.action === 'btn') {
+            // data.button: 'UP'|'DOWN'|'LEFT'|'RIGHT'|'A'|'B'|'X'|'Y'
+            // data.state: 'down'|'up'
+        }
+    }
+
+    /**
+     * MANDATORY cleanup. Called when exiting to the lobby or switching games.
+     */
+    destroy() {
+        this.running = false;
+        // CRITICAL: cancel every requestAnimationFrame, clearTimeout, and setInterval.
+        // Any leaked timer or loop will continue drawing over the lobby or next game!
+    }
+}
+```
+
+---
+
+### 5.2 The `GameContext` (`ctx`) Engine Reference
+
+When a game is launched, the engine instantiates it with an injected `ctx` object.
+Never reach into global DOM nodes or window properties; use `ctx`:
+
+| Property / Method | Type / Signature | Description |
+| :--- | :--- | :--- |
+| `ctx.id` | `string` | The unique ID of the active game (e.g. `'brawl'`). |
+| `ctx.view` | `{ w, h, dpr, scale }` | Current canvas dimensions in CSS pixels (`w`, `h`), device pixel ratio (`dpr`), and scale factor. |
+| `ctx.canvas` | `HTMLCanvasElement` | The TV canvas element. |
+| `ctx.ctx` | `CanvasRenderingContext2D` | Pre-scaled 2D context matching `effectiveDpr`. |
+| `ctx.overlay` | `HTMLElement` | DOM container (`#game-overlay`) sitting directly above the canvas for HTML HUDs. |
+| `ctx.setOverlay(html)` | `(html: string) => void` | Replaces the inner HTML of the TV HUD overlay. |
+| `ctx.clearCanvas()` | `() => void` | Clears the entire canvas back to transparent. |
+| `ctx.players` | `Object.<string, Player>` | Live dictionary of connected players (`{ id, name, color, avatar, is_vip, score }`). |
+| `ctx.vipId` | `string \| null` | Player ID of the room leader. |
+| `ctx.vip` | `Player \| null` | Player object of the room leader. |
+| `ctx.getRankedPlayers(scores)` | `(scores: Object) => Array` | Returns players sorted by score descending (highest first). |
+| `ctx.controller.setLayout(layout, state, target?)` | `(layout: string, state?: object, target?: string) => void` | Switches phone UI (`target`: `'all'` or specific `playerId`). |
+| `ctx.controller.vibrate(ms, target?)` | `(ms?: number, target?: string) => void` | Sends a haptic vibration to phones. |
+| `ctx.controller.send(payload, target?)` | `(payload: object, target?: string) => void` | Sends arbitrary custom events to phones. |
+| `ctx.sound.tone(freq, ms?, type?)` | `(freq: number, ms?: number, type?: string) => void` | Plays a synthesized WebAudio tone. |
+| `ctx.sound.chord([freqs], ms?, type?)` | `(freqs: number[], ms?: number, type?: string) => void` | Plays a synthesized chord. |
+| `ctx.sound.blip()`, `pop()`, `success()`, `fail()`, `fanfare()` | `() => void` | Built-in sound effects. |
+| `ctx.ui.results(cfg)` | `(cfg: object) => string` | Returns the standard HTML end-of-game podium scoreboard. |
+| `ctx.ui.leaderboard(rows, opts?)` | `(rows: Array, opts?: object) => string` | Returns standard ranked player leaderboard HTML. |
+| `ctx.ui.scoreRail(rows)` | `(rows: Array) => string` | Returns compact score chips for screen headers. |
+| `ctx.ui.clock(seconds, opts?)` | `(seconds: number\|string, opts?: object) => string` | Returns tabular numeral clock HTML (`opts.isHot = true` for red warning). |
+| `ctx.ui.hudBanner(cfg)` | `(cfg: object) => string` | Returns standard top HUD bar with title, subtitle, and badges. |
+| `ctx.ui.card(html, opts?)` | `(html: string, opts?: object) => string` | Returns a styled floating card panel matching the active theme. |
+| `ctx.graphics.roundRect(g, x, y, w, h, r)` | Canvas helper | Draws a rounded rectangle path on context `g`. |
+| `ctx.graphics.circle(g, x, y, r)` | Canvas helper | Draws a circular arc path on context `g`. |
+| `ctx.graphics.arenaBackdrop(view)` | Canvas helper | Draws the standard radial dark vignette backdrop. |
+| `ctx.graphics.label(text, x, y, opts?)` | Canvas helper | Draws crisp text using the console's typography tokens. |
+| `ctx.backToLobby()` | `() => void` | Returns all players to the TV lobby. |
+
+---
+
+### 5.3 Scoped Styling (`css` property in registration)
+
+New games do **not** need to touch `static/css/game.css`. Provide a `css` string in `CastOn.registerGame({...})`. The engine automatically injects it into `<head>` when the game starts and removes it when returning to the lobby:
+
+```javascript
+CastOn.registerGame({
+    id: 'mygame',
+    title: 'My Game',
+    tagline: 'Action',
+    players: '2–8 players',
+    control: 'D-Pad + Boost',
+    description: 'Dodge meteors and outlast rivals.',
+    accent: '#f43f5e',
+    icon: 'flame', // Key from static/js/icons.js (e.g. 'flame', 'zap', 'brain', 'palette', 'trophy', 'users')
+    css: `
+        .mygame-hud {
+            position: absolute;
+            top: 20px; left: var(--gutter);
+            display: flex; gap: 12px;
+        }
+        .mygame-shield {
+            color: var(--accent);
+            font-weight: 700;
+        }
+    `,
+    create: (ctx) => new MyGame(ctx)
+});
+```
+
+---
+
+### 5.4 Supported Phone Controller Layouts
+
+Switch phone layouts anytime with `ctx.controller.setLayout(layoutName, state)`:
+
+1. **`'dpad'`** — Virtual analog joystick / D-Pad + A and B arcade action buttons.
+   - **Optional shoulder buttons**: pass `state.extras: [{ button: 'X', label: 'Shield' }, { button: 'Y', label: 'Bomb' }]`.
+   - **Input payload**: `{"action": "btn", "button": "UP|DOWN|LEFT|RIGHT|A|B|X|Y", "state": "down|up"}`.
+2. **`'trivia'`** — 4 large arcade buzzer buttons (Red, Blue, Yellow, Green).
+   - **Option labels**: pass `state.options: ['Choice A', 'Choice B', 'Choice C', 'Choice D']`.
+   - **Input payload**: `{"action": "trivia_answer", "choice": 0|1|2|3}`.
+3. **`'draw'`** — Touch canvas with normalized vectors and secret prompt banner.
+   - **Word banner**: pass `state.word: 'ELEPHANT'`.
+   - **Input payload**: `{"action": "draw_stroke", "x0": float, "y0": float, "x1": float, "y1": float, "color": "#hex", "clear": bool}`.
+4. **`'guess'`** — Single-line text input field and submit button.
+   - **Pre-fill**: pass `state.prefill: '...'`.
+   - **Input payload**: `{"action": "submit_guess", "text": "USER INPUT"}`.
+
+---
+
+### 5.5 Turnkey Boilerplate Template for AI Agents
+
+When asked to create a new game, copy this exact pattern into `static/js/games/<id>.js`:
 
 ```javascript
 (function (w) {
 'use strict';
 
-const C = w.CastOn;      // engine API
-const T = C.tools;       // canvas + overlay helpers (gametools.js)
+const CastOn = w.CastOn;
 
-class MyGame {
-    constructor() {
-        this.phase = 'play';
+class NewPartyGame extends CastOn.Game {
+    constructor(ctx) {
+        super(ctx);
+        this.ctx = ctx;
+        this.scores = {};
+        this.running = true;
         this.rafId = null;
 
-        // Tell the phones what UI to show.
-        C.setLayout('dpad', { title: 'My Game', subtitle: 'D-Pad moves' });
+        // Initialize player scores
+        Object.keys(this.ctx.players).forEach(id => { this.scores[id] = 0; });
 
-        // C.view is the CSS-pixel size of the stage; C.ctx is already
-        // scaled for devicePixelRatio.
+        // Set controller layout
+        this.ctx.controller.setLayout('dpad', {
+            title: 'New Game',
+            subtitle: 'Survive and score points'
+        });
+
+        // Audio cue on start
+        this.ctx.sound.fanfare();
+
+        // Start render loop
         this.loop = this.loop.bind(this);
         this.rafId = requestAnimationFrame(this.loop);
     }
 
-    onResize(view) { /* the TV was resized; recompute derived geometry */ }
+    onPlayersSync() {
+        Object.keys(this.ctx.players).forEach(id => {
+            if (this.scores[id] === undefined) this.scores[id] = 0;
+        });
+    }
 
-    onPlayersSync() { /* someone joined or left mid-game */ }
+    onInput(playerId, data) {
+        if (!this.running) return;
 
-    onInput(playerId, data) { /* data.action, data.button, data.state, … */ }
+        if (data.action === 'btn' && data.state === 'down') {
+            if (data.button === 'A') {
+                this.scores[playerId] = (this.scores[playerId] || 0) + 10;
+                this.ctx.sound.pop();
+            }
+        }
+    }
+
+    onResize(view) {
+        // Re-align geometry if needed
+    }
+
+    loop() {
+        if (!this.running) return;
+        const { ctx, view } = this.ctx;
+
+        // 1. Draw arena backdrop
+        this.ctx.graphics.arenaBackdrop(view);
+
+        // 2. Render game entities on canvas...
+
+        // 3. Render HUD overlay via shared tools
+        const ranked = this.ctx.getRankedPlayers(this.scores);
+        this.ctx.setOverlay(this.ctx.ui.scoreRail(ranked));
+
+        this.rafId = requestAnimationFrame(this.loop);
+    }
+
+    endGame() {
+        this.running = false;
+        if (this.rafId) cancelAnimationFrame(this.rafId);
+
+        const ranked = this.ctx.getRankedPlayers(this.scores);
+        this.ctx.setOverlay(this.ctx.ui.results({
+            title: 'Game Over',
+            rows: ranked,
+            footer: 'Leader: press A on phone to return to lobby'
+        }));
+        this.ctx.sound.fanfare();
+    }
 
     destroy() {
-        // CRITICAL: stop every loop and timer here. Leaked rAF loops keep
-        // drawing over the lobby after the game ends.
+        this.running = false;
         if (this.rafId) cancelAnimationFrame(this.rafId);
-        clearTimeout(this.timerId);
         this.rafId = null;
     }
 }
 
-C.registerGame({
-    id: 'mygame',
-    title: 'My Game',
-    tagline: 'Category',          // short chip on the tile cover
-    players: '2–8 players',
-    control: 'D-Pad + action',
-    description: 'One sentence describing the hook.',
-    accent: '#8b5cf6',            // tile + cover colour
-    icon: 'zap',                  // a key from js/icons.js
-    create: () => new MyGame()
+CastOn.registerGame({
+    id: 'newgame',
+    title: 'New Party Game',
+    tagline: 'Arcade',
+    players: '1–8 players',
+    control: 'D-Pad + Action',
+    description: 'A fun party game hook explained in one punchy sentence.',
+    accent: '#38bdf8',
+    icon: 'zap',
+    create: (ctx) => new NewPartyGame(ctx)
 });
 
 })(window);
 ```
 
-### Step 2: Add the `<script>` tag to `static/tv.html`
-Add it **after** `games/gametools.js` and after `console.js`:
+---
 
-```html
-<script src="/static/js/games/mygame.js"></script>
-```
+### 5.6 Step-by-Step AI Agent Checklist for New Games
 
-That is all — the lobby, keyboard navigation and `LEFT`/`RIGHT` wrapping are
-driven by `CastOn.games.length`, so a new game appears automatically.
-
-### Step 3: (Optional) Add a Custom Controller Layout
-1. Add `<section id="layout-mycustom" class="layout layout--mycustom hidden">`
-   inside `#controller-shell` in `static/controller.html`.
-2. Add the id to `LAYOUT_IDS` in `static/js/controller-app.js`, handle any
-   bespoke setup in `switchLayout(layout, state)`, and wire the pointer
-   handlers next to the D-pad/buzzer bindings.
-3. Call `C.setLayout('mycustom', { ... })` from your TV game class.
-
-### Engine API cheat-sheet (`window.CastOn`)
-| Member | Purpose |
-| :--- | :--- |
-| `CastOn.players` | Live map of `playerId → player` (re-read every frame, never cache) |
-| `CastOn.vipId` | Id of the room leader, or `null` |
-| `CastOn.ctx` / `CastOn.canvas` | The TV canvas and its `devicePixelRatio`-scaled context |
-| `CastOn.view` | `{ w, h, dpr }` in CSS pixels — use this, not `canvas.width` |
-| `CastOn.overlay` | The DOM layer above the canvas for HUDs |
-| `CastOn.hud(html)` | Replace the overlay contents |
-| `CastOn.setLayout(layout, state, target?)` | Switch phone layouts (`target`: `"all"` or a player id) |
-| `CastOn.toController(target, payload)` | Send a one-off event (e.g. `{type:'vibrate', ms:50}`) |
-| `CastOn.vibrate(target, ms)` | Shorthand haptic |
-| `CastOn.tone(freq, ms, type)` / `CastOn.chord([…])` | WebAudio blips |
-| `CastOn.tools` | `sorted`, `leaderboard`, `scoreRail`, `results`, `roundRect`, `label`… |
-
-> **Helpers are shared, so prefer them.** `T.sorted(players, scores)` returns a
-> ranked array; `T.results({…})` renders the standard end-of-game podium;
-> `T.leaderboard(rows)` renders a ranked list. Reusing these keeps every game
-> looking like it belongs to the same console.
+1. **Create the Game File**: Create `static/js/games/<id>.js` following the boilerplate above.
+2. **Register Script in `static/tv.html`**:
+   Add `<script src="/static/js/games/<id>.js"></script>` directly after `static/js/games/gametools.js`.
+3. **Verify with Demo Mode**:
+   Launch `http://localhost:8000/tv?demo=4&game=<index>` to test headless execution and keyboard inputs without requiring physical phones.
+4. **Verify `destroy()`**: Ensure switching between games and returning to the lobby leaves zero leaked intervals or animation frames.
 
 ---
 

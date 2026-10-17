@@ -23,7 +23,8 @@ const WORDS = [
 ];
 
 class SketchGuess {
-    constructor() {
+    constructor(ctx) {
+        this.ctx = ctx || C;
         this.id = 'sketch';
         this.scores = {};
         this.round = -1;
@@ -355,7 +356,7 @@ C.registerGame({
     description: 'One artist, one hundred strokes. Sketch the secret prompt on your phone while the room races to name it.',
     accent: '#10b981',
     icon: 'palette',
-    create: () => new SketchGuess()
+    create: (ctx) => new SketchGuess(ctx)
 });
 
 })(window);

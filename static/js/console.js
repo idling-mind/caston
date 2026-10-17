@@ -453,6 +453,106 @@ function setLobbyLayout() {
     });
 }
 
+/* ==========================================================================
+   Active Game Style Scoping & Game Context
+   ========================================================================== */
+
+let activeGameStyleEl = null;
+
+function applyGameStyles(css) {
+    if (!css) {
+        clearGameStyles();
+        return;
+    }
+    if (!activeGameStyleEl) {
+        activeGameStyleEl = document.createElement('style');
+        activeGameStyleEl.id = 'active-game-styles';
+        document.head.appendChild(activeGameStyleEl);
+    }
+    activeGameStyleEl.textContent = css;
+}
+
+function clearGameStyles() {
+    if (activeGameStyleEl) {
+        activeGameStyleEl.textContent = '';
+    }
+}
+
+function createGameContext(def) {
+    return {
+        id: def.id,
+        meta: def,
+
+        // Stage & Canvas
+        get canvas() { return dom.canvas; },
+        get ctx() { return CastOn.ctx; },
+        get overlay() { return dom.overlay; },
+        get view() { return CastOn.view; },
+        get scale() { return CastOn.scale; },
+
+        setOverlay(html) {
+            if (dom.overlay) dom.overlay.innerHTML = html;
+        },
+        clearCanvas() {
+            if (CastOn.ctx && dom.canvas) {
+                CastOn.ctx.save();
+                CastOn.ctx.setTransform(1, 0, 0, 1, 0, 0);
+                CastOn.ctx.clearRect(0, 0, dom.canvas.width, dom.canvas.height);
+                CastOn.ctx.restore();
+            }
+        },
+
+        // Players & State
+        get players() { return state.players; },
+        get vipId() { return state.vipId; },
+        get vip() { return state.players[state.vipId] || null; },
+
+        getRankedPlayers(scores) {
+            return (CastOn.tools && CastOn.tools.sorted)
+                ? CastOn.tools.sorted(state.players, scores)
+                : Object.values(state.players || {});
+        },
+
+        // Mobile Controller Communication
+        controller: {
+            setLayout(layout, layoutState, target) {
+                setLayout(layout, layoutState, target);
+            },
+            vibrate(ms, target) {
+                vibrate(target, ms);
+            },
+            send(payload, target) {
+                toController(target, payload);
+            }
+        },
+
+        // Audio Blip Synth
+        sound: {
+            tone(freq, ms, type) { tone(freq, ms, type); },
+            chord(freqs, ms, type) { chord(freqs, ms, type); },
+            blip() { tone(580, 80, 'sine'); },
+            pop() { tone(420, 60, 'triangle'); },
+            success() { chord([523, 659, 784], 140, 'triangle'); },
+            fail() { chord([311, 293], 180, 'sawtooth'); },
+            fanfare() { chord([392, 523, 659, 784], 220, 'triangle'); }
+        },
+
+        // Shared UI & Graphics Toolkit
+        ui: CastOn.tools || {},
+        graphics: {
+            get roundRect() { return CastOn.tools ? CastOn.tools.roundRect : null; },
+            get circle() { return CastOn.tools ? CastOn.tools.circle : null; },
+            get arenaBackdrop() { return CastOn.tools ? CastOn.tools.arenaBackdrop : null; },
+            get label() { return CastOn.tools ? CastOn.tools.label : null; }
+        },
+
+        // Navigation
+        backToLobby() {
+            returnToLobby();
+        }
+    };
+}
+
 function launchGame(index) {
     const def = CastOn.games[index];
     if (!def) return;
@@ -466,10 +566,14 @@ function launchGame(index) {
     fitCanvas();
     dom.overlay.innerHTML = '';
 
+    applyGameStyles(def.css);
+
+    const ctx = createGameContext(def);
     try {
-        state.game = def.create();
+        state.game = def.create(ctx);
     } catch (err) {
         console.error('Game failed to start:', def.id, err);
+        clearGameStyles();
         dom.overlay.innerHTML =
             '<div class="float-panel" style="position:static;max-width:460px;margin:auto">' +
             '<p class="eyebrow">Could not start</p>' +
@@ -482,6 +586,7 @@ function launchGame(index) {
 function returnToLobby() {
     if (state.game && state.game.destroy) state.game.destroy();
     state.game = null;
+    clearGameStyles();
     dom.overlay.innerHTML = '';
     if (CastOn.ctx && dom.canvas) {
         CastOn.ctx.save();
@@ -665,7 +770,22 @@ Object.defineProperty(CastOn, 'vipId', { get: () => state.vipId });
 Object.defineProperty(CastOn, 'joinUrl', { get: () => state.joinUrl });
 
 CastOn.games = [];
-CastOn.registerGame = (def) => CastOn.games.push(def);
+CastOn.registerGame = (def) => {
+    if (!def || !def.id || !def.title || typeof def.create !== 'function') {
+        console.error('CastOn: Invalid game registration', def);
+        return;
+    }
+    const idx = CastOn.games.findIndex(g => g.id === def.id);
+    if (idx >= 0) {
+        CastOn.games[idx] = def;
+    } else {
+        CastOn.games.push(def);
+    }
+    if (dom.grid && state.mode === 'lobby') {
+        renderLobbyTiles();
+    }
+};
+CastOn.createGameContext = createGameContext;
 CastOn.launchGame = launchGame;
 CastOn.returnToLobby = returnToLobby;
 CastOn.setLayout = setLayout;
