@@ -282,7 +282,7 @@ class SketchGuess {
                     <div class="sk__artist">
                         <span class="eyebrow">Drawing now</span>
                         <span class="sk__artist-name">
-                            <span class="avatar avatar--sm" style="--ring-color:${drawer ? drawer.color : '#fff'}">${drawer ? drawer.avatar : '?'}</span>
+                            <span class="avatar avatar--sm" style="--ring-color:${drawer ? drawer.color : '#fff'}">${drawer ? T.avatar(drawer.avatar) : '?'}</span>
                             ${C.escapeHtml(drawerName)}
                         </span>
                     </div>
@@ -324,7 +324,7 @@ class SketchGuess {
         }
         return this.guesses.map(g => `
             <div class="sk__guess${g.correct ? ' is-correct' : ''}">
-                <span class="sk__guess-face">${g.avatar}</span>
+                <span class="sk__guess-face">${T.avatar(g.avatar)}</span>
                 <span class="sk__guess-name">${C.escapeHtml(g.name)}</span>
                 <span class="sk__guess-text">${C.escapeHtml(g.text)}</span>
             </div>

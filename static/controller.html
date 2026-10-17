@@ -66,6 +66,35 @@
                        autocomplete="nickname" placeholder="e.g. Nova" aria-label="Your display name">
             </div>
 
+            <div class="field">
+                <label class="field__label">Your avatar</label>
+                <div class="avatar-edit-stage">
+                    <div class="avatar avatar--lg avatar-preview" id="join-avatar-preview">🦊</div>
+                    <div class="avatar-upload-actions">
+                        <label class="btn btn--ghost btn--sm avatar-file-label" title="Take a picture with your camera">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                            <span>Camera</span>
+                            <input type="file" id="join-avatar-camera" accept="image/*" capture="user" class="visually-hidden">
+                        </label>
+                        <label class="btn btn--ghost btn--sm avatar-file-label" title="Choose a photo from your gallery">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            <span>Gallery</span>
+                            <input type="file" id="join-avatar-file" accept="image/*" class="visually-hidden">
+                        </label>
+                    </div>
+                </div>
+                <div class="avatar-picker-scroll">
+                    <div class="avatar-presets" id="join-avatar-presets"></div>
+                </div>
+            </div>
+
             <button id="join-btn" class="btn btn--primary btn--block btn--lg" type="button">
                 <span>Connect</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -88,8 +117,16 @@
 
         <!-- ---------- Player header ---------- -->
         <header class="pad-header">
-            <div class="pad-header__id">
-                <span class="avatar" id="player-avatar-box">🦊</span>
+            <div class="pad-header__id" id="player-profile-btn" role="button" tabindex="0" title="Tap to change your name or avatar">
+                <div class="avatar-wrap">
+                    <span class="avatar avatar--interactive" id="player-avatar-box">🦊</span>
+                    <span class="avatar-badge-edit" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </span>
+                </div>
                 <div class="pad-header__name">
                     <span class="row" style="gap:8px">
                         <span class="display" id="player-label">Player</span>
@@ -104,14 +141,16 @@
                 </div>
             </div>
 
-            <button id="home-btn" class="btn btn--ghost hidden" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m3 9.5 9-7.5 9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <path d="M9.5 22v-8h5v8"/>
-                </svg>
-                <span>Lobby</span>
-            </button>
+            <div class="pad-header__actions">
+                <button id="home-btn" class="btn btn--ghost hidden" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m3 9.5 9-7.5 9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <path d="M9.5 22v-8h5v8"/>
+                    </svg>
+                    <span>Lobby</span>
+                </button>
+            </div>
         </header>
 
         <!-- ---------- Stat strip ---------- -->
@@ -240,6 +279,69 @@
         </section>
 
         <p class="pad-foot" id="pad-foot">Keep this page open — it is your controller.</p>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL — EDIT PROFILE                                                  -->
+    <!-- ===================================================================== -->
+    <div id="profile-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+        <div class="modal-card">
+            <header class="modal-card__head">
+                <div>
+                    <p class="eyebrow">Player profile</p>
+                    <h2 id="profile-modal-title" class="display t-md">Change avatar &amp; name</h2>
+                </div>
+                <button id="profile-modal-close" class="btn btn--ghost btn--icon" type="button" aria-label="Close dialog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="modal-card__body">
+                <div class="field">
+                    <label class="field__label" style="text-align:center">Avatar</label>
+                    <div class="avatar-hero-stage">
+                        <div class="avatar avatar-preview avatar-preview--hero" id="edit-avatar-preview">🦊</div>
+                        <div class="avatar-upload-actions avatar-upload-actions--center">
+                            <label class="btn btn--ghost btn--sm avatar-file-label" title="Take a picture with your camera">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                                <span>Camera</span>
+                                <input type="file" id="edit-avatar-camera" accept="image/*" capture="user" class="visually-hidden">
+                            </label>
+                            <label class="btn btn--ghost btn--sm avatar-file-label" title="Choose a photo from your gallery">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <span>Gallery</span>
+                                <input type="file" id="edit-avatar-file" accept="image/*" class="visually-hidden">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="avatar-picker-scroll">
+                        <div class="avatar-presets" id="edit-avatar-presets"></div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="edit-player-name">Your display name</label>
+                    <input id="edit-player-name" class="input" type="text" maxlength="12"
+                           autocomplete="nickname" placeholder="e.g. Nova" aria-label="Your display name">
+                </div>
+            </div>
+
+            <footer class="modal-card__foot">
+                <button id="cancel-profile-btn" class="btn btn--ghost btn--block" type="button">Cancel</button>
+                <button id="save-profile-btn" class="btn btn--primary btn--block" type="button">Save changes</button>
+            </footer>
+        </div>
     </div>
 
     <script src="/static/js/controller-app.js"></script>

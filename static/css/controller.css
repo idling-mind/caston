@@ -175,9 +175,52 @@ textarea {
     align-items: center;
     gap: 12px;
     min-width: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    padding: 4px 6px;
+    margin: -4px -6px;
+    border-radius: var(--r-md);
+    transition: background 0.15s ease, opacity 0.15s ease;
 }
 
-.pad-header__id .avatar { border-color: var(--ring-color, var(--line-strong)); }
+.pad-header__id:hover {
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.pad-header__id:active {
+    opacity: 0.82;
+}
+
+.pad-header__id .avatar {
+    border-color: var(--ring-color, var(--line-strong));
+    overflow: hidden;
+}
+
+.avatar-wrap {
+    position: relative;
+    flex: none;
+}
+
+.avatar-badge-edit {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: var(--accent, var(--c-blue));
+    color: #fff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    pointer-events: none;
+    border: 1.5px solid var(--card, #121829);
+}
+
+.avatar-badge-edit svg {
+    width: 9px;
+    height: 9px;
+}
 
 .pad-header__name {
     display: flex;
@@ -196,7 +239,217 @@ textarea {
 
 .pad-header .tag--crown svg { width: 12px; height: 12px; }
 
+.pad-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+}
+
 .pad-header .btn { padding: 10px 14px; font-size: 11.5px; }
+
+/* ---------- Avatar selector & picker components ---------- */
+
+.avatar-edit-stage {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 4px 0;
+}
+
+.avatar-hero-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 8px 0 4px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.avatar-preview {
+    width: 68px;
+    height: 68px;
+    font-size: 34px;
+    border-radius: 50%;
+    border: 2.5px solid var(--accent, var(--c-blue));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--c-blue)) 20%, transparent);
+    flex: none;
+    background: var(--panel-2);
+    overflow: hidden;
+}
+
+.avatar-preview--hero {
+    width: 96px;
+    height: 96px;
+    font-size: 48px;
+    border-width: 3.5px;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent, var(--c-blue)) 22%, transparent);
+}
+
+.avatar-upload-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.avatar-upload-actions--center {
+    justify-content: center;
+    width: 100%;
+    flex: none;
+}
+
+.avatar-file-label {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.avatar-file-label:active {
+    transform: scale(0.96);
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.avatar-picker-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 2px 10px;
+}
+
+.avatar-presets {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: max-content;
+    padding: 4px 4px 6px;
+}
+
+.avatar-preset-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    line-height: 1;
+    background: color-mix(in srgb, var(--card-ink) 7%, transparent);
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    flex: none;
+    padding: 0;
+    touch-action: manipulation;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.avatar-preset-btn:hover {
+    background: color-mix(in srgb, var(--card-ink) 13%, transparent);
+}
+
+.avatar-preset-btn:active {
+    transform: scale(0.92);
+}
+
+.avatar-preset-btn.is-selected {
+    border-color: var(--accent, var(--c-blue));
+    background: color-mix(in srgb, var(--accent, var(--c-blue)) 22%, transparent);
+    transform: scale(1.08);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--c-blue)) 30%, transparent);
+}
+
+/* ---------- Modal dialog ---------- */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    touch-action: auto;
+}
+
+.modal-backdrop.hidden {
+    display: none !important;
+}
+
+.modal-card {
+    width: min(420px, 100%);
+    max-height: 90dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px 20px;
+    border-radius: var(--r-lg);
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-pop);
+    overflow-y: auto;
+    touch-action: auto;
+}
+
+.modal-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--card-line);
+}
+
+.modal-card__head .eyebrow { color: var(--card-ink-2); margin-bottom: 2px; }
+
+.modal-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-card__foot {
+    display: flex;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--card-line);
+}
+
+.btn--icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-sm);
+}
+
+.btn--icon svg {
+    width: 18px;
+    height: 18px;
+}
 
 /* ---------- Stat strip -------------------------------------------------- */
 

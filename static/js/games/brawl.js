@@ -9,6 +9,17 @@
 const C = w.CastOn;
 const T = C.tools;
 
+const avatarImgCache = new Map();
+function getAvatarImg(src) {
+    let img = avatarImgCache.get(src);
+    if (!img) {
+        img = new Image();
+        img.src = src;
+        avatarImgCache.set(src, img);
+    }
+    return img;
+}
+
 const ARENA = { pad: 46, accel: 0.95, drag: 0.915, maxSpeed: 26 };
 const ORB_VALUE = 10;
 const ROUND_MS = 75000;
@@ -341,13 +352,32 @@ class BumperBrawl {
             g.shadowBlur = 0;
             g.lineWidth = 3.5;
             g.strokeStyle = 'rgba(255,255,255,0.9)';
-            g.stroke();
             g.restore();
 
-            g.font = '26px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
-            g.textAlign = 'center';
-            g.textBaseline = 'middle';
-            g.fillText(p.avatar, e.x, e.y + 1);
+            const isImg = p.avatar && typeof p.avatar === 'string' &&
+                (p.avatar.startsWith('data:image/') || p.avatar.startsWith('http://') || p.avatar.startsWith('https://') || p.avatar.startsWith('/'));
+
+            if (isImg) {
+                const img = getAvatarImg(p.avatar);
+                if (img && img.complete && img.naturalWidth > 0) {
+                    g.save();
+                    g.beginPath();
+                    g.arc(e.x, e.y, r - 3, 0, Math.PI * 2);
+                    g.clip();
+                    g.drawImage(img, e.x - r + 3, e.y - r + 3, (r - 3) * 2, (r - 3) * 2);
+                    g.restore();
+                } else {
+                    g.font = '24px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                    g.textAlign = 'center';
+                    g.textBaseline = 'middle';
+                    g.fillText('👤', e.x, e.y + 1);
+                }
+            } else {
+                g.font = '26px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                g.textAlign = 'center';
+                g.textBaseline = 'middle';
+                g.fillText(p.avatar || '🎮', e.x, e.y + 1);
+            }
 
             T.label(p.name.toUpperCase(), e.x, e.y - r - 20, {
                 size: 12, weight: 600, color: 'rgba(255,255,255,0.72)'
@@ -387,7 +417,8 @@ class BumperBrawl {
             g.fillRect(view.w - 210, y - 13, 3, 26);
             g.restore();
 
-            T.label(r.avatar + ' ' + r.name, view.w - 200, y, {
+            const rAvatar = (r.avatar && typeof r.avatar === 'string' && r.avatar.startsWith('data:image/')) ? '👤' : (r.avatar || '🎮');
+            T.label(rAvatar + ' ' + r.name, view.w - 200, y, {
                 size: 13, weight: 600, align: 'left', color: 'rgba(255,255,255,0.9)'
             });
             T.label(String(r.score), view.w - 40, y, {

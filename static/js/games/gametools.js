@@ -7,10 +7,19 @@
 'use strict';
 
 const CastOn = w.CastOn;
-const esc = CastOn.escapeHtml;
+const esc = CastOn.escapeHtml || ((s) => String(s == null ? '' : s));
 const icon = (n, o) => CastOn.icon(n, o);
 
 const T = {};
+
+T.avatar = function (face) {
+    if (CastOn.renderAvatar) return CastOn.renderAvatar(face);
+    if (!face) return '🎮';
+    if (typeof face === 'string' && (face.startsWith('data:image/') || face.startsWith('http://') || face.startsWith('https://') || face.startsWith('/'))) {
+        return `<img class="avatar__img" src="${face}" alt="Avatar">`;
+    }
+    return esc(face);
+};
 
 /* ---------- canvas primitives -------------------------------------------- */
 
@@ -86,7 +95,7 @@ T.leaderboard = function (rows, opts) {
         <div class="lb__row" style="--ring-color:${r.color}">
             <span class="lb__rank">${i + 1}</span>
             <span class="row" style="gap:10px;min-width:0">
-                <span class="avatar avatar--sm" style="--ring-color:${r.color}">${r.avatar}</span>
+                <span class="avatar avatar--sm" style="--ring-color:${r.color}">${T.avatar(r.avatar)}</span>
                 <span class="lb__name">${esc(r.name)}</span>
             </span>
             <span class="lb__score">${r.score}</span>
@@ -99,7 +108,7 @@ T.scoreRail = function (rows) {
     if (!rows.length) return '';
     return '<div class="rail">' + rows.map(r => `
         <span class="rail__item" style="--ring-color:${r.color}">
-            <span class="rail__face">${r.avatar}</span>
+            <span class="rail__face">${T.avatar(r.avatar)}</span>
             <span class="rail__name">${esc(r.name)}</span>
             <span class="rail__score">${r.score}</span>
         </span>
@@ -119,7 +128,7 @@ T.results = function (cfg) {
     const podiumHtml = podium.map((r, i) => `
         <div class="podium__slot podium__slot--${i + 1}" style="--ring-color:${r.color}">
             <span class="podium__place">${i === 0 ? icon('trophy') : (i + 1) + ''}</span>
-            <span class="avatar avatar--lg" style="--ring-color:${r.color}">${r.avatar}</span>
+            <span class="avatar avatar--lg" style="--ring-color:${r.color}">${T.avatar(r.avatar)}</span>
             <span class="podium__name">${esc(r.name)}</span>
             <span class="podium__score">${r.score}</span>
         </div>

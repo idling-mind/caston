@@ -202,6 +202,16 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 }
+CastOn.escapeHtml = escapeHtml;
+
+function renderAvatar(avatar) {
+    if (!avatar) return '🎮';
+    if (typeof avatar === 'string' && (avatar.startsWith('data:image/') || avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/'))) {
+        return `<img class="avatar__img" src="${avatar}" alt="Avatar">`;
+    }
+    return escapeHtml(avatar);
+}
+CastOn.renderAvatar = renderAvatar;
 
 function playerList() {
     return Object.values(state.players);
@@ -227,7 +237,7 @@ function renderStrip() {
 
     dom.strip.innerHTML = list.map(p => `
         <span class="mini" style="--ring-color:${p.color}">
-            <span class="mini__avatar">${p.avatar}</span>
+            <span class="mini__avatar">${renderAvatar(p.avatar)}</span>
             <span class="mini__name">${escapeHtml(p.name)}</span>
             ${p.is_vip ? '<span class="mini__crown">' + icon('crown') + '</span>' : ''}
         </span>
@@ -257,7 +267,7 @@ function renderRoster() {
 
     const seats = list.map((p, i) => `
         <div class="roster__cell" style="--ring-color:${p.color}; animation-delay:${i * 45}ms">
-            <span class="avatar">${p.avatar}</span>
+            <span class="avatar">${renderAvatar(p.avatar)}</span>
             <span class="roster__namebar">
                 <span class="roster__name">${escapeHtml(p.name)}</span>
                 <span class="roster__role">${p.is_vip ? 'Leader' : 'Player'}</span>

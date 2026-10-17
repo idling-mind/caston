@@ -127,6 +127,15 @@ body.tv {
     place-items: center;
     font-size: 14px;
     background: color-mix(in srgb, var(--ring-color) 22%, transparent);
+    overflow: hidden;
+}
+
+.mini__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
 }
 
 .mini__name {

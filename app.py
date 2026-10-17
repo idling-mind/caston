@@ -212,7 +212,7 @@ async def tv_ws_endpoint(ws: WebSocket):
         rooms.pop(code, None)
 
 @app.websocket("/ws/controller/{code}")
-async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player", pid: str = ""):
+async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player", pid: str = "", avatar: str = ""):
     code = code.upper().strip()
     await ws.accept()
 
@@ -228,17 +228,20 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
         idx = len(room.players)
         pid = f"p_{random.randint(10000, 99999)}"
         color = PLAYER_COLORS[idx % len(PLAYER_COLORS)]
-        avatar = AVATARS[idx % len(AVATARS)]
+        default_avatar = AVATARS[idx % len(AVATARS)]
+        chosen_avatar = avatar if (avatar and len(avatar) <= 32) else default_avatar
         room.players[pid] = {
             "id": pid,
             "name": name[:12].strip() or f"Player {idx+1}",
             "color": color,
-            "avatar": avatar,
+            "avatar": chosen_avatar,
             "score": 0,
             "is_vip": False
         }
     else:
         room.players[pid]["name"] = name[:12].strip() or room.players[pid]["name"]
+        if avatar and len(avatar) <= 32:
+            room.players[pid]["avatar"] = avatar
 
     room.controllers[pid] = ws
     room.assign_vip()
@@ -269,6 +272,29 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
     try:
         while True:
             data = await ws.receive_json()
+            action = data.get("action")
+            if action == "update_profile":
+                new_name = (data.get("name") or "").strip()[:12]
+                new_avatar = (data.get("avatar") or "").strip()
+                changed = False
+                if new_name and pid in room.players:
+                    room.players[pid]["name"] = new_name
+                    changed = True
+                if new_avatar and pid in room.players:
+                    room.players[pid]["avatar"] = new_avatar
+                    changed = True
+                if changed:
+                    await room.tv_ws.send_json({
+                        "type": "players_sync",
+                        "players": list(room.players.values()),
+                        "vip_id": room.vip_id
+                    })
+                    await ws.send_json({
+                        "type": "profile_sync",
+                        "player": room.players[pid]
+                    })
+                continue
+
             await room.tv_ws.send_json({
                 "type": "controller_input",
                 "player_id": pid,

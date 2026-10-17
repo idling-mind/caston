@@ -226,7 +226,7 @@ class FamilyTrivia {
                 .filter(id => this.answers[id].choice === i)
                 .map(id => {
                     const p = C.players[id];
-                    return p ? `<span class="q-card__face" style="--ring-color:${p.color}">${p.avatar}</span>` : '';
+                    return p ? `<span class="q-card__face" style="--ring-color:${p.color}">${T.avatar(p.avatar)}</span>` : '';
                 })
                 .join('');
         });
@@ -249,7 +249,7 @@ class FamilyTrivia {
                 .filter(id => this.answers[id].choice === i)
                 .map(id => {
                     const p = C.players[id];
-                    return p ? `<span class="q-card__face" style="--ring-color:${p.color}">${p.avatar}</span>` : '';
+                    return p ? `<span class="q-card__face" style="--ring-color:${p.color}">${T.avatar(p.avatar)}</span>` : '';
                 }).join('');
 
             return `

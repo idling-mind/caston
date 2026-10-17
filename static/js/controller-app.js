@@ -17,12 +17,28 @@ const el = {
     joinBtn: doc.getElementById('join-btn'),
     error: doc.getElementById('join-error'),
 
+    joinAvatarPreview: doc.getElementById('join-avatar-preview'),
+    joinAvatarCamera: doc.getElementById('join-avatar-camera'),
+    joinAvatarFile: doc.getElementById('join-avatar-file'),
+    joinAvatarPresets: doc.getElementById('join-avatar-presets'),
+
     avatar: doc.getElementById('player-avatar-box'),
     avatarFace: doc.getElementById('player-avatar-box'),
     label: doc.getElementById('player-label'),
     vipBadge: doc.getElementById('vip-badge'),
     homeBtn: doc.getElementById('home-btn'),
     status: doc.getElementById('game-status-label'),
+
+    profileTriggerBtn: doc.getElementById('player-profile-btn'),
+    profileModal: doc.getElementById('profile-modal'),
+    profileModalClose: doc.getElementById('profile-modal-close'),
+    editAvatarPreview: doc.getElementById('edit-avatar-preview'),
+    editAvatarCamera: doc.getElementById('edit-avatar-camera'),
+    editAvatarFile: doc.getElementById('edit-avatar-file'),
+    editAvatarPresets: doc.getElementById('edit-avatar-presets'),
+    editPlayerName: doc.getElementById('edit-player-name'),
+    cancelProfileBtn: doc.getElementById('cancel-profile-btn'),
+    saveProfileBtn: doc.getElementById('save-profile-btn'),
 
     statRoom: doc.getElementById('stat-room-code'),
     statRole: doc.getElementById('stat-role'),
@@ -36,10 +52,80 @@ const el = {
     guessSubmit: doc.getElementById('guess-submit')
 };
 
-/* The avatar face span is the first child text node of the avatar chip. */
+const PRESET_AVATARS = [
+    '🦊', '🐼', '🦁', '🐸', '🐙', '🦄', '🦖', '🤖',
+    '🐯', '🐨', '🐱', '🐶', '🐺', '🐵', '🚀', '⚡',
+    '👑', '👾', '👻', '🍕', '🔥', '🎮', '💎', '⭐'
+];
+
+let selectedAvatar = localStorage.getItem('caston_avatar') || PRESET_AVATARS[0];
+let modalAvatar = selectedAvatar;
+let playerColor = '#2563EB';
+
+function renderAvatarToElement(target, face) {
+    if (!target) return;
+    target.innerHTML = '';
+    const val = face || '🎮';
+    if (typeof val === 'string' && (val.startsWith('data:image/') || val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/'))) {
+        const img = doc.createElement('img');
+        img.src = val;
+        img.alt = 'Avatar';
+        img.className = 'avatar__img';
+        target.appendChild(img);
+    } else {
+        target.textContent = val;
+    }
+}
+
 function setAvatar(face) {
-    if (!el.avatar) return;
-    el.avatar.textContent = face;
+    renderAvatarToElement(el.avatar, face);
+}
+
+function processImageFile(file, cb) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const size = 128;
+                const canvas = doc.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                const minDim = Math.min(img.naturalWidth, img.naturalHeight);
+                const sx = (img.naturalWidth - minDim) / 2;
+                const sy = (img.naturalHeight - minDim) / 2;
+                ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.84);
+                cb(dataUrl);
+            } catch (err) {
+                console.error('Error processing image avatar:', err);
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function renderPresetAvatars(container, currentAvatar, onSelect) {
+    if (!container) return;
+    container.innerHTML = '';
+    PRESET_AVATARS.forEach((face) => {
+        const btn = doc.createElement('button');
+        btn.type = 'button';
+        btn.className = 'avatar-preset-btn' + (face === currentAvatar ? ' is-selected' : '');
+        btn.textContent = face;
+        btn.setAttribute('aria-label', 'Select avatar ' + face);
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            buzz(16);
+            container.querySelectorAll('.avatar-preset-btn').forEach(b => b.classList.remove('is-selected'));
+            btn.classList.add('is-selected');
+            onSelect(face);
+        });
+        container.appendChild(btn);
+    });
 }
 
 /* ---------- connection state --------------------------------------------- */
@@ -100,10 +186,12 @@ function joinRoom() {
     hideError();
     roomCode = code;
     localStorage.setItem('caston_name', name);
+    if (selectedAvatar) localStorage.setItem('caston_avatar', selectedAvatar);
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const avatarParam = (selectedAvatar && selectedAvatar.length <= 16) ? ('&avatar=' + encodeURIComponent(selectedAvatar)) : '';
     const url = proto + '//' + location.host + '/ws/controller/' + encodeURIComponent(code) +
-        '?name=' + encodeURIComponent(name) + '&pid=' + encodeURIComponent(storedPid);
+        '?name=' + encodeURIComponent(name) + '&pid=' + encodeURIComponent(storedPid) + avatarParam;
 
     try {
         ws = new WebSocket(url);
@@ -160,6 +248,26 @@ function handleMessage(msg) {
             setVip(!!msg.is_vip);
             break;
 
+        case 'profile_sync':
+            if (msg.player) {
+                if (msg.player.name) {
+                    localStorage.setItem('caston_name', msg.player.name);
+                    if (el.label) el.label.textContent = msg.player.name;
+                    if (el.name) el.name.value = msg.player.name;
+                }
+                if (msg.player.avatar) {
+                    selectedAvatar = msg.player.avatar;
+                    localStorage.setItem('caston_avatar', msg.player.avatar);
+                    renderAvatarToElement(el.avatar, msg.player.avatar);
+                    renderAvatarToElement(el.joinAvatarPreview, msg.player.avatar);
+                }
+                if (msg.player.color) {
+                    playerColor = msg.player.color;
+                    if (el.avatar) el.avatar.style.setProperty('--ring-color', playerColor);
+                }
+            }
+            break;
+
         case 'layout_update':
             switchLayout(msg.layout, msg.state || {});
             buzz(30);
@@ -201,8 +309,25 @@ function onJoined(msg) {
     if (el.joinScreen) el.joinScreen.classList.add('hidden');
     if (el.shell) el.shell.classList.remove('hidden');
 
-    setAvatar(player.avatar || '🎮');
-    if (el.avatar) el.avatar.style.setProperty('--ring-color', player.color || '#fff');
+    playerColor = player.color || '#2563EB';
+
+    const savedAvatar = localStorage.getItem('caston_avatar');
+    if (savedAvatar) {
+        selectedAvatar = savedAvatar;
+        if (savedAvatar !== player.avatar) {
+            send({
+                action: 'update_profile',
+                name: player.name || localStorage.getItem('caston_name') || 'Player',
+                avatar: savedAvatar
+            });
+        }
+    } else if (player.avatar) {
+        selectedAvatar = player.avatar;
+        localStorage.setItem('caston_avatar', player.avatar);
+    }
+
+    renderAvatarToElement(el.avatar, selectedAvatar);
+    if (el.avatar) el.avatar.style.setProperty('--ring-color', playerColor);
     if (el.label) el.label.textContent = player.name || 'Player';
     if (el.statRoom) el.statRoom.textContent = msg.room_code || roomCode;
     if (el.statScore) el.statScore.textContent = (player.score || 0).toLocaleString();
@@ -711,7 +836,7 @@ if (el.clearPad) {
 }
 
 /* ==========================================================================
-   Header actions
+   Header actions & Profile modal
    ========================================================================== */
 
 if (el.homeBtn) {
@@ -719,6 +844,161 @@ if (el.homeBtn) {
         buzz(40);
         send({ action: 'home' });
     });
+}
+
+function openProfileModal() {
+    modalAvatar = selectedAvatar;
+    if (el.editPlayerName) {
+        el.editPlayerName.value = localStorage.getItem('caston_name') || (el.label ? el.label.textContent : '') || '';
+    }
+    renderAvatarToElement(el.editAvatarPreview, modalAvatar);
+    if (el.editAvatarPreview) {
+        el.editAvatarPreview.style.setProperty('--ring-color', playerColor);
+    }
+    renderPresetAvatars(el.editAvatarPresets, modalAvatar, (face) => {
+        modalAvatar = face;
+        renderAvatarToElement(el.editAvatarPreview, face);
+    });
+    if (el.profileModal) el.profileModal.classList.remove('hidden');
+    buzz(20);
+    setTimeout(() => {
+        if (el.editPlayerName) {
+            try { el.editPlayerName.focus(); } catch (e) {}
+        }
+    }, 100);
+}
+
+function closeProfileModal() {
+    if (el.profileModal) el.profileModal.classList.add('hidden');
+}
+
+function saveProfile() {
+    const rawName = (el.editPlayerName ? el.editPlayerName.value : '').trim();
+    const newName = (rawName || localStorage.getItem('caston_name') || 'Player').slice(0, 12);
+    selectedAvatar = modalAvatar;
+
+    localStorage.setItem('caston_name', newName);
+    localStorage.setItem('caston_avatar', selectedAvatar);
+
+    if (el.label) el.label.textContent = newName;
+    if (el.name) el.name.value = newName;
+    renderAvatarToElement(el.avatar, selectedAvatar);
+    renderAvatarToElement(el.joinAvatarPreview, selectedAvatar);
+
+    send({
+        action: 'update_profile',
+        name: newName,
+        avatar: selectedAvatar
+    });
+
+    closeProfileModal();
+    buzz(45);
+}
+
+function initProfileModal() {
+    if (el.profileTriggerBtn) {
+        el.profileTriggerBtn.addEventListener('click', openProfileModal);
+    }
+    if (el.avatar) {
+        el.avatar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openProfileModal();
+        });
+    }
+    if (el.label) {
+        el.label.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openProfileModal();
+        });
+    }
+    if (el.profileModalClose) {
+        el.profileModalClose.addEventListener('click', closeProfileModal);
+    }
+    if (el.cancelProfileBtn) {
+        el.cancelProfileBtn.addEventListener('click', closeProfileModal);
+    }
+    if (el.saveProfileBtn) {
+        el.saveProfileBtn.addEventListener('click', saveProfile);
+    }
+    if (el.profileModal) {
+        el.profileModal.addEventListener('click', (e) => {
+            if (e.target === el.profileModal) closeProfileModal();
+        });
+    }
+
+    const handleEditFile = (file) => {
+        processImageFile(file, (dataUrl) => {
+            modalAvatar = dataUrl;
+            renderAvatarToElement(el.editAvatarPreview, dataUrl);
+            if (el.editAvatarPresets) {
+                el.editAvatarPresets.querySelectorAll('.avatar-preset-btn').forEach(b => b.classList.remove('is-selected'));
+            }
+            buzz(25);
+        });
+    };
+
+    if (el.editAvatarCamera) {
+        el.editAvatarCamera.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleEditFile(e.target.files[0]);
+                e.target.value = '';
+            }
+        });
+    }
+    if (el.editAvatarFile) {
+        el.editAvatarFile.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleEditFile(e.target.files[0]);
+                e.target.value = '';
+            }
+        });
+    }
+    if (el.editPlayerName) {
+        el.editPlayerName.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveProfile();
+            }
+        });
+    }
+}
+
+function initJoinAvatar() {
+    renderAvatarToElement(el.joinAvatarPreview, selectedAvatar);
+    renderPresetAvatars(el.joinAvatarPresets, selectedAvatar, (face) => {
+        selectedAvatar = face;
+        localStorage.setItem('caston_avatar', face);
+        renderAvatarToElement(el.joinAvatarPreview, face);
+    });
+
+    const handleJoinFile = (file) => {
+        processImageFile(file, (dataUrl) => {
+            selectedAvatar = dataUrl;
+            localStorage.setItem('caston_avatar', dataUrl);
+            renderAvatarToElement(el.joinAvatarPreview, dataUrl);
+            if (el.joinAvatarPresets) {
+                el.joinAvatarPresets.querySelectorAll('.avatar-preset-btn').forEach(b => b.classList.remove('is-selected'));
+            }
+            buzz(25);
+        });
+    };
+
+    if (el.joinAvatarCamera) {
+        el.joinAvatarCamera.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleJoinFile(e.target.files[0]);
+                e.target.value = '';
+            }
+        });
+    }
+    if (el.joinAvatarFile) {
+        el.joinAvatarFile.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleJoinFile(e.target.files[0]);
+                e.target.value = '';
+            }
+        });
+    }
 }
 
 /* ==========================================================================
@@ -742,6 +1022,9 @@ if (el.name) {
         if (e.key === 'Enter') { e.preventDefault(); joinRoom(); }
     });
 }
+
+initJoinAvatar();
+initProfileModal();
 
 // Auto-connect when a room code arrived via the QR link.
 if (roomCode.length === 4) {

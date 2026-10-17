@@ -131,6 +131,15 @@
     background: color-mix(in srgb, var(--ring-color) 20%, transparent);
     border: 2px solid var(--ring-color);
     animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    overflow: hidden;
+}
+
+.q-card__face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
 }
 
 .q-card__tick {
@@ -185,6 +194,15 @@
     font-size: 15px;
     background: color-mix(in srgb, var(--ring-color) 22%, transparent);
     border: 1.5px solid var(--ring-color);
+    overflow: hidden;
+}
+
+.rail__face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
 }
 
 .rail__name {
@@ -352,7 +370,24 @@
     font-size: 13px;
 }
 
-.sk__guess-face { font-size: 15px; }
+.sk__guess-face {
+    width: 22px;
+    height: 22px;
+    font-size: 15px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    overflow: hidden;
+    flex: none;
+}
+
+.sk__guess-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
 
 .sk__guess-name {
     font-family: var(--font-display);
