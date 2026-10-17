@@ -367,6 +367,17 @@ function renderLobbyTiles() {
             launchGame(state.selected);
         });
     });
+
+    // Auto-scroll the horizontal row to keep the focused game centered
+    const focusedEl = dom.grid.querySelector('.tile.is-focused');
+    if (focusedEl) {
+        requestAnimationFrame(() => {
+            const gridRect = dom.grid.getBoundingClientRect();
+            const elRect = focusedEl.getBoundingClientRect();
+            const targetLeft = dom.grid.scrollLeft + (elRect.left - gridRect.left) - (dom.grid.clientWidth - focusedEl.clientWidth) / 2;
+            dom.grid.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+        });
+    }
 }
 
 function renderAll() {
@@ -407,7 +418,7 @@ function renderCodeSlots() {
 function redrawQr() {
     if (!dom.qrHost || !state.joinUrl) return;
     const meta = themeMeta();
-    const size = dom.qrHost.clientWidth || 164;
+    const size = dom.qrHost.clientWidth || 116;
     const scale = CastOn.scale || 1;
     const dpr = Math.min(4, (w.devicePixelRatio || 1) * scale);
     CastOn.qr.draw(dom.qrHost, state.joinUrl, {
@@ -705,6 +716,15 @@ function boot() {
         if (!isNaN(gIdx) && gIdx >= 0 && gIdx < CastOn.games.length) {
             launchGame(gIdx);
         }
+    }
+
+    if (dom.grid) {
+        dom.grid.addEventListener('wheel', (e) => {
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                dom.grid.scrollLeft += e.deltaY;
+                e.preventDefault();
+            }
+        }, { passive: false });
     }
 
     w.addEventListener('resize', () => {

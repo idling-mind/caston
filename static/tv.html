@@ -99,49 +99,11 @@
             <!-- ============================================================= -->
             <section id="lobby-view" class="lobby">
 
-                <div class="lobby__head">
-                    <div>
-                        <p class="eyebrow is-accent">Tonight's lineup</p>
-                        <h2 class="display lobby__title">Pick a game</h2>
-                    </div>
-                    <div class="lobby__hint">
-                        <span aria-hidden="true">👑</span>
-                        <span>The room leader steers with the phone joystick</span>
-                    </div>
-                </div>
-
-                <div class="tile-grid" id="game-grid"></div>
-
-                <!-- Three-step primer — answers "now what?" with zero chrome. -->
-                <div class="steps">
-                    <div class="step">
-                        <span class="step__num">1</span>
-                        <span>
-                            <span class="step__title">Phones in</span>
-                            <span class="step__text">Everyone scans the code below and lands straight in the room.</span>
-                        </span>
-                    </div>
-                    <div class="step">
-                        <span class="step__num">2</span>
-                        <span>
-                            <span class="step__title">Leader picks</span>
-                            <span class="step__text">The room leader browses the lineup with the phone joystick.</span>
-                        </span>
-                    </div>
-                    <div class="step">
-                        <span class="step__num">3</span>
-                        <span>
-                            <span class="step__title">Play together</span>
-                            <span class="step__text">Press A to launch. Controllers reshape themselves per game.</span>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Join + roster band fills the remaining height -->
+                <!-- Join + roster band at top -->
                 <section class="room-band">
                     <div class="room-band__join">
                         <div class="plate plate--m">
-                            <canvas id="qr-hero" width="164" height="164"
+                            <canvas id="qr-hero" width="116" height="116"
                                     aria-label="QR code to join this room"></canvas>
                             <span class="plate__badge" aria-hidden="true">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -155,12 +117,12 @@
                         </div>
 
                         <div class="room-band__code">
-                            <p class="eyebrow is-accent">Scan with a phone camera</p>
+                            <p class="eyebrow is-accent">Scan with a phone</p>
                             <div class="code-slots" id="code-slots" aria-label="Room code">
                                 <span>–</span><span>–</span><span>–</span><span>–</span>
                             </div>
                             <p class="join__url" id="join-url">—</p>
-                            <p class="dim t-xs">No app, no download — works in any mobile browser.</p>
+                            <p class="dim t-xs">No app, no download — open camera to join.</p>
                         </div>
                     </div>
 
@@ -170,12 +132,23 @@
                             <span class="count-badge" id="roster-count-side">0</span>
                         </div>
                         <div class="roster" id="roster"></div>
-                        <p class="room-band__note">
-                            <span aria-hidden="true">👑</span>
-                            <span>The leader's phone drives the whole console: browse, pick, and press A to start.</span>
-                        </p>
                     </div>
                 </section>
+
+                <!-- Lineup header -->
+                <div class="lobby__head">
+                    <div>
+                        <p class="eyebrow is-accent">Tonight's lineup</p>
+                        <h2 class="display lobby__title">Pick a game</h2>
+                    </div>
+                    <div class="lobby__hint">
+                        <span aria-hidden="true">👑</span>
+                        <span>The room leader steers with the phone joystick</span>
+                    </div>
+                </div>
+
+                <!-- Games row underneath -->
+                <div class="tile-grid" id="game-grid"></div>
 
                 <div class="legend">
                     <span><kbd>◀ ▶</kbd> Change selection</span>
