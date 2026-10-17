@@ -17,6 +17,8 @@ html,
 body {
     margin: 0;
     padding: 0;
+    height: 100%;
+    width: 100%;
 }
 
 img,
@@ -268,10 +270,15 @@ body {
 .console {
     position: relative;
     z-index: 1;
-    height: 100dvh;
+    height: 100%;
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding-left: max(env(safe-area-inset-left, 0px), 0px);
+    padding-right: max(env(safe-area-inset-right, 0px), 0px);
+    padding-top: max(env(safe-area-inset-top, 0px), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
 }
 
 .topbar {
@@ -279,7 +286,7 @@ body {
     display: flex;
     align-items: center;
     gap: var(--gutter);
-    padding: 20px var(--gutter);
+    padding: clamp(10px, 1.4vh, 18px) var(--gutter);
     border-bottom: 1px solid var(--line);
     background: color-mix(in srgb, var(--bg-base) 46%, transparent);
     backdrop-filter: blur(18px);

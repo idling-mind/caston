@@ -30,7 +30,7 @@
 
 .q-screen__question {
     font-family: var(--font-display);
-    font-size: clamp(26px, 2.6vw, 40px);
+    font-size: 33px;
     font-weight: 700;
     letter-spacing: -0.025em;
     line-height: 1.12;
@@ -48,7 +48,7 @@
 }
 
 .q-screen__clock .numeral {
-    font-size: clamp(34px, 3.4vw, 48px);
+    font-size: 44px;
     color: var(--ink);
     transition: color 0.2s ease;
 }
@@ -109,7 +109,7 @@
 .q-card__text {
     flex: 1;
     font-family: var(--font-display);
-    font-size: clamp(17px, 1.5vw, 23px);
+    font-size: 19px;
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -388,7 +388,8 @@
 
 .scoreboard {
     pointer-events: auto;
-    width: min(880px, 88vw);
+    width: 880px;
+    max-width: 90%;
     margin: auto;
     padding: 30px 34px 26px;
     border-radius: var(--r-xl);
@@ -491,13 +492,3 @@
 }
 
 .scoreboard__foot svg { width: 16px; height: 16px; color: var(--accent); }
-
-/* ---------- Small screens / portrait TVs -------------------------------- */
-
-@media (max-width: 900px) {
-    .q-grid { grid-template-columns: 1fr; }
-    .sk__top { grid-template-columns: 1fr; }
-    .sk__artist, .sk__word, .sk__clock { justify-self: stretch; align-items: flex-start; text-align: left; }
-    .sk__side { position: static; width: auto; max-height: 34%; }
-    .sk { position: static; }
-}

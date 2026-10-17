@@ -128,23 +128,37 @@ function chord(freqs, ms, type) {
 }
 
 /* ==========================================================================
-   Canvas sizing
+   TV Viewport Scaling & Canvas sizing
    ========================================================================== */
+
+function updateTvScale() {
+    const baseW = 1280;
+    const baseH = 720;
+    const winW = w.innerWidth || document.documentElement.clientWidth || baseW;
+    const winH = w.innerHeight || document.documentElement.clientHeight || baseH;
+
+    const scale = Math.min(winW / baseW, winH / baseH);
+    CastOn.scale = scale;
+    document.documentElement.style.setProperty('--tv-scale', String(scale));
+    return scale;
+}
 
 function fitCanvas() {
     if (!dom.canvas || !dom.stage) return;
+    const scale = CastOn.scale || 1;
     const dpr = Math.min(w.devicePixelRatio || 1, 2);
-    const rect = dom.stage.getBoundingClientRect();
-    const cw = Math.max(1, Math.floor(rect.width));
-    const ch = Math.max(1, Math.floor(rect.height));
+    const effectiveDpr = Math.min(4, dpr * scale);
 
-    dom.canvas.width = Math.floor(cw * dpr);
-    dom.canvas.height = Math.floor(ch * dpr);
-    dom.canvas.style.width = cw + 'px';
-    dom.canvas.style.height = ch + 'px';
+    const cw = dom.stage.clientWidth || 1280;
+    const ch = dom.stage.clientHeight || 720;
 
-    CastOn.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    CastOn.view = { w: cw, h: ch, dpr: dpr };
+    dom.canvas.width = Math.floor(cw * effectiveDpr);
+    dom.canvas.height = Math.floor(ch * effectiveDpr);
+    dom.canvas.style.width = '100%';
+    dom.canvas.style.height = '100%';
+
+    CastOn.ctx.setTransform(effectiveDpr, 0, 0, effectiveDpr, 0, 0);
+    CastOn.view = { w: cw, h: ch, dpr: effectiveDpr, scale: scale };
 
     if (state.game && state.game.onResize) state.game.onResize(CastOn.view);
 }
@@ -383,9 +397,12 @@ function renderCodeSlots() {
 function redrawQr() {
     if (!dom.qrHost || !state.joinUrl) return;
     const meta = themeMeta();
-    const size = dom.qrHost.clientWidth || 236;
+    const size = dom.qrHost.clientWidth || 164;
+    const scale = CastOn.scale || 1;
+    const dpr = Math.min(4, (w.devicePixelRatio || 1) * scale);
     CastOn.qr.draw(dom.qrHost, state.joinUrl, {
         size: size,
+        dpr: dpr,
         quiet: 2,
         dark: meta.ink,
         light: '#ffffff',
@@ -638,6 +655,8 @@ CastOn.renderAll = renderAll;
 CastOn.showLobby = showLobby;
 CastOn.hud = (html) => { if (dom.overlay) dom.overlay.innerHTML = html; };
 CastOn.inDemoMode = () => DEMO_COUNT > 0;
+CastOn.scale = 1;
+CastOn.updateTvScale = updateTvScale;
 
 /* ==========================================================================
    Boot
@@ -656,6 +675,7 @@ function boot() {
     CastOn.overlay = dom.overlay;
     CastOn.view = { w: 0, h: 0, dpr: 1 };
 
+    updateTvScale();
     renderThemeSwitcher();
     setLobbyLayout();
     seedDemoPlayers(DEMO_COUNT);
@@ -664,7 +684,16 @@ function boot() {
     bindPreviewKeyboard();
     redrawQr();
 
+    const autoGame = new URLSearchParams(location.search).get('game');
+    if (autoGame !== null) {
+        const gIdx = parseInt(autoGame, 10);
+        if (!isNaN(gIdx) && gIdx >= 0 && gIdx < CastOn.games.length) {
+            launchGame(gIdx);
+        }
+    }
+
     w.addEventListener('resize', () => {
+        updateTvScale();
         redrawQr();
         fitCanvas();
         // Column count changes with width, so rebuild before re-trimming.

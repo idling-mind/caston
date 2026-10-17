@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="/static/css/design.css">
     <link rel="stylesheet" href="/static/css/console.css">
     <link rel="stylesheet" href="/static/css/game.css">
+    <script>
+        (function () {
+            var baseW = 1280, baseH = 720;
+            var w = window.innerWidth || document.documentElement.clientWidth || baseW;
+            var h = window.innerHeight || document.documentElement.clientHeight || baseH;
+            var s = Math.min(w / baseW, h / baseH);
+            document.documentElement.style.setProperty('--tv-scale', s);
+        })();
+    </script>
 </head>
 <body class="tv">
 

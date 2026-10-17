@@ -81,8 +81,9 @@ are deliberate; please keep changes consistent with them.
   Never hard-code a brand colour in a component; add or use a token.
 - **Five themes ship:** `broadcast` (default), `arcade`, `void`, `sunset`,
   `candy`. The chosen theme is persisted in `localStorage.caston_theme`.
-- **Everything scales.** Avoid fixed pixel heights on the TV; the console must
-  fill the stage from 1280×720 up to 4K. Test at 1920×1080 and 1280×720.
+- **Reference baseline & proportional scaling:** The console layout is anchored to a
+  **1280×720 reference canvas**. Proportional scaling (`--tv-scale`) scales the UI
+  up or down smoothly on any display (540p, 720p, 1080p, 1440p, 4K) and aspect ratio.
 
 ### 2.2 Themed QR code
 `static/js/qr.js` is a self-contained QR encoder (versions 1–9, ECC L/M/Q/H,
@@ -90,6 +91,25 @@ Reed–Solomon, all 8 masks with penalty scoring). `CastOn.qr.draw(canvas, text,
 opts)` renders it with rounded modules and shaped "eyes", tinted from the active
 theme via `CastOn.themeMeta().ink`. Encoding is verified against a third-party
 decoder; if you change `qr.js`, re-verify that the code still scans.
+
+### 2.3 TV Resolution Scaling & Stage Architecture
+The TV console is anchored to a **1280×720 reference layout** (64px topbar, 656px stage)
+and scales proportionally across displays and aspect ratios:
+- **Dynamic Scale Factor (`--tv-scale`):** Computed as `min(window.innerWidth / 1280, window.innerHeight / 720)`.
+  Set directly on `:root` synchronously in `<head>` (to prevent first-paint layout shifts)
+  and updated dynamically on `window.resize`.
+- **Full-Width Topbar:** `.console` is a full-viewport flex column (`100vw × 100vh`). The topbar
+  (`.topbar`) spans **100% full width edge-to-edge** with its internal elements scaled via
+  `zoom: var(--tv-scale, 1)`. On ultra-wide or non-16:9 displays (e.g. 21:9 or 2:1 aspect ratios),
+  the topbar stretches completely across the screen without side pillarbox gaps or truncated navigation.
+- **Stage & Lobby Centering:** `.stage` flexes to fill all remaining viewport height (`flex: 1`).
+  In lobby mode, `#lobby` renders at fixed 1280×656 reference coordinates and is centered
+  with `transform: scale(var(--tv-scale, 1))`.
+- **Crisp High-DPI Canvas & QR:** Active games and canvas overlays fill the full stage (`.game-stage`).
+  Canvas buffers scale by `effectiveDpr = (window.devicePixelRatio || 1) * scale`, ensuring crystal-clear
+  text, geometry, and QR code rendering on 4K TVs without blurring or coordinate distortion.
+- **Mobile Isolation:** Mobile controllers (`body.pad` / `controller.html` / `controller.css`) use
+  standard responsive flexbox/grid layouts and are completely isolated from `--tv-scale`.
 
 ---
 
@@ -272,5 +292,7 @@ driven by `CastOn.games.length`, so a new game appears automatically.
    - Because phones and TVs have vastly different resolutions and aspect ratios, any pointer/drawing coordinates sent from a mobile controller to the TV must be normalized to `[0.0, 1.0]` on the phone and multiplied by the TV view size on the other end.
 4. **Audio Policy on Android TV:**
    - Browsers block WebAudio until the first user interaction or WebSocket event callback. `CastOn.tone()` already resumes a suspended `AudioContext`, so always route sound through it.
-5. **Testing without phones (`?demo=N`):**
-   - Append `?demo=4` to `/tv` to seed fake players. The keyboard then stands in for a controller: arrows = D-Pad, `Enter`/`Space` = `A`, `Backspace` = `B`, `Escape` = back to lobby, and `1`–`9` jump straight into a game. This is the fastest way to review layout without a phone.
+5. **Testing without phones (`?demo=N`, `?game=N`):**
+   - Append `?demo=4` to `/tv` to seed fake players. The keyboard then stands in for a controller: arrows = D-Pad, `Enter`/`Space` = `A`, `Backspace` = `B`, `Escape` = back to lobby, and `1`–`9` jump straight into a game.
+   - Append `?game=0` (or `1`, `2`) to `/tv` to launch straight into an active game on boot (useful for headless screenshot and layout testing).
+   - Test TV layouts across various resolutions: 1280×720 (baseline reference), 1920×1080 (1080p), 3840×2160 (4K), 960×540 (small/540p), and ultrawide/2:1 viewports (e.g. 956×476 or 2560×1080) to verify edge-to-edge topbar and centered stage presentation.
