@@ -25,9 +25,7 @@ class BumperBrawl {
         this.startTime = performance.now();
         this.lastFrame = this.startTime;
         this.matchEndsAt = this.startTime + ROUND_MS;
-        this.phase = 'play';
-
-        C.setLayout('dpad', { title: 'Bumper brawl', subtitle: 'D-Pad moves · A boosts' });
+        C.setLayout('dpad', { title: 'Bumper brawl', subtitle: 'Joystick moves · A boosts' });
 
         this.view = C.view;
         this.spawnOrbs(4);
@@ -98,7 +96,11 @@ class BumperBrawl {
         const e = this.entities[id];
         if (!e || this.ended) return;
 
-        if (data.action === 'btn') {
+        if (data.action === 'joystick') {
+            e.jx = data.x;
+            e.jy = data.y;
+            e.useJoystick = (data.active !== false && (data.x !== 0 || data.y !== 0));
+        } else if (data.action === 'btn') {
             const { button, state } = data;
             if (['UP', 'DOWN', 'LEFT', 'RIGHT'].includes(button)) {
                 e.inputs = e.inputs || {};
@@ -145,10 +147,15 @@ class BumperBrawl {
             const e = this.entities[id];
             const inp = e.inputs || {};
 
-            if (inp.UP) e.vy -= ARENA.accel * k;
-            if (inp.DOWN) e.vy += ARENA.accel * k;
-            if (inp.LEFT) e.vx -= ARENA.accel * k;
-            if (inp.RIGHT) e.vx += ARENA.accel * k;
+            if (e.useJoystick) {
+                e.vx += (e.jx || 0) * ARENA.accel * k;
+                e.vy += (e.jy || 0) * ARENA.accel * k;
+            } else {
+                if (inp.UP) e.vy -= ARENA.accel * k;
+                if (inp.DOWN) e.vy += ARENA.accel * k;
+                if (inp.LEFT) e.vx -= ARENA.accel * k;
+                if (inp.RIGHT) e.vx += ARENA.accel * k;
+            }
 
             if (e.boost > 0) {
                 const speed = Math.hypot(e.vx, e.vy);
@@ -399,7 +406,7 @@ C.registerGame({
     title: 'Bumper Brawl',
     tagline: 'Hot',
     players: '2–8 players',
-    control: 'D-Pad + boost',
+    control: 'Joystick + boost',
     description: 'Scoop energy orbs and ram rivals out of the arena ring. Last dash wins the crowd.',
     accent: '#f43f5e',
     icon: 'flame',

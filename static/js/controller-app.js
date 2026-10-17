@@ -308,9 +308,242 @@ function renderExtras(extras) {
 }
 
 /* ==========================================================================
-   D-Pad & arcade buttons
-   Pointer capture keeps a held direction alive while another finger taps A.
+   Virtual Joystick & arcade buttons
+   Multi-touch support with pointer capture: hold or drag joystick with one
+   thumb while tapping A/B arcade buttons with the other thumb.
    ========================================================================== */
+
+function setupJoystick() {
+    const zone = doc.getElementById('joystick-zone');
+    const base = doc.getElementById('joystick-base');
+    const thumb = doc.getElementById('joystick-thumb');
+    if (!zone || !base || !thumb) return;
+
+    const notchUp = zone.querySelector('.joystick-notch--up');
+    const notchDown = zone.querySelector('.joystick-notch--down');
+    const notchLeft = zone.querySelector('.joystick-notch--left');
+    const notchRight = zone.querySelector('.joystick-notch--right');
+
+    let activePointerId = null;
+    let baseRect = null;
+    let maxDistance = 50;
+
+    let joyX = 0; // -1.0 to 1.0
+    let joyY = 0; // -1.0 to 1.0
+    let isHeld = false;
+
+    // Active directional states for synthesized button events
+    const activeDirs = { UP: false, DOWN: false, LEFT: false, RIGHT: false };
+
+    // Throttled network transmission
+    let rafId = null;
+    let lastSentX = 0;
+    let lastSentY = 0;
+    let lastSentTime = 0;
+
+    const DIR_DOWN = 0.40;
+    const DIR_UP = 0.18;
+
+    function updateNotches() {
+        if (notchUp) notchUp.classList.toggle('is-active', activeDirs.UP);
+        if (notchDown) notchDown.classList.toggle('is-active', activeDirs.DOWN);
+        if (notchLeft) notchLeft.classList.toggle('is-active', activeDirs.LEFT);
+        if (notchRight) notchRight.classList.toggle('is-active', activeDirs.RIGHT);
+    }
+
+    function syncDirectionButtons(nx, ny) {
+        // UP / DOWN
+        if (ny < -DIR_DOWN && !activeDirs.UP) {
+            activeDirs.UP = true;
+            buzz(12);
+            send({ action: 'btn', button: 'UP', state: 'down' });
+        } else if (ny > -DIR_UP && activeDirs.UP) {
+            activeDirs.UP = false;
+            send({ action: 'btn', button: 'UP', state: 'up' });
+        }
+
+        if (ny > DIR_DOWN && !activeDirs.DOWN) {
+            activeDirs.DOWN = true;
+            buzz(12);
+            send({ action: 'btn', button: 'DOWN', state: 'down' });
+        } else if (ny < DIR_UP && activeDirs.DOWN) {
+            activeDirs.DOWN = false;
+            send({ action: 'btn', button: 'DOWN', state: 'up' });
+        }
+
+        // LEFT / RIGHT
+        if (nx < -DIR_DOWN && !activeDirs.LEFT) {
+            activeDirs.LEFT = true;
+            buzz(12);
+            send({ action: 'btn', button: 'LEFT', state: 'down' });
+        } else if (nx > -DIR_UP && activeDirs.LEFT) {
+            activeDirs.LEFT = false;
+            send({ action: 'btn', button: 'LEFT', state: 'up' });
+        }
+
+        if (nx > DIR_DOWN && !activeDirs.RIGHT) {
+            activeDirs.RIGHT = true;
+            buzz(12);
+            send({ action: 'btn', button: 'RIGHT', state: 'down' });
+        } else if (nx < DIR_UP && activeDirs.RIGHT) {
+            activeDirs.RIGHT = false;
+            send({ action: 'btn', button: 'RIGHT', state: 'up' });
+        }
+
+        updateNotches();
+    }
+
+    function flushJoystick(force) {
+        const now = performance.now();
+        if (force || (now - lastSentTime >= 20 && (lastSentX !== joyX || lastSentY !== joyY))) {
+            lastSentX = joyX;
+            lastSentY = joyY;
+            lastSentTime = now;
+            send({
+                action: 'joystick',
+                x: joyX,
+                y: joyY,
+                active: isHeld
+            });
+        }
+    }
+
+    function processPointer(clientX, clientY) {
+        if (!baseRect) baseRect = base.getBoundingClientRect();
+        const centerX = baseRect.left + baseRect.width / 2;
+        const centerY = baseRect.top + baseRect.height / 2;
+
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+        const dist = Math.hypot(dx, dy);
+
+        let clampedX = dx;
+        let clampedY = dy;
+        if (dist > maxDistance && dist > 0) {
+            clampedX = (dx / dist) * maxDistance;
+            clampedY = (dy / dist) * maxDistance;
+        }
+
+        thumb.style.transform = 'translate3d(' + clampedX + 'px, ' + clampedY + 'px, 0)';
+
+        let normX = maxDistance > 0 ? clampedX / maxDistance : 0;
+        let normY = maxDistance > 0 ? clampedY / maxDistance : 0;
+        const mag = Math.hypot(normX, normY);
+
+        const DEADZONE = 0.08;
+        if (mag < DEADZONE) {
+            normX = 0;
+            normY = 0;
+        } else {
+            const scaled = (mag - DEADZONE) / (1 - DEADZONE);
+            normX = (normX / mag) * Math.min(1, scaled);
+            normY = (normY / mag) * Math.min(1, scaled);
+        }
+
+        joyX = Math.round(normX * 1000) / 1000;
+        joyY = Math.round(normY * 1000) / 1000;
+
+        syncDirectionButtons(joyX, joyY);
+
+        if (!rafId) {
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                flushJoystick(false);
+            });
+        }
+    }
+
+    function onPointerDown(e) {
+        if (activePointerId !== null) return;
+        e.preventDefault();
+
+        activePointerId = e.pointerId;
+        try { base.setPointerCapture(e.pointerId); } catch (err) {}
+
+        baseRect = base.getBoundingClientRect();
+        const thumbRect = thumb.getBoundingClientRect();
+        maxDistance = Math.max(10, (baseRect.width - thumbRect.width) / 2);
+
+        isHeld = true;
+        base.classList.add('is-active');
+        thumb.classList.add('is-active');
+        thumb.style.transition = 'none';
+
+        buzz(16);
+        processPointer(e.clientX, e.clientY);
+        flushJoystick(true);
+    }
+
+    function onPointerMove(e) {
+        if (e.pointerId !== activePointerId) return;
+        e.preventDefault();
+        processPointer(e.clientX, e.clientY);
+    }
+
+    function onPointerUp(e) {
+        if (e && e.pointerId !== activePointerId) return;
+        if (e) e.preventDefault();
+
+        if (activePointerId !== null) {
+            try { base.releasePointerCapture(activePointerId); } catch (err) {}
+        }
+        activePointerId = null;
+        isHeld = false;
+
+        base.classList.remove('is-active');
+        thumb.classList.remove('is-active');
+
+        thumb.style.transition = 'transform 0.16s cubic-bezier(0.18, 0.89, 0.32, 1.28)';
+        thumb.style.transform = 'translate3d(0, 0, 0)';
+
+        joyX = 0;
+        joyY = 0;
+        syncDirectionButtons(0, 0);
+
+        if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        flushJoystick(true);
+    }
+
+    base.addEventListener('pointerdown', onPointerDown);
+    base.addEventListener('pointermove', onPointerMove);
+    base.addEventListener('pointerup', onPointerUp);
+    base.addEventListener('pointercancel', onPointerUp);
+    base.addEventListener('lostpointercapture', onPointerUp);
+
+    thumb.addEventListener('keydown', (e) => {
+        let dx = 0, dy = 0;
+        if (e.key === 'ArrowUp') dy = -1;
+        else if (e.key === 'ArrowDown') dy = 1;
+        else if (e.key === 'ArrowLeft') dx = -1;
+        else if (e.key === 'ArrowRight') dx = 1;
+        else return;
+
+        e.preventDefault();
+        baseRect = base.getBoundingClientRect();
+        maxDistance = Math.max(10, (baseRect.width - thumb.getBoundingClientRect().width) / 2);
+        joyX = dx;
+        joyY = dy;
+        isHeld = true;
+        thumb.style.transition = 'none';
+        thumb.style.transform = 'translate3d(' + (dx * maxDistance * 0.75) + 'px, ' + (dy * maxDistance * 0.75) + 'px, 0)';
+        syncDirectionButtons(joyX, joyY);
+        flushJoystick(true);
+    });
+
+    thumb.addEventListener('keyup', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+            onPointerUp(null);
+        }
+    });
+
+    w.addEventListener('resize', () => {
+        baseRect = null;
+    });
+}
 
 function bindHoldButton(btn, button) {
     btn.addEventListener('pointerdown', (e) => {
@@ -332,7 +565,9 @@ function bindHoldButton(btn, button) {
     btn.addEventListener('lostpointercapture', () => btn.classList.remove('is-pressed'));
 }
 
-doc.querySelectorAll('.dpad__key[data-btn], .arcade__btn[data-btn]').forEach(btn => {
+setupJoystick();
+
+doc.querySelectorAll('.arcade__btn[data-btn]').forEach(btn => {
     bindHoldButton(btn, btn.getAttribute('data-btn'));
 });
 

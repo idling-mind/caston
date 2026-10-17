@@ -133,7 +133,7 @@ and scales proportionally across displays and aspect ratios:
 The TV acts as the **authoritative state machine** for every game. Whenever a game starts or changes phase, the TV sends a `set_layout` command through the server to either `"all"` controllers or a specific `player_id`.
 
 Currently supported layouts in `static/controller.html`:
-1. **`dpad`** (`#layout-dpad`): Cross D-Pad (`UP`, `DOWN`, `LEFT`, `RIGHT`) + Action buttons (`A`, `B`), plus optional shoulder buttons (`X`, `Y`) declared per-state via `setLayout(..., { extras: [{ button: 'X', label: 'Theme' }] })`. Supports simultaneous multi-touch via `setPointerCapture`.
+1. **`dpad`** (`#layout-dpad`): Virtual analog joystick (`UP`, `DOWN`, `LEFT`, `RIGHT`, 360° vector) + Action buttons (`A`, `B`), plus optional shoulder buttons (`X`, `Y`) declared per-state via `setLayout(..., { extras: [{ button: 'X', label: 'Theme' }] })`. Supports simultaneous multi-touch via `setPointerCapture`.
 2. **`trivia`** (`#layout-trivia`): 2x2 grid of colored buzzer buttons (`0`, `1`, `2`, `3`) with dynamic option text injected via `state.options`.
 3. **`draw`** (`#layout-draw`): HTML5 `<canvas>` touch drawing pad that normalizes coordinates to `[0.0, 1.0]` and streams stroke vectors in real time, plus a secret word banner and Clear button.
 4. **`guess`** (`#layout-guess`): Text input field + Submit button for word-guessing games.
@@ -171,6 +171,7 @@ All WebSocket communication uses JSON payloads.
 Sent via `sendInput(payload)` in `controller-app.js` and wrapped into `controller_input.data` for the TV:
 - **Lobby Return (VIP only):** `{"action": "home"}`
 - **Gamepad Buttons (`dpad` layout):** `{"action": "btn", "button": "UP|DOWN|LEFT|RIGHT|A|B|X|Y", "state": "down|up"}`
+- **Joystick Vector (`dpad` layout):** `{"action": "joystick", "x": float, "y": float, "active": bool}`
 - **Trivia Selection (`trivia` layout):** `{"action": "trivia_answer", "choice": 0|1|2|3}`
 - **Drawing Stroke (`draw` layout):** `{"action": "draw_stroke", "x0": float, "y0": float, "x1": float, "y1": float, "color": "#hex", "clear": bool}`
 - **Text Guess (`guess` layout):** `{"action": "submit_guess", "text": "USER INPUT"}`

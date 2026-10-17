@@ -230,12 +230,11 @@ textarea {
 
 .layout--dpad { justify-content: center; }
 
-/* Everything below is sized off a single custom property so the whole rig
+/* Everything below is sized off custom properties so the whole rig
    scales down cleanly on narrow phones instead of overflowing the viewport. */
 .dpad-rig {
-    --dpad: 202px;
-    --key: 64px;
-    --key-off: 69px;
+    --joy-size: 200px;
+    --joy-thumb: 80px;
     --btn-a: 88px;
     --btn-b: 68px;
 
@@ -261,76 +260,161 @@ textarea {
 
 .arcade__shoulders.hidden { display: none; }
 
-.dpad {
+/* ==========================================================================
+   Virtual Joystick
+   ========================================================================== */
+
+.joystick-zone {
     position: relative;
-    width: var(--dpad);
-    height: var(--dpad);
+    width: var(--joy-size, 200px);
+    height: var(--joy-size, 200px);
     flex: none;
-    border-radius: var(--r-xl);
-    background: color-mix(in srgb, var(--bg-base) 34%, transparent);
-    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.joystick-base {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--card) 6%, transparent) 0%, color-mix(in srgb, var(--bg-base) 45%, transparent) 100%);
+    border: 2px solid var(--line);
     backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.45), 0 10px 24px -10px rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    touch-action: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.dpad__key {
+.joystick-base.is-active {
+    cursor: grabbing;
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+    box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.45), 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 12px 28px -8px rgba(0, 0, 0, 0.65);
+}
+
+/* Concentric ring track */
+.joystick-track {
     position: absolute;
-    background: var(--card);
-    border: 1px solid var(--card-line);
-    transition: background 0.08s ease, transform 0.08s ease;
-}
-
-.dpad__key:active {
-    background: var(--c-blue);
-    transform: scale(0.95);
-}
-
-.dpad__key--up,
-.dpad__key--down {
-    left: var(--key-off);
-    width: var(--key);
-    height: var(--key);
-}
-
-.dpad__key--up    { top: 0;    border-radius: var(--r-md) var(--r-md) var(--r-xs) var(--r-xs); }
-.dpad__key--down  { bottom: 0; border-radius: var(--r-xs) var(--r-xs) var(--r-md) var(--r-md); }
-
-.dpad__key--left,
-.dpad__key--right {
-    top: var(--key-off);
-    width: var(--key);
-    height: var(--key);
-}
-
-.dpad__key--left  { left: 0;  border-radius: var(--r-md) var(--r-xs) var(--r-xs) var(--r-md); }
-.dpad__key--right { right: 0; border-radius: var(--r-xs) var(--r-md) var(--r-md) var(--r-xs); }
-
-.dpad__hub {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 42px;
-    height: 42px;
-    transform: translate(-50%, -50%);
-    border-radius: var(--r-xs);
-    background: color-mix(in srgb, var(--card) 18%, transparent);
-    border: 1px solid var(--card-line);
-}
-
-.dpad__arrow {
-    position: absolute;
-    font-size: 15px;
-    line-height: 1;
-    color: color-mix(in srgb, var(--card-ink) 55%, transparent);
+    inset: 18%;
+    border-radius: 50%;
+    border: 1px dashed color-mix(in srgb, var(--line) 45%, transparent);
     pointer-events: none;
-    transition: color 0.08s ease;
 }
 
-.dpad__key:active ~ .dpad__arrow { color: #fff; }
+/* Cardinal directional notch indicators */
+.joystick-notches {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
 
-.dpad__arrow--up    { left: 50%; top: 3.5%;               transform: translateX(-50%); }
-.dpad__arrow--down  { left: 50%; bottom: 3.5%;            transform: translateX(-50%); }
-.dpad__arrow--left  { top: 50%; left: 3.5%;               transform: translateY(-50%); }
-.dpad__arrow--right { top: 50%; right: 3.5%;              transform: translateY(-50%); }
+.joystick-notch {
+    position: absolute;
+    background: color-mix(in srgb, var(--card-ink) 25%, var(--line));
+    border-radius: 2px;
+    pointer-events: none;
+    transition: background 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.joystick-notch--up,
+.joystick-notch--down {
+    left: 50%;
+    width: 4px;
+    height: 10px;
+    transform: translateX(-50%);
+}
+
+.joystick-notch--up   { top: 8px; }
+.joystick-notch--down { bottom: 8px; }
+
+.joystick-notch--left,
+.joystick-notch--right {
+    top: 50%;
+    width: 10px;
+    height: 4px;
+    transform: translateY(-50%);
+}
+
+.joystick-notch--left  { left: 8px; }
+.joystick-notch--right { right: 8px; }
+
+/* Active directional notch glow */
+.joystick-notch.is-active {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+}
+.joystick-notch--up.is-active,
+.joystick-notch--down.is-active {
+    transform: translateX(-50%) scale(1.3);
+}
+.joystick-notch--left.is-active,
+.joystick-notch--right.is-active {
+    transform: translateY(-50%) scale(1.3);
+}
+
+/* Thumb knob */
+.joystick-thumb {
+    position: absolute;
+    top: calc(50% - var(--joy-thumb, 80px) / 2);
+    left: calc(50% - var(--joy-thumb, 80px) / 2);
+    width: var(--joy-thumb, 80px);
+    height: var(--joy-thumb, 80px);
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--card) 95%, #ffffff) 0%, color-mix(in srgb, var(--card) 78%, #000000) 100%);
+    border: 2px solid var(--card-line);
+    box-shadow: 0 10px 22px -6px rgba(0, 0, 0, 0.65), inset 0 2px 3px rgba(255, 255, 255, 0.8), inset 0 -3px 6px rgba(0, 0, 0, 0.35);
+    display: grid;
+    place-items: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    will-change: transform;
+    pointer-events: none;
+    outline: none;
+}
+
+.joystick-thumb:focus-visible {
+    box-shadow: 0 0 0 3px var(--focus), 0 10px 22px -6px rgba(0, 0, 0, 0.65);
+}
+
+.joystick-thumb__cap {
+    width: 44%;
+    height: 44%;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--card-ink) 9%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-ink) 14%, transparent);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.joystick-thumb__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.8;
+    transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
+}
+
+.joystick-thumb.is-active {
+    filter: brightness(1.05);
+}
+
+.joystick-thumb.is-active .joystick-thumb__dot {
+    opacity: 1;
+    transform: scale(1.3);
+    box-shadow: 0 0 10px var(--accent);
+}
 
 .arcade {
     display: flex;
@@ -361,13 +445,11 @@ textarea {
 
 /* Scale the rig down before it can overflow a narrow or short viewport. */
 @media (max-width: 430px) {
-    .dpad-rig { --dpad: 176px; --key: 56px; --key-off: 60px; --btn-a: 78px; --btn-b: 60px; }
-    .dpad__hub { width: 36px; height: 36px; }
-    .dpad__arrow { font-size: 13px; }
+    .dpad-rig { --joy-size: 174px; --joy-thumb: 70px; --btn-a: 78px; --btn-b: 60px; }
 }
 
 @media (max-width: 360px) {
-    .dpad-rig { --dpad: 158px; --key: 50px; --key-off: 54px; --btn-a: 70px; --btn-b: 54px; gap: 12px; }
+    .dpad-rig { --joy-size: 154px; --joy-thumb: 60px; --btn-a: 70px; --btn-b: 54px; gap: 12px; }
     .arcade { gap: 10px; }
 }
 

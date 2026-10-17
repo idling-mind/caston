@@ -138,16 +138,21 @@
         <section id="layout-dpad" class="layout layout--dpad hidden">
             <div class="dpad-rig">
 
-                <div class="dpad">
-                    <button class="dpad__key dpad__key--up"    data-btn="UP"    type="button" aria-label="Up"></button>
-                    <button class="dpad__key dpad__key--down"  data-btn="DOWN"  type="button" aria-label="Down"></button>
-                    <button class="dpad__key dpad__key--left"  data-btn="LEFT"  type="button" aria-label="Left"></button>
-                    <button class="dpad__key dpad__key--right" data-btn="RIGHT" type="button" aria-label="Right"></button>
-                    <span class="dpad__hub" aria-hidden="true"></span>
-                    <span class="dpad__arrow dpad__arrow--up"    aria-hidden="true">▲</span>
-                    <span class="dpad__arrow dpad__arrow--down"  aria-hidden="true">▼</span>
-                    <span class="dpad__arrow dpad__arrow--left"  aria-hidden="true">◀</span>
-                    <span class="dpad__arrow dpad__arrow--right" aria-hidden="true">▶</span>
+                <div class="joystick-zone" id="joystick-zone">
+                    <div class="joystick-base" id="joystick-base">
+                        <div class="joystick-track" aria-hidden="true"></div>
+                        <div class="joystick-notches" aria-hidden="true">
+                            <span class="joystick-notch joystick-notch--up" data-dir="UP"></span>
+                            <span class="joystick-notch joystick-notch--down" data-dir="DOWN"></span>
+                            <span class="joystick-notch joystick-notch--left" data-dir="LEFT"></span>
+                            <span class="joystick-notch joystick-notch--right" data-dir="RIGHT"></span>
+                        </div>
+                        <div class="joystick-thumb" id="joystick-thumb" role="slider" aria-label="Analog joystick" tabindex="0">
+                            <div class="joystick-thumb__cap">
+                                <span class="joystick-thumb__dot"></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="arcade">
