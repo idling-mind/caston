@@ -1,0 +1,66 @@
+# Music, Bands & Audio Questions
+# 18 Easy, 19 Medium, 18 Hard = 55 total
+
+QUESTIONS = [
+    # EASY (18)
+    {"q": "How many strings does a standard acoustic or electric guitar typically have?", "options": ["Four", "Five", "Six", "Eight"], "answer": 2, "difficulty": "easy", "category": "Music"},
+    {"q": "Who is known as the 'King of Pop' and performed the moonwalk?", "options": ["Prince", "Michael Jackson", "Stevie Wonder", "Elton John"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "Which British rock band consisted of John, Paul, George, and Ringo?", "options": ["The Rolling Stones", "The Who", "The Beatles", "Queen"], "answer": 2, "difficulty": "easy", "category": "Music"},
+    {"q": "What instrument does someone play if they are called a 'pianist'?", "options": ["Violin", "Flute", "Piano", "Trumpet"], "answer": 2, "difficulty": "easy", "category": "Music"},
+    {"q": "Who performed the hit song 'Rolling in the Deep' and released albums named '19', '21', and '25'?", "options": ["Adele", "Beyoncé", "Taylor Swift", "Rihanna"], "answer": 0, "difficulty": "easy", "category": "Music"},
+    {"q": "What legendary British rock group was fronted by charismatic singer Freddie Mercury?", "options": ["Led Zeppelin", "Queen", "Pink Floyd", "Black Sabbath"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "Which musical term means to play loudly?", "options": ["Piano", "Forte", "Allegro", "Adagio"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "How many musicians are in a traditional string quartet?", "options": ["Two", "Three", "Four", "Five"], "answer": 2, "difficulty": "easy", "category": "Music"},
+    {"q": "Which singer-songwriter released the record-breaking album '1989' and embarked on 'The Eras Tour'?", "options": ["Katy Perry", "Lady Gaga", "Taylor Swift", "Ariana Grande"], "answer": 2, "difficulty": "easy", "category": "Music"},
+    {"q": "What brass instrument uses a sliding mechanism to change pitch rather than valves?", "options": ["Trumpet", "Trombone", "Tuba", "French Horn"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "Who sang the iconic country song 'Jolene' and founded the Dollywood theme park?", "options": ["Patsy Cline", "Dolly Parton", "Loretta Lynn", "Reba McEntire"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "Which Jamaican singer popularized reggae music globally with songs like 'No Woman, No Cry'?", "options": ["Peter Tosh", "Bob Marley", "Jimmy Cliff", "Toots Hibbert"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "What is the highest standard female singing voice?", "options": ["Alto", "Mezzo-soprano", "Soprano", "Contralto"], "answer": 2, "difficulty": "easy", "category": "Music"},
+    {"q": "Which Swedish pop supergroup achieved international fame with 'Dancing Queen' and 'Mamma Mia'?", "options": ["Roxette", "ABBA", "Ace of Base", "The Cardigans"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "What woodwind instrument is known for its black cylindrical body and single reed?", "options": ["Oboe", "Clarinet", "Bassoon", "Flute"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "Who released the hit pop single 'Thriller' with its famous horror-themed video in 1983?", "options": ["Prince", "Michael Jackson", "Lionel Richie", "David Bowie"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "In an orchestra, who stands on the podium and directs the musicians with a baton?", "options": ["Concertmaster", "Conductor", "Principal", "Soloist"], "answer": 1, "difficulty": "easy", "category": "Music"},
+    {"q": "What key is directly to the left of the two black keys on a piano keyboard?", "options": ["C", "D", "E", "F"], "answer": 0, "difficulty": "easy", "category": "Music"},
+
+    # MEDIUM (19)
+    {"q": "Which classical composer wrote the famous 'Ode to Joy' in his Ninth Symphony while completely deaf?", "options": ["Wolfgang Amadeus Mozart", "Ludwig van Beethoven", "Johann Sebastian Bach", "Franz Schubert"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "What was the landmark 1973 Pink Floyd album featuring a prism refracting light on its cover?", "options": ["The Wall", "Wish You Were Here", "The Dark Side of the Moon", "Animals"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "Which guitarist famously played a left-handed Fender Stratocaster upside down and headlined Woodstock in 1969?", "options": ["Eric Clapton", "Jimi Hendrix", "Jimmy Page", "Jeff Beck"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "What is the national musical instrument of Scotland?", "options": ["Bodhrán", "Bagpipes", "Celtic Harp", "Accordion"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "Which 1991 Nirvana album ushered grunge into mainstream culture with 'Smells Like Teen Spirit'?", "options": ["Bleach", "Nevermind", "In Utero", "Incesticide"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "What Italian musical term directs the performer to gradually increase in volume?", "options": ["Decrescendo", "Diminuendo", "Crescendo", "Staccato"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "Which artist holds the nickname 'The Boss' and is backed by the E Street Band?", "options": ["Bob Dylan", "Tom Petty", "Bruce Springsteen", "Neil Young"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "How many keys does a standard full-size modern acoustic piano have?", "options": ["76", "84", "88", "92"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "Which jazz trumpeter recorded the best-selling jazz album of all time, 'Kind of Blue', in 1959?", "options": ["Louis Armstrong", "Miles Davis", "Dizzy Gillespie", "Chet Baker"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "In sheet music, what symbol at the beginning of the staff is also known as the G-clef?", "options": ["Bass clef", "Treble clef", "Alto clef", "Tenor clef"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "Which English rock band recorded the classic 1971 rock anthem 'Stairway to Heaven'?", "options": ["Deep Purple", "The Rolling Stones", "Led Zeppelin", "The Kinks"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "What singer was known as 'The Queen of Soul' with hits like 'Respect' and 'Natural Woman'?", "options": ["Tina Turner", "Diana Ross", "Aretha Franklin", "Etta James"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "What musical term describes notes played in a short, detached, clipped manner?", "options": ["Legato", "Staccato", "Sostenuto", "Glissando"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "Which female artist has won the most Grammy Awards in recording history?", "options": ["Alison Krauss", "Aretha Franklin", "Beyoncé", "Taylor Swift"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "Which Austrian composer was a child prodigy who wrote his first symphony at age eight?", "options": ["Joseph Haydn", "Wolfgang Amadeus Mozart", "Franz Liszt", "Johannes Brahms"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "What city is renowned as the birthplace of grunge rock in the late 1980s and early 1990s?", "options": ["Portland", "Seattle", "Minneapolis", "San Francisco"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "Which electronic music duo from France wore iconic robot helmets in all public appearances?", "options": ["Justice", "Air", "Daft Punk", "Modjo"], "answer": 2, "difficulty": "medium", "category": "Music"},
+    {"q": "What percussion instrument consists of wooden bars tuned to chromatic pitches struck with mallets?", "options": ["Glockenspiel", "Xylophone", "Vibraphone", "Steel drum"], "answer": 1, "difficulty": "medium", "category": "Music"},
+    {"q": "Which British singer had worldwide hits with 'Careless Whisper' and 'Faith'?", "options": ["George Michael", "Boy George", "Robbie Williams", "Sting"], "answer": 0, "difficulty": "medium", "category": "Music"},
+
+    # HARD (18)
+    {"q": "What is the standard concert pitch frequency in Hertz for the note A above middle C (A4)?", "options": ["415 Hz", "432 Hz", "440 Hz", "452 Hz"], "answer": 2, "difficulty": "hard", "category": "Music"},
+    {"q": "Which Baroque master composed the 'Brandenburg Concertos' and 'The Well-Tempered Clavier'?", "options": ["George Frideric Handel", "Johann Sebastian Bach", "Antonio Vivaldi", "Henry Purcell"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "What musical interval is historically referred to as 'Diabolus in Musica' (the Devil's chord)?", "options": ["Minor third", "Tritone (augmented fourth)", "Major seventh", "Diminished sixth"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "Which opera composer wrote the epic four-opera cycle 'Der Ring des Nibelungen' (The Ring Cycle)?", "options": ["Giuseppe Verdi", "Richard Wagner", "Giacomo Puccini", "Richard Strauss"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "Which innovative jazz saxophonist was a pioneer of bebop and nicknamed 'Bird'?", "options": ["John Coltrane", "Charlie Parker", "Sonny Rollins", "Cannonball Adderley"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "What avant-garde John Cage composition consists of four minutes and thirty-three seconds of silence?", "options": ["'As Slow as Possible'", "'4′33″'", "'Music of Changes'", "'Imaginary Landscape'"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "What is the lowest-pitched instrument in the standard woodwind family of an orchestra?", "options": ["Bass clarinet", "Contrabassoon", "Bass trombone", "Cor anglais"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "In what time signature is a traditional European Viennese waltz written?", "options": ["2/4 time", "3/4 time", "4/4 time", "6/8 time"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "Which Italian luthier based in Cremona is widely considered the greatest violin maker in history?", "options": ["Andrea Amati", "Antonio Stradivari", "Giuseppe Guarneri", "Gasparo da Salò"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "What complex time signature is the main theme of the Dave Brubeck Quartet's jazz classic 'Take Five' written in?", "options": ["5/4 time", "7/4 time", "9/8 time", "11/8 time"], "answer": 0, "difficulty": "hard", "category": "Music"},
+    {"q": "Which Russian composer wrote the premiere ballet 'The Rite of Spring' that famously sparked a riot in Paris in 1913?", "options": ["Pyotr Ilyich Tchaikovsky", "Igor Stravinsky", "Sergei Rachmaninoff", "Dmitri Shostakovich"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "What is the name for a rapid alternation between two adjacent musical notes, typically indicated by 'tr'?", "options": ["Tremolo", "Trill", "Vibrato", "Mordent"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "Which groundbreaking 1966 Beach Boys album featured unorthodox instruments like theremin and bicycle bells?", "options": ["Surfer Girl", "Pet Sounds", "Smiley Smile", "Sunflower"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "What musical mode is formed by playing only the white keys of a piano starting on D?", "options": ["Ionian", "Dorian", "Phrygian", "Mixolydian"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "Which classical guitarist popularized Rodrigo's 'Concierto de Aranjuez' and was regarded as the father of modern classical guitar?", "options": ["Paco de Lucía", "Andrés Segovia", "John Williams", "Julian Bream"], "answer": 1, "difficulty": "hard", "category": "Music"},
+    {"q": "What vocal technique involves singing rapid notes across multiple pitches while singing a single syllable of text?", "options": ["Melisma", "Falsetto", "Bel Canto", "Sprechgesang"], "answer": 0, "difficulty": "hard", "category": "Music"},
+    {"q": "Who wrote the iconic four violin concertos titled 'The Four Seasons' in the early 18th century?", "options": ["Antonio Vivaldi", "Arcangelo Corelli", "Claudio Monteverdi", "Domenico Scarlatti"], "answer": 0, "difficulty": "hard", "category": "Music"},
+    {"q": "What is the term for a recurring musical theme associated with a specific character, place, or idea in opera and film?", "options": ["Ostinato", "Leitmotif", "Cadenza", "Rondo"], "answer": 1, "difficulty": "hard", "category": "Music"}
+]
+

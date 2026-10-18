@@ -281,6 +281,30 @@ function handleMessage(msg) {
             if (el.statScore) el.statScore.textContent = (msg.score || 0).toLocaleString();
             break;
 
+        case 'trivia_locked':
+            if (el.status && msg.elapsedSec) {
+                el.status.textContent = '✓ Guess locked in (' + msg.elapsedSec + 's)';
+            }
+            break;
+
+        case 'trivia_result':
+            if (msg.correct) {
+                buzz(90);
+                if (el.status) {
+                    el.status.textContent = '🎉 Correct! +' + (msg.points || 0).toLocaleString() + ' pts (⚡ ' + (msg.elapsedSec || '?') + 's' + (msg.fastest ? ' · Fastest!' : '') + ')';
+                }
+            } else if (msg.timedOut) {
+                buzz(40);
+                if (el.status) el.status.textContent = '⏰ Time is up (+0 pts)';
+            } else {
+                buzz(50);
+                if (el.status) el.status.textContent = '❌ Incorrect (+0 pts)';
+            }
+            if (el.statScore && typeof msg.totalScore === 'number') {
+                el.statScore.textContent = msg.totalScore.toLocaleString();
+            }
+            break;
+
         case 'room_closed':
             // Do not use a blocking alert(): it freezes the page and the user
             // cannot dismiss it without losing the tab. Show an inline notice
@@ -365,11 +389,17 @@ function switchLayout(layout, state) {
         if (foot) foot.textContent = state.subtitle;
     }
 
-    if (layout === 'trivia' && state.options) {
-        state.options.forEach((opt, i) => {
-            const node = doc.getElementById('trivia-opt-' + i);
-            if (node) node.textContent = opt;
+    if (layout === 'trivia') {
+        triviaLocked = false;
+        doc.querySelectorAll('.buzzer[data-choice]').forEach(b => {
+            b.classList.remove('is-selected', 'is-dimmed', 'is-correct-reveal', 'is-wrong-reveal');
         });
+        if (state.options) {
+            state.options.forEach((opt, i) => {
+                const node = doc.getElementById('trivia-opt-' + i);
+                if (node) node.textContent = opt;
+            });
+        }
     }
 
     if (layout === 'draw') {
@@ -709,11 +739,29 @@ doc.querySelectorAll('.arcade__btn[data-btn]').forEach(btn => {
    Trivia buzzers
    ========================================================================== */
 
+let triviaLocked = false;
+
 doc.querySelectorAll('.buzzer[data-choice]').forEach(btn => {
     btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
+        if (triviaLocked) return;
+        triviaLocked = true;
         buzz(35);
-        send({ action: 'trivia_answer', choice: Number(btn.getAttribute('data-choice')) });
+        const choice = Number(btn.getAttribute('data-choice'));
+        send({ action: 'trivia_answer', choice: choice });
+
+        doc.querySelectorAll('.buzzer[data-choice]').forEach(b => {
+            if (b === btn) {
+                b.classList.add('is-selected');
+                b.classList.remove('is-dimmed');
+            } else {
+                b.classList.add('is-dimmed');
+                b.classList.remove('is-selected');
+            }
+        });
+        if (el.status) el.status.textContent = '✓ Guess locked in!';
+        const foot = doc.getElementById('pad-foot');
+        if (foot) foot.textContent = 'Waiting for all players to guess...';
     });
 });
 

@@ -30,12 +30,13 @@
 
 .q-screen__question {
     font-family: var(--font-display);
-    font-size: 33px;
+    font-size: clamp(26px, 2.7vw, 34px);
     font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.12;
-    margin: 8px 0 0;
-    max-width: 22ch;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 6px 0 0;
+    max-width: none;
+    width: 100%;
 }
 
 .q-screen__clock {
@@ -161,6 +162,237 @@
     justify-content: space-between;
     gap: 20px;
     flex: none;
+    min-height: 44px;
+}
+
+/* Difficulty & Category Eyebrows */
+.tag--difficulty {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+    padding: 3px 8px;
+}
+
+.tag--easy {
+    background: color-mix(in srgb, var(--c-emerald) 18%, transparent);
+    color: var(--c-emerald);
+    border-color: color-mix(in srgb, var(--c-emerald) 40%, transparent);
+}
+
+.tag--medium {
+    background: color-mix(in srgb, var(--c-amber) 18%, transparent);
+    color: var(--c-amber);
+    border-color: color-mix(in srgb, var(--c-amber) 40%, transparent);
+}
+
+.tag--hard {
+    background: color-mix(in srgb, var(--c-rose) 18%, transparent);
+    color: var(--c-rose);
+    border-color: color-mix(in srgb, var(--c-rose) 40%, transparent);
+}
+
+.tag--category {
+    font-size: 11px;
+    color: var(--ink-2);
+    border-color: var(--line);
+}
+
+.tag--pts {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* Guess Status Tracker (Does NOT show who picked what) */
+.q-status-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.tag--all-guesses {
+    background: color-mix(in srgb, var(--c-emerald) 28%, var(--bg-base)) !important;
+    color: #ffffff !important;
+    border-color: var(--c-emerald) !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    padding: 6px 14px !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--c-emerald) 35%, transparent);
+    animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.q-check-pulse {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--c-emerald);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.q-players-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 2px 0;
+}
+
+.q-player-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 8px;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--bg-base) 86%, #ffffff 14%);
+    border: 1.5px solid color-mix(in srgb, var(--line-strong) 80%, #ffffff 20%);
+    font-size: 14.5px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    opacity: 1 !important;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.q-player-chip.is-waiting {
+    opacity: 1 !important;
+    background: color-mix(in srgb, var(--bg-base) 88%, #ffffff 12%);
+    border-color: var(--line-strong);
+    color: var(--ink-2);
+}
+
+.q-player-chip.is-answered {
+    opacity: 1 !important;
+    background: color-mix(in srgb, var(--accent) 24%, var(--bg-base));
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+    animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.q-player-chip__face {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    background: color-mix(in srgb, var(--ring-color) 30%, transparent);
+    border: 2px solid var(--ring-color);
+    overflow: hidden;
+    flex: none;
+}
+
+.q-player-chip__face img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.q-player-chip__name {
+    max-width: 13ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #ffffff;
+}
+
+.q-player-chip__badge {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink-3);
+    margin-left: 2px;
+}
+
+.q-player-chip.is-answered .q-player-chip__badge {
+    color: var(--c-emerald);
+}
+
+/* Reveal Banner Breakdown */
+.q-reveal-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    min-width: 0;
+    padding: 2px 0;
+}
+
+.q-reveal-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 16px 7px 8px;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--bg-base) 88%, #ffffff 12%);
+    border: 1.5px solid color-mix(in srgb, var(--line-strong) 80%, #ffffff 20%);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    opacity: 1 !important;
+    animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+    flex: none;
+}
+
+.q-reveal-chip.is-correct {
+    background: color-mix(in srgb, var(--c-emerald) 24%, var(--bg-base));
+    border-color: var(--c-emerald);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--c-emerald) 35%, transparent);
+}
+
+.q-reveal-chip.is-wrong {
+    background: color-mix(in srgb, var(--bg-base) 88%, #ffffff 12%);
+    border-color: color-mix(in srgb, var(--line-strong) 80%, #ffffff 20%);
+    opacity: 1 !important;
+    color: #ffffff;
+}
+
+.q-reveal-pts {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+}
+
+.q-reveal-chip.is-correct .q-reveal-pts {
+    color: var(--c-emerald);
+}
+
+.q-reveal-chip.is-wrong .q-reveal-pts {
+    color: #ffffff;
+}
+
+.q-reveal-speed {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.q-reveal-status {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-2);
+}
+
+.q-reveal-badge {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: var(--r-xs);
+    background: var(--accent);
+    color: var(--accent-ink);
 }
 
 /* ---------- Score rail (compact player chips) --------------------------- */

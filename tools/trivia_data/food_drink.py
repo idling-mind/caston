@@ -1,0 +1,66 @@
+# Food, Drink & Culinary Questions
+# 18 Easy, 19 Medium, 18 Hard = 55 total
+
+QUESTIONS = [
+    # EASY (18)
+    {"q": "What is the primary ingredient in traditional Italian guacamole?", "options": ["Tomato", "Avocado", "Cucumber", "Zucchini"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "Which country is internationally famous as the birthplace of pizza and spaghetti?", "options": ["Spain", "France", "Italy", "Greece"], "answer": 2, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What beverage is made from fermented roasted cacao beans?", "options": ["Coffee", "Hot Chocolate", "Tea", "Chai"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What type of pastry is shaped like a crescent and is an iconic breakfast food in France?", "options": ["Baguette", "Croissant", "Brioche", "Éclair"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What food staple is made by fermenting dough with yeast, flour, and water, then baking it?", "options": ["Pasta", "Bread", "Couscous", "Tofu"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "Which fruit is dried in the sun or food dehydrators to make raisins?", "options": ["Plum", "Apricot", "Grape", "Fig"], "answer": 2, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What is the primary liquid ingredient used in traditional sushi rice preparation alongside vinegar?", "options": ["Milk", "Water", "Soy sauce", "Apple juice"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "Which popular dairy food is produced by coagulation of milk protein casein, creating varieties like Cheddar and Gouda?", "options": ["Yogurt", "Butter", "Cheese", "Cream"], "answer": 2, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "In Swedish culture, what is the customary coffee and pastry social break called?", "options": ["Lagom", "Fika", "Smörgås", "Kanel"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What vegetable is known for causing eyes to tear up when being sliced or chopped?", "options": ["Carrot", "Celery", "Onion", "Potato"], "answer": 2, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "Which hot breakfast porridge is commonly made from rolled or steel-cut oats boiled in milk or water?", "options": ["Grits", "Oatmeal", "Polenta", "Muesli"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What sweet topping is produced naturally by maple tree sap boiled down into syrup?", "options": ["Honey", "Molasses", "Maple syrup", "Agave"], "answer": 2, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "Which red condiment made from tomatoes, vinegar, and sugar is a staple on French fries and burgers?", "options": ["Mustard", "Mayonnaise", "Ketchup", "Relish"], "answer": 2, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What popular fizzy drink was invented by pharmacist John Pemberton in Atlanta in 1886?", "options": ["Pepsi", "Coca-Cola", "Dr Pepper", "7UP"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "Which citrus fruit is traditionally squeezed over fish and used to make tart lemonade?", "options": ["Lime", "Orange", "Lemon", "Grapefruit"], "answer": 2, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What Asian food product made from soybean curds is pressed into white solid blocks?", "options": ["Tempeh", "Tofu", "Seitan", "Miso"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What is the main flavor component of pesto sauce alongside basil, pine nuts, and Parmesan?", "options": ["Ginger", "Olive oil and garlic", "Paprika", "Cumin"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+    {"q": "What meat comes from pigs and is often cured into bacon and ham?", "options": ["Beef", "Pork", "Poultry", "Mutton"], "answer": 1, "difficulty": "easy", "category": "Food & Drink"},
+
+    # MEDIUM (19)
+    {"q": "What expensive, aromatic spice is harvested by hand from the stigmas of the Crocus sativus flower?", "options": ["Cardamom", "Vanilla", "Saffron", "Star Anise"], "answer": 2, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What type of pasta translates from Italian as 'little worms'?", "options": ["Spaghetti", "Vermicelli", "Rotini", "Fettuccine"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "Which fermented cabbage dish seasoned with chili pepper, garlic, and ginger is Korea's national dish?", "options": ["Sauerkraut", "Kimchi", "Tsukemono", "Curtido"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What variety of tea is oxidized and fermented into dark leaves, distinct from green and white tea?", "options": ["Herbal tea", "Black tea", "Matcha", "Rooibos"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What cheese is traditionally used to top an authentic Neapolitan pizza Margherita?", "options": ["Parmigiano-Reggiano", "Mozzarella di Bufala", "Ricotta", "Provolone"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "Which cocktail is made with white rum, sugar, lime juice, soda water, and fresh spearmint?", "options": ["Daiquiri", "Mojito", "Piña Colada", "Mai Tai"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What French culinary term describes vegetables cut into thin, matchstick-sized strips?", "options": ["Brunoise", "Chiffonade", "Julienne", "Mirepoix"], "answer": 2, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "Which fruit is famous in Southeast Asia for its strong, pungent odor and prickly husk?", "options": ["Jackfruit", "Durian", "Mangosteen", "Rambutan"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What type of mushroom is prized by gourmet chefs and sniffed out by trained pigs and dogs underground?", "options": ["Chanterelle", "Morel", "Truffle", "Shiitake"], "answer": 2, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "Which Mexican liquor is distilled specifically from the blue agave plant around the town of Tequila?", "options": ["Mezcal", "Tequila", "Sotol", "Raicilla"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What is the primary flavoring herb used in Greek tzatziki and traditional pickles?", "options": ["Rosemary", "Dill", "Tarragon", "Coriander"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "Which Italian dessert translates in English to 'pick me up' and features espresso-dipped ladyfingers and mascarpone?", "options": ["Panna Cotta", "Tiramisu", "Cannoli", "Zabaglione"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What country produces the renowned sparkling wine that can only legally be called 'Champagne'?", "options": ["Italy", "Spain", "France", "Germany"], "answer": 2, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What substance in hot chili peppers triggers the burning sensation in human heat receptors?", "options": ["Piperine", "Capsaicin", "Allicin", "Curcumin"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What aromatic tree bark is rolled into quills and ground into a sweet baking spice?", "options": ["Nutmeg", "Clove", "Cinnamon", "Allspice"], "answer": 2, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What kind of pastry dough is layered with butter and folded repeatedly to create airy, flaky layers for baklava and strudel?", "options": ["Shortcrust pastry", "Filo (Phyllo) pastry", "Choux pastry", "Suet pastry"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "Which classic French mother sauce is an emulsion of egg yolks, melted butter, and lemon juice?", "options": ["Béchamel", "Velouté", "Hollandaise", "Espagnole"], "answer": 2, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "What grain is used as the base ingredient to brew traditional Japanese sake?", "options": ["Barley", "Wheat", "Rice", "Millet"], "answer": 2, "difficulty": "medium", "category": "Food & Drink"},
+    {"q": "In Indian cuisine, what cylinder-shaped clay oven is traditionally used to bake naan and roast chicken?", "options": ["Wok", "Tandoor", "Karahi", "Tagine"], "answer": 1, "difficulty": "medium", "category": "Food & Drink"},
+
+    # HARD (18)
+    {"q": "What is the culinary term for the aromatic flavor base in French cooking composed of two parts onions, one part carrot, and one part celery?", "options": ["Bouquet garni", "Mirepoix", "Sofrito", "Duxelles"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "Which rare and dangerous Japanese delicacy prepared from pufferfish must be certified by specially licensed chefs to prevent tetrodotoxin poisoning?", "options": ["Unagi", "Fugu", "Uni", "Toro"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What scale developed in 1912 measures the pungency and spicy heat of chili peppers?", "options": ["Baumé scale", "Scoville scale", "Brix scale", "Plato scale"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "Which wine-producing region in northern Italy is celebrated for its prestigious Nebbiolo-based red wines Barolo and Barbaresco?", "options": ["Tuscany", "Veneto", "Piedmont", "Lombardy"], "answer": 2, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What is the primary animal source of milk used to make authentic Greek Feta and French Roquefort cheese?", "options": ["Cow's milk", "Sheep's milk", "Goat's milk", "Water buffalo milk"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "Which botanical spice is derived from the lacy reddish aril that covers the nutmeg seed?", "options": ["Mace", "Sumac", "Annatto", "Galangal"], "answer": 0, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What is the national distilled alcoholic beverage of Peru and Chile made from distilled fermented grape juice?", "options": ["Cachaça", "Pisco", "Grappa", "Singani"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What cooking technique involves sealing food in an airtight bag and cooking it in a precisely temperature-controlled water bath?", "options": ["Braising", "Sous-vide", "Poaching", "En papillote"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "In coffee production, what expensive specialty coffee is harvested from beans eaten and defecated by the Asian palm civet?", "options": ["Geisha coffee", "Kopi Luwak", "Blue Mountain", "Bourbon Santos"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "Which chemical reaction between reducing sugars and amino acids gives browned food its distinctive savory flavor and crust?", "options": ["Fermentation", "Caramelization", "Maillard reaction", "Saponification"], "answer": 2, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What classic cocktail created in Florence, Italy, in 1919 consists of equal parts gin, sweet vermouth, and Campari?", "options": ["Aperol Spritz", "Negroni", "Americano", "Bellini"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What part of the cacao tree produces the raw material for chocolate?", "options": ["Tree bark", "Root tubers", "Seed pods", "Leaves"], "answer": 2, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "Which Spanish fortified wine produced in the Andalusian 'Sherry Triangle' is aged under a layer of indigenous yeast called 'flor'?", "options": ["Port", "Fino Sherry", "Madeira", "Marsala"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What rare and pungent culinary resin, also called 'devil's dung', is widely used as a digestive aid and allium substitute in Indian cooking?", "options": ["Fenugreek", "Asafoetida (Hing)", "Nigella", "Ajwain"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "In butchery, from which cut of beef is the tender, delicate filet mignon sourced?", "options": ["Ribeye", "Tenderloin", "Sirloin", "Chuck"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What fermented beverage originates from the Caucasus mountains, made by inoculating cow or goat milk with gelatinous polysaccharide grains containing bacteria and yeasts?", "options": ["Kombucha", "Kefir", "Ayran", "Lassi"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "Which bitter aperitif liqueur famous for its bright red color is infused with herbs, fruit, and cascarilla bark, originally colored with carmine dye?", "options": ["Chartreuse", "Campari", "Fernet-Branca", "Sambuca"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"},
+    {"q": "What is the traditional name for the conical North African earthenware cooking pot that slowly circulates steam back into the stew?", "options": ["Couscoussier", "Tagine", "Caldero", "Poyke"], "answer": 1, "difficulty": "hard", "category": "Food & Drink"}
+]
+

@@ -1,0 +1,66 @@
+# Sports, Athletics & Games Questions
+# 18 Easy, 19 Medium, 18 Hard = 55 total
+
+QUESTIONS = [
+    # EASY (18)
+    {"q": "How many players are on the field for one standard football (soccer) team during play?", "options": ["Nine", "Ten", "Eleven", "Twelve"], "answer": 2, "difficulty": "easy", "category": "Sports"},
+    {"q": "In which sport can you score a touchdown or a field goal?", "options": ["Baseball", "American Football", "Basketball", "Ice Hockey"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+    {"q": "What sport is played at the prestigious Wimbledon Championship in London?", "options": ["Golf", "Cricket", "Tennis", "Polo"], "answer": 2, "difficulty": "easy", "category": "Sports"},
+    {"q": "How many holes are played in a standard full round of golf?", "options": ["9", "12", "18", "21"], "answer": 2, "difficulty": "easy", "category": "Sports"},
+    {"q": "What piece of equipment is hit back and forth over a net in badminton?", "options": ["Tennis ball", "Shuttlecock (Birdie)", "Puck", "Squash ball"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+    {"q": "How many points is a standard free throw worth in basketball?", "options": ["One point", "Two points", "Three points", "Four points"], "answer": 0, "difficulty": "easy", "category": "Sports"},
+    {"q": "Which country won the FIFA Men's World Cup in 2022 led by Lionel Messi?", "options": ["France", "Brazil", "Argentina", "Germany"], "answer": 2, "difficulty": "easy", "category": "Sports"},
+    {"q": "In bowling, what term refers to knocking down all ten pins with the first ball of a frame?", "options": ["Spare", "Strike", "Split", "Turkey"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+    {"q": "How many bases are on a baseball diamond, excluding home plate?", "options": ["Two", "Three", "Four", "Five"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+    {"q": "What color jersey is worn by the overall race leader in the Tour de France?", "options": ["Green jersey", "Yellow jersey", "Polka dot jersey", "White jersey"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+    {"q": "Which country is internationally famous for sumo wrestling?", "options": ["China", "South Korea", "Japan", "Mongolia"], "answer": 2, "difficulty": "easy", "category": "Sports"},
+    {"q": "How many rings are interlocked on the official Olympic flag?", "options": ["Four", "Five", "Six", "Seven"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+    {"q": "What object is passed between runners in an athletics relay race?", "options": ["Baton", "Ribbon", "Sash", "Torch"], "answer": 0, "difficulty": "easy", "category": "Sports"},
+    {"q": "In ice hockey, what hard vulcanized rubber disk is used instead of a ball?", "options": ["Puck", "Ring", "Stone", "Block"], "answer": 0, "difficulty": "easy", "category": "Sports"},
+    {"q": "What Jamaican sprinter set the world record for the 100m sprint at 9.58 seconds?", "options": ["Yohan Blake", "Tyson Gay", "Usain Bolt", "Asafa Powell"], "answer": 2, "difficulty": "easy", "category": "Sports"},
+    {"q": "How many players are on the court for one volleyball team?", "options": ["Four", "Five", "Six", "Seven"], "answer": 2, "difficulty": "easy", "category": "Sports"},
+    {"q": "In which sport do competitors slide polished granite stones across ice toward a target circular house?", "options": ["Bobsleigh", "Curling", "Luge", "Skeleton"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+    {"q": "What is the highest possible score with a single dart in a standard game of darts?", "options": ["50 (Bullseye)", "60 (Triple 20)", "100", "180"], "answer": 1, "difficulty": "easy", "category": "Sports"},
+
+    # MEDIUM (19)
+    {"q": "What is the exact distance of an official marathon footrace?", "options": ["24.2 miles", "26.2 miles (42.195 km)", "28.0 miles", "30.5 miles"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "Which NBA legend won six championships with the Chicago Bulls in the 1990s?", "options": ["Magic Johnson", "Kobe Bryant", "Michael Jordan", "LeBron James"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "In tennis, what score is called when a game reaches 40-40?", "options": ["Advantage", "Break point", "Deuce", "Tiebreak"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "Which nation has won the most FIFA Men's World Cup titles in history, with five victories?", "options": ["Germany", "Italy", "Brazil", "Argentina"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "What swimming stroke is typically the fastest of the four competitive strokes?", "options": ["Breaststroke", "Backstroke", "Freestyle (Front crawl)", "Butterfly"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "In chess, which piece can move in an L-shape and jump over other pieces?", "options": ["Bishop", "Rook", "Knight", "Queen"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "Which country hosted the first modern Olympic Games in 1896?", "options": ["France", "United Kingdom", "Greece", "United States"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "In cricket, how many dismissals (outs) end an innings for one batting team in standard play?", "options": ["8", "10", "11", "12"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "What is the diameter of an NBA basketball hoop in inches?", "options": ["16 inches", "18 inches", "20 inches", "22 inches"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "Who was the legendary heavyweight boxing champion famous for the quote 'Float like a butterfly, sting like a bee'?", "options": ["Joe Frazier", "George Foreman", "Muhammad Ali", "Mike Tyson"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "Which Formula 1 driver holds the joint record for the most World Drivers' Championships with seven titles alongside Michael Schumacher?", "options": ["Sebastian Vettel", "Fernando Alonso", "Lewis Hamilton", "Max Verstappen"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "What is the term for scoring three consecutive strikes in ten-pin bowling?", "options": ["Hat-trick", "Turkey", "Triple crown", "Eagle"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "In rugby union, how many points is an unconverted try worth?", "options": ["Three points", "Four points", "Five points", "Six points"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "Which golfer has won 18 major championships, the most in professional golf history?", "options": ["Tiger Woods", "Jack Nicklaus", "Arnold Palmer", "Gary Player"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "What martial art translates literally from Japanese as 'the gentle way'?", "options": ["Karate", "Aikido", "Judo", "Taekwondo"], "answer": 2, "difficulty": "medium", "category": "Sports"},
+    {"q": "Which Grand Slam tennis tournament is the only one played on red clay courts?", "options": ["Australian Open", "French Open (Roland Garros)", "Wimbledon", "US Open"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "In baseball, what is the term when a batter hits a home run with all three bases loaded?", "options": ["Cycle", "Grand Slam", "Triple play", "Golden hit"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "Which winter sport combines cross-country skiing with target rifle marksmanship?", "options": ["Nordic Combined", "Biathlon", "Triathlon", "Skiathlon"], "answer": 1, "difficulty": "medium", "category": "Sports"},
+    {"q": "In snooker, what is the maximum possible break without penalty points?", "options": ["147", "155", "160", "180"], "answer": 0, "difficulty": "medium", "category": "Sports"},
+
+    # HARD (18)
+    {"q": "Who was the only boxer in heavyweight history to retire as the undefeated world champion with a 49-0 record?", "options": ["Joe Louis", "Rocky Marciano", "Gene Tunney", "Floyd Mayweather Jr."], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "What Greek runner supposedly ran from the battlefield of Marathon to Athens to deliver news of Greek victory in 490 BC?", "options": ["Pheidippides", "Leonidas", "Themistocles", "Miltiades"], "answer": 0, "difficulty": "hard", "category": "Sports"},
+    {"q": "Which country won the very first FIFA World Cup tournament held in 1930?", "options": ["Argentina", "Brazil", "Uruguay", "Italy"], "answer": 2, "difficulty": "hard", "category": "Sports"},
+    {"q": "What is the maximum weight in ounces of a standard regulation baseball?", "options": ["4.5 ounces", "5.25 ounces", "6.0 ounces", "6.75 ounces"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "In cycling, what is the nickname for the grueling cobblestone classic race 'Paris-Roubaix'?", "options": ["The Hell of the North", "The Great Loop", "The Race to the Sun", "The Monument of Dust"], "answer": 0, "difficulty": "hard", "category": "Sports"},
+    {"q": "Which legendary track athlete won four gold medals at the 1936 Berlin Olympics, defying Nazi racial propaganda?", "options": ["Jim Thorpe", "Jesse Owens", "Carl Lewis", "Paavo Nurmi"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "In chess, what French term describes a special pawn capture that can only occur immediately after an opposing pawn moves two squares forward?", "options": ["Zugzwang", "Fianchetto", "En passant", "J'adoube"], "answer": 2, "difficulty": "hard", "category": "Sports"},
+    {"q": "Which city has hosted the Summer Olympic Games three separate times (1908, 1948, and 2012)?", "options": ["Paris", "London", "Los Angeles", "Athens"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "What is the height of a standard professional tennis net at the center of the court?", "options": ["2 feet 6 inches", "3 feet (36 inches)", "3 feet 6 inches", "4 feet"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "Which nation won the America's Cup sailing trophy in 1983, ending the New York Yacht Club's 132-year winning streak?", "options": ["New Zealand", "Australia", "United Kingdom", "Switzerland"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "Who scored the fastest goal in FIFA World Cup history, finding the net after just 11 seconds against South Korea in 2002?", "options": ["Clint Dempsey", "Hakan Şükür", "Bryan Robson", "Václav Mašek"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "What is the term in golf for completing a hole in three strokes under par?", "options": ["Eagle", "Albatross (Double Eagle)", "Condor", "Birdie"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "In the game of Scrabble, which two letters are worth the maximum value of 10 points each?", "options": ["J and Z", "Q and Z", "Q and X", "K and Z"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "Which NHL goaltender holds the all-time career record for the most regular season wins with 691?", "options": ["Patrick Roy", "Martin Brodeur", "Dominik Hašek", "Henrik Lundqvist"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "What is the standard weight of a men's Olympic shot put sphere in kilograms?", "options": ["5.00 kg", "6.26 kg", "7.26 kg", "8.00 kg"], "answer": 2, "difficulty": "hard", "category": "Sports"},
+    {"q": "In fencing, which of the three weapons allows scoring hits with both the point and the cutting edge of the blade?", "options": ["Foil", "Épée", "Sabre", "Rapier"], "answer": 2, "difficulty": "hard", "category": "Sports"},
+    {"q": "Which cricket ground in London is universally known as the 'Home of Cricket'?", "options": ["The Oval", "Lord's", "Edgbaston", "Old Trafford"], "answer": 1, "difficulty": "hard", "category": "Sports"},
+    {"q": "How many total squares are on a standard international chessboard?", "options": ["48", "64", "72", "81"], "answer": 1, "difficulty": "hard", "category": "Sports"}
+]
+

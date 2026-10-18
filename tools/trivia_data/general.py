@@ -1,0 +1,66 @@
+# General Knowledge, Curiosities & Everyday Science Questions
+# 18 Easy, 19 Medium, 18 Hard = 55 total
+
+QUESTIONS = [
+    # EASY (18)
+    {"q": "How many days are in a standard leap year?", "options": ["364", "365", "366", "367"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What animal is known as the 'Ship of the Desert' due to its ability to endure long arid journeys?", "options": ["Horse", "Camel", "Llama", "Elephant"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "How many cards are in a standard deck of playing cards, excluding jokers?", "options": ["48", "52", "54", "56"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "Which primary colors are mixed together to create the secondary color green?", "options": ["Red and Yellow", "Blue and Yellow", "Red and Blue", "Blue and White"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What is the largest living species of bird in the world, incapable of flight but capable of running up to 70 km/h?", "options": ["Emu", "Ostrich", "Cassowary", "Rhea"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "How many sides does a regular octagon have?", "options": ["Six", "Seven", "Eight", "Ten"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What color is the gemstone known as an emerald?", "options": ["Red", "Blue", "Green", "Purple"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What precious stone is traditionally gifted on a 60th wedding anniversary and is composed purely of carbon?", "options": ["Ruby", "Sapphire", "Diamond", "Emerald"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What is the largest species of shark swimming in Earth's oceans today?", "options": ["Great White Shark", "Whale Shark", "Tiger Shark", "Basking Shark"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "How many hours are in one complete standard Earth day?", "options": ["12", "24", "48", "60"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What is the common name for the larvae of a butterfly or moth?", "options": ["Grub", "Maggot", "Caterpillar", "Nymph"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What is the main color of a ripe banana?", "options": ["Red", "Yellow", "Orange", "Green"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "In which direction does the Sun appear to rise each morning?", "options": ["North", "South", "East", "West"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "How many items are in a standard 'baker's dozen'?", "options": ["11", "12", "13", "14"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What is the name of the white part of an avian egg?", "options": ["Yolk", "Albumen", "Shell", "Chalice"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "Which creature is known for building wooden dams across rivers and streams?", "options": ["Otter", "Beaver", "Muskrat", "Badger"], "answer": 1, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "What is the term for a group of lions living together in a social unit?", "options": ["Pack", "Herd", "Pride", "Flock"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+    {"q": "How many minutes are in two full hours?", "options": ["60", "100", "120", "150"], "answer": 2, "difficulty": "easy", "category": "General Knowledge"},
+
+    # MEDIUM (19)
+    {"q": "What animal produces the loudest sound of any living creature on Earth, reaching up to 188 decibels underwater?", "options": ["Howler Monkey", "Blue Whale", "Pistol Shrimp", "African Elephant"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What is the only mammal capable of true, sustained powered flight?", "options": ["Flying Squirrel", "Bat", "Sugar Glider", "Colugo"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What unit is used to measure the purity and fineness of gold alloys, where 24 represents pure gold?", "options": ["Troy Ounce", "Karat (Carat)", "Gram", "Grain"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "Which bird is celebrated for its ability to fly backwards and hover in mid-air?", "options": ["Swift", "Hummingbird", "Swallow", "Kingfisher"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What color are flamingos naturally when they hatch from eggs before their diet of carotenoid shrimp tints them pink?", "options": ["Bright Pink", "Grey or White", "Yellow", "Brown"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What is the term for animals that are active primarily during dawn and dusk rather than night or day?", "options": ["Nocturnal", "Diurnal", "Crepuscular", "Matutinal"], "answer": 2, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "How many hearts does a standard octopus have to pump blood through its gills and body?", "options": ["One", "Two", "Three", "Four"], "answer": 2, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What tree produces acorns as its fruit?", "options": ["Maple", "Oak", "Pine", "Birch"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "Which sea creature can regenerate lost limbs, digest prey outside its body, and possesses radial five-fold symmetry?", "options": ["Sea Urchin", "Starfish (Sea Star)", "Jellyfish", "Sea Anemone"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "In the standard phonetic alphabet used by aviation and NATO, what word represents the letter 'M'?", "options": ["Mango", "Mike", "Mary", "Monaco"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What animal holds the title for having the longest lifespan among terrestrial vertebrates, frequently living over 150 years?", "options": ["Bowhead Whale", "Giant Tortoise", "Greenland Shark", "Tuatara"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What precious organic gemstone is created inside the shells of living mollusks around an irritant?", "options": ["Amber", "Pearl", "Coral", "Jet"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "Which mammal is known for sleeping while floating on its back and holding hands with companions to prevent drifting apart?", "options": ["Sea Otter", "Seal", "Walrus", "Manatee"], "answer": 0, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What does a barometer measure in meteorology and atmospheric science?", "options": ["Wind speed", "Atmospheric pressure", "Humidity", "Precipitation volume"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What color is the blood of a horseshoe crab due to the copper-based hemocyanin within it?", "options": ["Red", "Blue", "Green", "Clear"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What is the collective noun used to describe a group of flamingos?", "options": ["Flamboyance", "Congregation", "Fleet", "Swarm"], "answer": 0, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "Which Australian marsupial is famous for having cube-shaped feces to prevent waste from rolling away?", "options": ["Kangaroo", "Koala", "Wombat", "Platypus"], "answer": 2, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "How many dots are on a standard six-sided die?", "options": ["18", "21", "24", "26"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+    {"q": "What is the collective term for a group of crows in English folklore?", "options": ["Cete", "A Murder", "A Parliament", "A Colony"], "answer": 1, "difficulty": "medium", "category": "General Knowledge"},
+
+    # HARD (18)
+    {"q": "Which marine mammal species is known to have the thickest fur in the animal kingdom, with up to one million hairs per square inch?", "options": ["Polar Bear", "Sea Otter", "Bearded Seal", "Muskox"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What species of jellyfish is known biologically to be potentially 'immortal' by reverting back to its polyp stage when stressed or aged?", "options": ["Aurelia aurita", "Turritopsis dohrnii", "Chrysaora quinquecirrha", "Cyanea capillata"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the medical term for the brief involuntary twitching of muscles when drifting off to sleep, often accompanied by a falling sensation?", "options": ["Hypnic jerk (Hypnagogic jerk)", "Restless leg syndrome", "Bruxism", "Cataplexy"], "answer": 0, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "Which is the only vertebrate animal known to have no red blood cells and no hemoglobin, having clear blood adapted to sub-zero Antarctic water?", "options": ["Antarctic Icefish", "Patagonian Toothfish", "Greenland Shark", "Lanternfish"], "answer": 0, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the fear of long words ironically named?", "options": ["Nomophobia", "Hippopotomonstrosesquippedaliophobia", "Arachibutyrophobia", "Ablutophobia"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What deep-sea cephalopod has the largest eyes of any living animal, measuring up to 10 inches (25 cm) across?", "options": ["Giant Squid / Colossal Squid", "Octopus vulgaris", "Nautilus", "Cuttlefish"], "answer": 0, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the name for the tiny plastic or metal cylinder at the end of a shoelace that prevents it from unraveling?", "options": ["Grommet", "Aglet", "Ferrule", "Flange"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What species of tree is considered the oldest individual living non-clonal tree on Earth, with Methuselah in California estimated over 4,800 years old?", "options": ["Coast Redwood", "Great Basin Bristlecone Pine", "Giant Sequoia", "Ginkgo Biloba"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the only bird species documented to be poisonous due to batrachotoxins absorbed from its beetle diet in New Guinea?", "options": ["Kakapo", "Hooded Pitohui", "Hoatzin", "Kagu"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the dot over the lowercase letter 'i' or 'j' formally called in typography?", "options": ["Cedilla", "Tittle", "Macron", "Caron"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "Which animal has the highest blood pressure of any living animal, required to pump blood over 2 meters up to its brain?", "options": ["Blue Whale", "Giraffe", "African Elephant", "Ostrich"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the biological term for the shedding of skin or exoskeleton in reptiles, insects, and crustaceans?", "options": ["Metamorphosis", "Ecdysis (Molting)", "Senescence", "Autotomy"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the smell of fresh rain falling on dry earth or stone called?", "options": ["Petrichor", "Ozone", "Geosmin", "Humus"], "answer": 0, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What unique physical trait distinguishes the platypus and four species of echidna as 'monotremes'?", "options": ["They are warm-blooded lizards", "They are mammals that lay eggs", "They lack skeletons", "They have three stomachs"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "In horology, what is the rotating cage designed by Abraham-Louis Breguet in 1795 to counter the effects of gravity on a watch's balance wheel?", "options": ["Chronometer", "Tourbillon", "Escapement", "Bezel"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What is the term for a word, phrase, number, or other sequence of characters that reads the same backward as forward, such as 'racecar'?", "options": ["Anagram", "Palindrome", "Pangram", "Acronym"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "What rare optical phenomenon produces a momentary flash of green light right above the upper rim of the setting or rising Sun?", "options": ["Fata Morgana", "Green flash", "Alpenglow", "Crepuscular rays"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"},
+    {"q": "Which mineral crystal structure causes Iceland spar (calcite) to create a double image of anything viewed through it?", "options": ["Pleochroism", "Birefringence (Double refraction)", "Fluorescence", "Phosphorescence"], "answer": 1, "difficulty": "hard", "category": "General Knowledge"}
+]
+
