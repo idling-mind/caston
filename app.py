@@ -305,6 +305,9 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
         room.controllers.pop(pid, None)
         room.players.pop(pid, None)
         room.assign_vip()
+        if not room.players:
+            room.current_layout = "dpad"
+            room.layout_state = {}
         try:
             await room.tv_ws.send_json({
                 "type": "players_sync",

@@ -327,15 +327,19 @@ function trimRosterOverflow() {
 
 function renderLobbyTiles() {
     if (!dom.grid) return;
-    const isLeader = state.vipId === null || !!state.players[state.vipId];
+    const hasPlayers = Object.keys(state.players).length > 0;
+    const isLeader = hasPlayers && (state.vipId === null || !!state.players[state.vipId]);
 
     dom.grid.innerHTML = CastOn.games.map((g, i) => {
         const focused = i === state.selected;
-        // Only the room leader can act on the board, so the CTA is phrased
-        // as an instruction for them and as a status for everyone else.
-        const cta = focused
-            ? (isLeader ? 'Press A to play' : 'Leader to start')
-            : 'Move to select';
+        let cta;
+        if (!hasPlayers) {
+            cta = 'Connect to play';
+        } else if (focused) {
+            cta = isLeader ? 'Press A to play' : 'Leader to start';
+        } else {
+            cta = 'Move to select';
+        }
 
         return `
         <button type="button" class="tile${focused ? ' is-focused' : ''}"
@@ -352,7 +356,7 @@ function renderLobbyTiles() {
                 <span class="tile__foot">
                     <span class="tile__control">${icon('gamepad')}${escapeHtml(g.control)}</span>
                     <span class="tile__cta">
-                        ${focused ? '<span class="key">A</span>' : ''}
+                        ${focused && hasPlayers ? '<span class="key">A</span>' : ''}
                         <span>${cta}</span>
                     </span>
                 </span>
@@ -362,6 +366,10 @@ function renderLobbyTiles() {
 
     dom.grid.querySelectorAll('.tile').forEach(el => {
         el.addEventListener('click', () => {
+            if (Object.keys(state.players).length === 0) {
+                tone(220, 150, 'sawtooth');
+                return;
+            }
             state.selected = Number(el.dataset.index);
             renderLobbyTiles();
             launchGame(state.selected);
@@ -557,6 +565,12 @@ function launchGame(index) {
     const def = CastOn.games[index];
     if (!def) return;
 
+    if (Object.keys(state.players).length === 0) {
+        tone(220, 150, 'sawtooth');
+        returnToLobby();
+        return;
+    }
+
     if (state.game && state.game.destroy) state.game.destroy();
     state.game = null;
 
@@ -661,6 +675,15 @@ function onPlayersSync(msg) {
     state.players = incoming;
     renderStrip();
     renderRoster();
+
+    // If no one is connected or the last person disconnects, stop the game and return to the lobby
+    if (Object.keys(state.players).length === 0) {
+        if (state.mode !== 'lobby' || state.game !== null) {
+            returnToLobby();
+            return;
+        }
+    }
+
     if (state.game && state.game.onPlayersSync) state.game.onPlayersSync();
 }
 
@@ -705,6 +728,9 @@ function connect() {
     ws.onclose = () => {
         const sub = document.getElementById('status-subtitle');
         if (sub) sub.textContent = 'Disconnected';
+        if (state.mode !== 'lobby' || state.game !== null) {
+            returnToLobby();
+        }
     };
 }
 
