@@ -28,11 +28,15 @@ function getAvatarImg(src) {
     return img;
 }
 
+const BASE_PLAYER_R = 24; // Base player radius at reference scale 1.0 (1280x720)
+const BASE_ORB_R = 14;     // Base regular energy coin radius at reference scale 1.0
+const BASE_SPECIAL_COIN_R = 21; // Base special power coin radius at reference scale 1.0
+
 const ARENA_CONFIG = {
     accel: 0.98,
     drag: 0.92,
     maxSpeed: 27,
-    playerR: 24, // Nimble, responsive radius with comfortable clearance
+    playerR: BASE_PLAYER_R, // Nimble, responsive radius with comfortable clearance
     restitution: 0.55
 };
 
@@ -241,18 +245,21 @@ function extractBoundaryLoops(solid, cols, rows, x0, y0, cellW, cellH) {
    Procedural Arena Generator with Wide Channels & 100% Reachability
    ========================================================================== */
 class ProceduralArena {
-    constructor(view) {
-        this.view = view;
+    constructor(view, scale, fixedArchetype) {
+        this.view = view || { w: 1280, h: 720 };
+        this.scale = (typeof scale === 'number' && scale > 0)
+            ? scale
+            : ((this.view && this.view.scale) || (C && C.scale) || Math.min(this.view.w / 1280, this.view.h / 720) || 1);
         this.cols = 84;
         this.rows = 48;
 
-        const padX = 50;
-        const topY = 74;
-        const botY = view.h - 44;
+        const padX = 50 * this.scale;
+        const topY = 74 * this.scale;
+        const botY = this.view.h - 44 * this.scale;
         this.x0 = padX;
         this.y0 = topY;
-        this.playW = Math.max(300, view.w - padX * 2);
-        this.playH = Math.max(200, botY - topY);
+        this.playW = Math.max(150, this.view.w - padX * 2);
+        this.playH = Math.max(100, botY - topY);
         this.cellW = this.playW / this.cols;
         this.cellH = this.playH / this.rows;
 
@@ -263,7 +270,8 @@ class ProceduralArena {
         this.arenaPath = null;
         this.walkableCells = [];
 
-        this.generate();
+        this.archetype = fixedArchetype != null ? fixedArchetype : Math.floor(Math.random() * 4);
+        this.generate(this.archetype);
     }
 
     carveRect(x, y, w, h, isWalkable) {
@@ -287,19 +295,21 @@ class ProceduralArena {
         }
     }
 
-    generate() {
+    generate(fixedArchetype) {
         let attempts = 0;
         let success = false;
+        const s = this.scale;
 
         while (attempts < 10 && !success) {
             attempts++;
             this.solid.fill(1);
-            const archetype = Math.floor(Math.random() * 4);
+            const archetype = fixedArchetype != null ? fixedArchetype : Math.floor(Math.random() * 4);
+            this.archetype = archetype;
             const cx = this.x0 + this.playW * 0.5;
             const cy = this.y0 + this.playH * 0.5;
 
-            const varX = (Math.random() - 0.5) * 20;
-            const varY = (Math.random() - 0.5) * 16;
+            const varX = (Math.random() - 0.5) * 20 * s;
+            const varY = (Math.random() - 0.5) * 16 * s;
 
             if (archetype === 0) {
                 // Dual Rectangular Wings + Central Atrium + Wide Channels
@@ -308,16 +318,16 @@ class ProceduralArena {
                 const sep = this.playW * 0.28;
                 this.carveRect(cx - sep - rw * 0.5 + varX, cy - rh * 0.5 + varY, rw, rh, true);
                 this.carveRect(cx + sep - rw * 0.5 - varX, cy - rh * 0.5 - varY, rw, rh, true);
-                this.carveRect(cx - 170, cy - 145, 340, 290, true);
+                this.carveRect(cx - 170 * s, cy - 145 * s, 340 * s, 290 * s, true);
 
                 // Top & Bottom rectangular passages
-                this.carveRect(cx - this.playW * 0.35, cy - rh * 0.36, this.playW * 0.70, 125, true);
-                this.carveRect(cx - this.playW * 0.35, cy + rh * 0.36 - 125, this.playW * 0.70, 125, true);
+                this.carveRect(cx - this.playW * 0.35, cy - rh * 0.36, this.playW * 0.70, 125 * s, true);
+                this.carveRect(cx - this.playW * 0.35, cy + rh * 0.36 - 125 * s, this.playW * 0.70, 125 * s, true);
 
                 // Rectangular Dead Islands
-                this.carveRect(cx - 50, cy - 40, 100, 80, false);
-                this.carveRect(cx - this.playW * 0.30 - 30, cy + (Math.random() < 0.5 ? -70 : 70) - 30, 60, 60, false);
-                this.carveRect(cx + this.playW * 0.30 - 30, cy + (Math.random() < 0.5 ? -70 : 70) - 30, 60, 60, false);
+                this.carveRect(cx - 50 * s, cy - 40 * s, 100 * s, 80 * s, false);
+                this.carveRect(cx - this.playW * 0.30 - 30 * s, cy + (Math.random() < 0.5 ? -70 : 70) * s - 30 * s, 60 * s, 60 * s, false);
+                this.carveRect(cx + this.playW * 0.30 - 30 * s, cy + (Math.random() < 0.5 ? -70 : 70) * s - 30 * s, 60 * s, 60 * s, false);
             } else if (archetype === 1) {
                 // Tri-Chamber Compound (Top Hangar & Lower Vaults)
                 const th = this.playH * 0.38;
@@ -330,18 +340,18 @@ class ProceduralArena {
                 this.carveRect(cx + this.playW * 0.26 - bw * 0.5, cy + this.playH * 0.22 - bh * 0.5, bw, bh, true);
 
                 // Rectangular Corridors
-                this.carveRect(cx - this.playW * 0.26 - 60, cy - this.playH * 0.20, 125, this.playH * 0.45, true);
-                this.carveRect(cx + this.playW * 0.26 - 65, cy - this.playH * 0.20, 125, this.playH * 0.45, true);
-                this.carveRect(cx - 150, cy - 80, 300, 160, true);
-                this.carveRect(cx - this.playW * 0.26, cy + this.playH * 0.24 - 60, this.playW * 0.52, 125, true);
+                this.carveRect(cx - this.playW * 0.26 - 60 * s, cy - this.playH * 0.20, 125 * s, this.playH * 0.45, true);
+                this.carveRect(cx + this.playW * 0.26 - 65 * s, cy - this.playH * 0.20, 125 * s, this.playH * 0.45, true);
+                this.carveRect(cx - 150 * s, cy - 80 * s, 300 * s, 160 * s, true);
+                this.carveRect(cx - this.playW * 0.26, cy + this.playH * 0.24 - 60 * s, this.playW * 0.52, 125 * s, true);
 
                 // Dead Islands
-                this.carveRect(cx - 45, cy - 35, 90, 70, false);
-                this.carveRect(cx - this.playW * 0.26 - 28, cy + this.playH * 0.22 - 28, 56, 56, false);
-                this.carveRect(cx + this.playW * 0.26 - 28, cy + this.playH * 0.22 - 28, 56, 56, false);
+                this.carveRect(cx - 45 * s, cy - 35 * s, 90 * s, 70 * s, false);
+                this.carveRect(cx - this.playW * 0.26 - 28 * s, cy + this.playH * 0.22 - 28 * s, 56 * s, 56 * s, false);
+                this.carveRect(cx + this.playW * 0.26 - 28 * s, cy + this.playH * 0.22 - 28 * s, 56 * s, 56 * s, false);
             } else if (archetype === 2) {
                 // 4-Quadrant Matrix (Crossroads Plaza & Corner Bastions)
-                this.carveRect(cx - 170, cy - 140, 340, 280, true);
+                this.carveRect(cx - 170 * s, cy - 140 * s, 340 * s, 280 * s, true);
                 const qw = this.playW * 0.34;
                 const qh = this.playH * 0.36;
                 this.carveRect(cx - this.playW * 0.28 - qw * 0.5, cy - this.playH * 0.26 - qh * 0.5, qw, qh, true);
@@ -350,33 +360,33 @@ class ProceduralArena {
                 this.carveRect(cx + this.playW * 0.28 - qw * 0.5, cy + this.playH * 0.26 - qh * 0.5, qw, qh, true);
 
                 // Central Avenues & Perimeter Channels
-                this.carveRect(cx - 65, this.y0 + 10, 130, this.playH - 20, true);
-                this.carveRect(this.x0 + 10, cy - 60, this.playW - 20, 125, true);
-                this.carveRect(cx - this.playW * 0.35, cy - this.playH * 0.35, this.playW * 0.70, 115, true);
-                this.carveRect(cx - this.playW * 0.35, cy + this.playH * 0.35 - 115, this.playW * 0.70, 115, true);
+                this.carveRect(cx - 65 * s, this.y0 + 10 * s, 130 * s, this.playH - 20 * s, true);
+                this.carveRect(this.x0 + 10 * s, cy - 60 * s, this.playW - 20 * s, 125 * s, true);
+                this.carveRect(cx - this.playW * 0.35, cy - this.playH * 0.35, this.playW * 0.70, 115 * s, true);
+                this.carveRect(cx - this.playW * 0.35, cy + this.playH * 0.35 - 115 * s, this.playW * 0.70, 115 * s, true);
 
                 // 4 Rectangular Pylon Dead Islands
-                const ioX = 85, ioY = 75, iw = 50, ih = 45;
+                const ioX = 85 * s, ioY = 75 * s, iw = 50 * s, ih = 45 * s;
                 this.carveRect(cx - ioX - iw * 0.5, cy - ioY - ih * 0.5, iw, ih, false);
                 this.carveRect(cx + ioX - iw * 0.5, cy - ioY - ih * 0.5, iw, ih, false);
                 this.carveRect(cx - ioX - iw * 0.5, cy + ioY - ih * 0.5, iw, ih, false);
                 this.carveRect(cx + ioX - iw * 0.5, cy + ioY - ih * 0.5, iw, ih, false);
             } else {
                 // Circuit Ring & Rectangular Fortress
-                this.carveRect(this.x0 + 15, this.y0 + 15, this.playW - 30, 140, true);
-                this.carveRect(this.x0 + 15, this.y0 + this.playH - 155, this.playW - 30, 140, true);
-                this.carveRect(this.x0 + 15, this.y0 + 15, 145, this.playH - 30, true);
-                this.carveRect(this.x0 + this.playW - 160, this.y0 + 15, 145, this.playH - 30, true);
-                this.carveRect(cx - 65, this.y0 + 15, 130, this.playH - 30, true);
-                this.carveRect(this.x0 + 15, cy - 60, this.playW - 30, 125, true);
+                this.carveRect(this.x0 + 15 * s, this.y0 + 15 * s, this.playW - 30 * s, 140 * s, true);
+                this.carveRect(this.x0 + 15 * s, this.y0 + this.playH - 155 * s, this.playW - 30 * s, 140 * s, true);
+                this.carveRect(this.x0 + 15 * s, this.y0 + 15 * s, 145 * s, this.playH - 30 * s, true);
+                this.carveRect(this.x0 + this.playW - 160 * s, this.y0 + 15 * s, 145 * s, this.playH - 30 * s, true);
+                this.carveRect(cx - 65 * s, this.y0 + 15 * s, 130 * s, this.playH - 30 * s, true);
+                this.carveRect(this.x0 + 15 * s, cy - 60 * s, this.playW - 30 * s, 125 * s, true);
 
                 // Rectangular Dead Islands
-                const bw = 150, bh = 100;
-                this.carveRect(cx - 170 - bw * 0.5, cy - 120 - bh * 0.5, bw, bh, false);
-                this.carveRect(cx + 170 - bw * 0.5, cy - 120 - bh * 0.5, bw, bh, false);
-                this.carveRect(cx - 170 - bw * 0.5, cy + 120 - bh * 0.5, bw, bh, false);
-                this.carveRect(cx + 170 - bw * 0.5, cy + 120 - bh * 0.5, bw, bh, false);
-                this.carveRect(cx - 45, cy - 35, 90, 70, false);
+                const bw = 150 * s, bh = 100 * s;
+                this.carveRect(cx - 170 * s - bw * 0.5, cy - 120 * s - bh * 0.5, bw, bh, false);
+                this.carveRect(cx + 170 * s - bw * 0.5, cy - 120 * s - bh * 0.5, bw, bh, false);
+                this.carveRect(cx - 170 * s - bw * 0.5, cy + 120 * s - bh * 0.5, bw, bh, false);
+                this.carveRect(cx + 170 * s - bw * 0.5, cy + 120 * s - bh * 0.5, bw, bh, false);
+                this.carveRect(cx - 45 * s, cy - 35 * s, 90 * s, 70 * s, false);
             }
 
             // Guaranteed Reachability via Flood Fill (BFS)
@@ -430,15 +440,30 @@ class ProceduralArena {
 
         // 6. Build list of safe walkable cells
         this.walkableCells = [];
+        const minWalkableDist = 30 * this.scale;
         for (let gy = 1; gy < this.rows - 1; gy++) {
             for (let gx = 1; gx < this.cols - 1; gx++) {
                 const idx = gy * this.cols + gx;
-                if (this.sdf[idx] >= 30) {
+                if (this.sdf[idx] >= minWalkableDist) {
                     this.walkableCells.push({
                         x: this.x0 + gx * this.cellW,
                         y: this.y0 + gy * this.cellH,
                         dist: this.sdf[idx]
                     });
+                }
+            }
+        }
+        if (this.walkableCells.length === 0) {
+            for (let gy = 1; gy < this.rows - 1; gy++) {
+                for (let gx = 1; gx < this.cols - 1; gx++) {
+                    const idx = gy * this.cols + gx;
+                    if (this.sdf[idx] > 0) {
+                        this.walkableCells.push({
+                            x: this.x0 + gx * this.cellW,
+                            y: this.y0 + gy * this.cellH,
+                            dist: this.sdf[idx]
+                        });
+                    }
                 }
             }
         }
@@ -490,7 +515,7 @@ class ProceduralArena {
         const gy = (y - this.y0) / this.cellH;
 
         if (gx <= 0.5 || gx >= this.cols - 1.5 || gy <= 0.5 || gy >= this.rows - 1.5) {
-            return -20;
+            return -20 * this.scale;
         }
 
         const ix = Math.floor(gx);
@@ -509,7 +534,7 @@ class ProceduralArena {
     }
 
     getNormal(x, y) {
-        const eps = 3.5;
+        const eps = Math.max(1, 3.5 * this.scale);
         const dx = this.getDistance(x + eps, y) - this.getDistance(x - eps, y);
         const dy = this.getDistance(x, y + eps) - this.getDistance(x, y - eps);
         const len = Math.hypot(dx, dy);
@@ -525,10 +550,13 @@ class ProceduralArena {
     }
 
     getRandomSafeSpawn(minClearance) {
-        const req = minClearance || 35;
+        const req = (minClearance != null ? minClearance : 35) * this.scale;
         let viable = this.walkableCells.filter(c => c.dist >= req);
         if (viable.length === 0) {
-            viable = this.walkableCells.filter(c => c.dist >= 24);
+            viable = this.walkableCells.filter(c => c.dist >= 24 * this.scale);
+        }
+        if (viable.length === 0) {
+            viable = this.walkableCells.filter(c => c.dist > 0);
         }
         if (viable.length > 0) {
             const pick = viable[Math.floor(Math.random() * viable.length)];
@@ -539,7 +567,7 @@ class ProceduralArena {
         for (let i = 1; i < this.walkableCells.length; i++) {
             if (this.walkableCells[i].dist > (best ? best.dist : 0)) best = this.walkableCells[i];
         }
-        return { x: best ? best.x : this.x0 + 100, y: best ? best.y : this.y0 + 100 };
+        return { x: best ? best.x : this.x0 + 100 * this.scale, y: best ? best.y : this.y0 + 100 * this.scale };
     }
 }
 
@@ -550,8 +578,9 @@ class BumperBrawl {
     constructor(ctx) {
         this.ctx = ctx || C;
         this.id = 'brawl';
-        this.view = C.view || { w: 1280, h: 720 };
-        this.arena = new ProceduralArena(this.view);
+        this.view = (this.ctx && this.ctx.view) || C.view || { w: 1280, h: 720 };
+        const s = this.getScale();
+        this.arena = new ProceduralArena(this.view, s);
 
         this.entities = {};
         this.regularOrbs = [];
@@ -589,15 +618,45 @@ class BumperBrawl {
         requestAnimationFrame(this.draw);
     }
 
+    getScale() {
+        if (this.view && typeof this.view.scale === 'number' && this.view.scale > 0) {
+            return this.view.scale;
+        }
+        if (this.ctx && this.ctx.view && typeof this.ctx.view.scale === 'number' && this.ctx.view.scale > 0) {
+            return this.ctx.view.scale;
+        }
+        if (C && typeof C.scale === 'number' && C.scale > 0) {
+            return C.scale;
+        }
+        const v = this.view || (this.ctx && this.ctx.view) || C.view;
+        if (v && typeof v.w === 'number' && typeof v.h === 'number' && v.w > 0 && v.h > 0) {
+            return Math.min(v.w / 1280, v.h / 720);
+        }
+        return 1;
+    }
+
+    getPlayerR() {
+        return Math.max(8, BASE_PLAYER_R * this.getScale());
+    }
+
+    getOrbR() {
+        return Math.max(5, BASE_ORB_R * this.getScale());
+    }
+
+    getSpecialCoinR() {
+        return Math.max(7, BASE_SPECIAL_COIN_R * this.getScale());
+    }
+
     /* ---------- Spawn & Coin Logic ---------------------------------------- */
 
     spawnRegularOrbs(n) {
+        const orbR = this.getOrbR();
         for (let i = 0; i < n; i++) {
             const pt = this.arena.getRandomSafeSpawn(36);
             this.regularOrbs.push({
                 x: pt.x,
                 y: pt.y,
-                r: 14,
+                r: orbR,
                 phase: Math.random() * Math.PI * 2
             });
         }
@@ -609,7 +668,7 @@ class BumperBrawl {
             type: type,
             x: pt.x,
             y: pt.y,
-            r: 21,
+            r: this.getSpecialCoinR(),
             phase: Math.random() * Math.PI * 2,
             spawnedAt: performance.now()
         };
@@ -633,10 +692,12 @@ class BumperBrawl {
     sync() {
         const players = (this.ctx && this.ctx.players) || C.players || {};
         const pKeys = Object.keys(players);
+        const playerR = this.getPlayerR();
 
         pKeys.forEach((id) => {
             if (this.entities[id]) {
                 this.entities[id].player = players[id];
+                this.entities[id].r = playerR;
                 return;
             }
             const pt = this.arena.getRandomSafeSpawn(46);
@@ -647,7 +708,7 @@ class BumperBrawl {
                 y: pt.y,
                 vx: 0,
                 vy: 0,
-                r: ARENA_CONFIG.playerR,
+                r: playerR,
                 boost: 0,
                 bob: Math.random() * Math.PI * 2,
                 hit: 0,
@@ -675,13 +736,51 @@ class BumperBrawl {
     /* ---------- Lifecycle ------------------------------------------------- */
 
     onResize(view) {
+        const oldW = (this.view && this.view.w) || 1280;
+        const oldH = (this.view && this.view.h) || 720;
         this.view = view;
-        this.arena = new ProceduralArena(view);
+        const s = this.getScale();
+        this.arena = new ProceduralArena(view, s, this.arena ? this.arena.archetype : undefined);
+
+        const ratioX = (view.w && oldW) ? view.w / oldW : 1;
+        const ratioY = (view.h && oldH) ? view.h / oldH : 1;
+
+        const newPlayerR = this.getPlayerR();
+        const newOrbR = this.getOrbR();
+        const newSpecialR = this.getSpecialCoinR();
+
         Object.values(this.entities).forEach(e => {
+            e.r = newPlayerR;
+            e.x *= ratioX;
+            e.y *= ratioY;
             if (this.arena.getDistance(e.x, e.y) < e.r) {
                 const pt = this.arena.getRandomSafeSpawn(46);
                 e.x = pt.x;
                 e.y = pt.y;
+            }
+        });
+
+        this.regularOrbs.forEach(orb => {
+            if (!orb) return;
+            orb.r = newOrbR;
+            orb.x *= ratioX;
+            orb.y *= ratioY;
+            if (this.arena.getDistance(orb.x, orb.y) < orb.r) {
+                const pt = this.arena.getRandomSafeSpawn(36);
+                orb.x = pt.x;
+                orb.y = pt.y;
+            }
+        });
+
+        this.specialCoins.forEach(coin => {
+            if (!coin) return;
+            coin.r = newSpecialR;
+            coin.x *= ratioX;
+            coin.y *= ratioY;
+            if (this.arena.getDistance(coin.x, coin.y) < coin.r) {
+                const pt = this.arena.getRandomSafeSpawn(44);
+                coin.x = pt.x;
+                coin.y = pt.y;
             }
         });
     }
@@ -792,7 +891,7 @@ class BumperBrawl {
         this.regularOrbs = this.regularOrbs.filter(Boolean);
         while (this.regularOrbs.length < targetOrbs) {
             const pt = this.arena.getRandomSafeSpawn(36);
-            this.regularOrbs.push({ x: pt.x, y: pt.y, r: 14, phase: Math.random() * Math.PI * 2 });
+            this.regularOrbs.push({ x: pt.x, y: pt.y, r: this.getOrbR(), phase: Math.random() * Math.PI * 2 });
         }
 
         // Update particle lifetimes
@@ -812,13 +911,14 @@ class BumperBrawl {
             if (loop && loop.length > 0) {
                 const pt = loop[Math.floor(Math.random() * loop.length)];
                 const n = this.arena.getNormal(pt.x, pt.y);
+                const s = this.getScale();
                 this.particles.push({
                     type: 'ember',
                     x: pt.x,
                     y: pt.y,
-                    vx: n.nx * (0.8 + Math.random() * 1.5) + (Math.random() - 0.5) * 1.2,
-                    vy: n.ny * (0.8 + Math.random() * 1.5) + (Math.random() - 0.5) * 1.2,
-                    r: 2.5 + Math.random() * 3,
+                    vx: (n.nx * (0.8 + Math.random() * 1.5) + (Math.random() - 0.5) * 1.2) * s,
+                    vy: (n.ny * (0.8 + Math.random() * 1.5) + (Math.random() - 0.5) * 1.2) * s,
+                    r: (2.5 + Math.random() * 3) * s,
                     life: 700 + Math.random() * 500,
                     maxLife: 1200,
                     color: Math.random() < 0.5 ? '#ff3700' : '#ffaa00'
@@ -837,6 +937,7 @@ class BumperBrawl {
 
     stepPhysics(k, now, isLavaActive) {
         const eKeys = Object.keys(this.entities);
+        const s = this.getScale();
 
         eKeys.forEach(id => {
             const e = this.entities[id];
@@ -846,6 +947,7 @@ class BumperBrawl {
                     const pt = this.arena.getRandomSafeSpawn(44);
                     e.x = pt.x;
                     e.y = pt.y;
+                    e.r = this.getPlayerR();
                     e.vx = 0;
                     e.vy = 0;
                     e.invulnerableUntil = now + 3500;
@@ -875,15 +977,15 @@ class BumperBrawl {
                 const mLen = Math.hypot(moveX, moveY);
                 if (mLen > 0.05) {
                     const normFactor = mLen > 1 ? 1 / mLen : 1;
-                    e.vx += moveX * normFactor * ARENA_CONFIG.accel * k;
-                    e.vy += moveY * normFactor * ARENA_CONFIG.accel * k;
+                    e.vx += moveX * normFactor * ARENA_CONFIG.accel * s * k;
+                    e.vy += moveY * normFactor * ARENA_CONFIG.accel * s * k;
                 }
 
                 if (e.boost > 0) {
                     const speed = Math.hypot(e.vx, e.vy);
-                    if (speed > 0.6) {
-                        e.vx += (e.vx / speed) * e.boost * 0.55;
-                        e.vy += (e.vy / speed) * e.boost * 0.55;
+                    if (speed > 0.6 * s) {
+                        e.vx += (e.vx / speed) * e.boost * 0.55 * s;
+                        e.vy += (e.vy / speed) * e.boost * 0.55 * s;
                     }
                     e.boost = Math.max(0, e.boost - k);
                 }
@@ -896,7 +998,7 @@ class BumperBrawl {
             e.vy *= drag;
 
             // Speed clamp
-            const maxSpd = e.knockPowerUntil > now ? ARENA_CONFIG.maxSpeed * 1.3 : ARENA_CONFIG.maxSpeed;
+            const maxSpd = (e.knockPowerUntil > now ? ARENA_CONFIG.maxSpeed * 1.3 : ARENA_CONFIG.maxSpeed) * s;
             const speed = Math.hypot(e.vx, e.vy);
             if (speed > maxSpd) {
                 e.vx = (e.vx / speed) * maxSpd;
@@ -907,8 +1009,8 @@ class BumperBrawl {
             e.y += e.vy * k;
 
             // Stage boundary clamp safety
-            e.x = Math.max(30, Math.min(this.view.w - 30, e.x));
-            e.y = Math.max(65, Math.min(this.view.h - 35, e.y));
+            e.x = Math.max(30 * s, Math.min(this.view.w - 30 * s, e.x));
+            e.y = Math.max(65 * s, Math.min(this.view.h - 35 * s, e.y));
 
             // Collision with Procedural Arena Walls & Dead Islands via SDF
             const dist = this.arena.getDistance(e.x, e.y);
@@ -917,7 +1019,7 @@ class BumperBrawl {
                 const pen = e.r - dist;
 
                 // Push position out along normal with pushout limit to prevent pinballing
-                const push = Math.min(pen, 12);
+                const push = Math.min(pen, 12 * s);
                 e.x += normal.nx * push;
                 e.y += normal.ny * push;
 
@@ -929,7 +1031,7 @@ class BumperBrawl {
                     e.vx -= (1 + ARENA_CONFIG.restitution) * nVx;
                     e.vy -= (1 + ARENA_CONFIG.restitution) * nVy;
 
-                    if (Math.abs(vdot) > 5) {
+                    if (Math.abs(vdot) > 5 * s) {
                         C.tone(isFrozen ? 1100 : 180, 60, isFrozen ? 'sine' : 'square');
                         C.vibrate(id, 25);
                     }
@@ -946,20 +1048,21 @@ class BumperBrawl {
             for (let i = 0; i < this.regularOrbs.length; i++) {
                 const orb = this.regularOrbs[i];
                 if (!orb) continue;
-                if (Math.hypot(e.x - orb.x, e.y - orb.y) < e.r + orb.r + 3) {
+                if (Math.hypot(e.x - orb.x, e.y - orb.y) < e.r + orb.r + 3 * s) {
                     this.scores[id] = (this.scores[id] || 0) + 10;
                     C.tone(920, 110, 'sine');
                     C.vibrate(id, 35);
                     C.toController(id, { type: 'score_update', score: this.scores[id] });
                     const pt = this.arena.getRandomSafeSpawn(36);
-                    this.regularOrbs[i] = { x: pt.x, y: pt.y, r: 14, phase: Math.random() * Math.PI * 2 };
+                    this.regularOrbs[i] = { x: pt.x, y: pt.y, r: this.getOrbR(), phase: Math.random() * Math.PI * 2 };
                 }
             }
 
             // Scoop Special Coins
             for (let i = this.specialCoins.length - 1; i >= 0; i--) {
                 const coin = this.specialCoins[i];
-                if (Math.hypot(e.x - coin.x, e.y - coin.y) < e.r + coin.r + 4) {
+                if (!coin) continue;
+                if (Math.hypot(e.x - coin.x, e.y - coin.y) < e.r + coin.r + 4 * s) {
                     this.collectSpecialCoin(e, coin, now);
                     this.specialCoins.splice(i, 1);
                 }
@@ -1005,10 +1108,10 @@ class BumperBrawl {
                     const aHasKnock = a.knockPowerUntil > now;
                     const bHasKnock = b.knockPowerUntil > now;
 
-                    let baseImpulse = Math.max(6, Math.abs(rel) * 1.15);
+                    let baseImpulse = Math.max(6 * s, Math.abs(rel) * 1.15);
                     if (aHasKnock || bHasKnock) {
-                        baseImpulse = 48 + Math.abs(rel) * 1.4;
-                        this.screenShake = 16;
+                        baseImpulse = 48 * s + Math.abs(rel) * 1.4;
+                        this.screenShake = 16 * s;
                         C.sound.tone(68, 260, 'sawtooth');
                         this.spawnShockwave((a.x + b.x) * 0.5, (a.y + b.y) * 0.5, '#f43f5e');
 
@@ -1037,7 +1140,7 @@ class BumperBrawl {
                         a.vy -= ny * baseImpulse;
                         b.vx += nx * baseImpulse;
                         b.vy += ny * baseImpulse;
-                        if (Math.abs(rel) > 3) {
+                        if (Math.abs(rel) > 3 * s) {
                             C.tone(150, 70, 'square');
                             C.vibrate('all', 30);
                         }
@@ -1101,16 +1204,17 @@ class BumperBrawl {
             }
         }, FREEZE_HIT_DURATION_MS);
 
+        const s = this.getScale();
         for (let i = 0; i < 16; i++) {
             const ang = (i / 16) * Math.PI * 2;
-            const spd = 2 + Math.random() * 4;
+            const spd = (2 + Math.random() * 4) * s;
             this.particles.push({
                 type: 'frost',
                 x: victim.x,
                 y: victim.y,
                 vx: Math.cos(ang) * spd,
                 vy: Math.sin(ang) * spd,
-                r: 3 + Math.random() * 3,
+                r: (3 + Math.random() * 3) * s,
                 life: 600 + Math.random() * 400,
                 maxLife: 1000,
                 color: Math.random() < 0.6 ? '#38bdf8' : '#ffffff'
@@ -1119,6 +1223,7 @@ class BumperBrawl {
     }
 
     killPlayerWithLava(player, now) {
+        const s = this.getScale();
         player.dead = true;
         player.respawnAt = now + 2400;
         player.vx = 0;
@@ -1126,7 +1231,7 @@ class BumperBrawl {
 
         C.chord([160, 110, 80], 350, 'sawtooth');
         C.vibrate(player.id, 450);
-        this.screenShake = 14;
+        this.screenShake = 14 * s;
 
         if (player.lastHitBy && (now - player.lastHitAt < 4000) && player.lastHitBy !== player.id) {
             const killer = this.entities[player.lastHitBy];
@@ -1147,14 +1252,14 @@ class BumperBrawl {
 
         for (let i = 0; i < 28; i++) {
             const ang = Math.random() * Math.PI * 2;
-            const spd = 2 + Math.random() * 6;
+            const spd = (2 + Math.random() * 6) * s;
             this.particles.push({
                 type: 'fire',
                 x: player.x,
                 y: player.y,
                 vx: Math.cos(ang) * spd,
                 vy: Math.sin(ang) * spd,
-                r: 4 + Math.random() * 5,
+                r: (4 + Math.random() * 5) * s,
                 life: 650 + Math.random() * 500,
                 maxLife: 1150,
                 color: Math.random() < 0.4 ? '#ff2200' : Math.random() < 0.7 ? '#ff7700' : '#ffea00'
@@ -1163,14 +1268,15 @@ class BumperBrawl {
     }
 
     spawnShockwave(x, y, color) {
+        const s = this.getScale();
         this.particles.push({
             type: 'shockwave',
             x: x,
             y: y,
             vx: 0,
             vy: 0,
-            r: 10,
-            maxR: 90,
+            r: 10 * s,
+            maxR: 90 * s,
             life: 400,
             maxLife: 400,
             color: color || '#ffffff'
@@ -1217,9 +1323,10 @@ class BumperBrawl {
 
         // 1. Render Walkable Arena Floor
         g.save();
+        const s = this.getScale();
         const cx = view.w * 0.5;
         const cy = view.h * 0.5;
-        const floorGrad = g.createRadialGradient(cx, cy, 60, cx, cy, Math.max(view.w, view.h) * 0.65);
+        const floorGrad = g.createRadialGradient(cx, cy, 60 * s, cx, cy, Math.max(view.w, view.h) * 0.65);
         if (isLava) {
             floorGrad.addColorStop(0, 'rgba(45, 15, 12, 0.55)');
             floorGrad.addColorStop(0.7, 'rgba(25, 8, 8, 0.9)');
@@ -1237,8 +1344,8 @@ class BumperBrawl {
         g.clip(this.arena.arenaPath, 'evenodd');
         g.globalAlpha = isLava ? 0.12 : 0.08;
         g.strokeStyle = isLava ? '#ff4500' : '#60a5fa';
-        g.lineWidth = 1;
-        const gridStep = 48;
+        g.lineWidth = Math.max(1, 1 * s);
+        const gridStep = Math.max(16, Math.round(48 * s));
         for (let x = 0; x < view.w; x += gridStep) {
             g.beginPath(); g.moveTo(x, 0); g.lineTo(x, view.h); g.stroke();
         }
@@ -1260,7 +1367,7 @@ class BumperBrawl {
                 g.fillStyle = 'rgba(6, 9, 18, 0.96)';
                 g.fill(islPath);
 
-                g.lineWidth = 2.5;
+                g.lineWidth = Math.max(1.5, 2.5 * s);
                 g.strokeStyle = isLava ? 'rgba(255, 69, 0, 0.65)' : 'rgba(56, 189, 248, 0.35)';
                 g.stroke(islPath);
                 g.restore();
@@ -1271,94 +1378,96 @@ class BumperBrawl {
         g.save();
         if (isLava) {
             const lavaPulse = Math.sin(now / 95) * 0.5 + 0.5;
-            g.lineWidth = 7 + lavaPulse * 4;
+            g.lineWidth = Math.max(2, (7 + lavaPulse * 4) * s);
             g.strokeStyle = '#ff2200';
             g.shadowColor = '#ff3300';
-            g.shadowBlur = 34 + lavaPulse * 16;
+            g.shadowBlur = (34 + lavaPulse * 16) * s;
             g.stroke(this.arena.arenaPath);
 
-            g.lineWidth = 3 + lavaPulse * 2;
+            g.lineWidth = Math.max(1.5, (3 + lavaPulse * 2) * s);
             g.strokeStyle = '#ffea00';
             g.shadowColor = '#ff9900';
-            g.shadowBlur = 12;
+            g.shadowBlur = 12 * s;
             g.stroke(this.arena.arenaPath);
         } else {
-            g.lineWidth = 4.5;
+            g.lineWidth = Math.max(2, 4.5 * s);
             const isSudden = this.phase === 'sudden';
             g.strokeStyle = isSudden ? 'rgba(244,63,94,0.95)' : 'rgba(56,189,248,0.9)';
             g.shadowColor = isSudden ? '#f43f5e' : '#38bdf8';
-            g.shadowBlur = 20;
+            g.shadowBlur = 20 * s;
             g.stroke(this.arena.arenaPath);
         }
         g.restore();
 
         // 4. Regular Energy Orbs
         this.regularOrbs.forEach(orb => {
+            if (!orb) return;
             const pulse = 1 + Math.sin(now / 300 + orb.phase) * 0.14;
             g.save();
             T.circle(g, orb.x, orb.y, orb.r * pulse);
             g.fillStyle = '#fbbf24';
             g.shadowColor = '#f59e0b';
-            g.shadowBlur = 20;
+            g.shadowBlur = 20 * s;
             g.fill();
             g.restore();
         });
 
         // 5. Special Power Coins
         this.specialCoins.forEach(coin => {
+            if (!coin) return;
             const pulse = 1 + Math.sin(now / 220 + coin.phase) * 0.16;
             const r = coin.r * pulse;
             g.save();
 
             if (coin.type === 'freeze') {
                 g.shadowColor = '#06b6d4';
-                g.shadowBlur = 26;
+                g.shadowBlur = 26 * s;
                 T.circle(g, coin.x, coin.y, r);
                 g.fillStyle = '#0284c7';
                 g.fill();
 
                 g.strokeStyle = '#e0f2fe';
-                g.lineWidth = 2.5;
+                g.lineWidth = Math.max(1.5, 2.5 * s);
                 g.stroke();
 
                 const rot = now / 400;
                 for (let k = 0; k < 4; k++) {
                     const ang = rot + (k * Math.PI) / 2;
-                    const sx = coin.x + Math.cos(ang) * (r + 4);
-                    const sy = coin.y + Math.sin(ang) * (r + 4);
-                    T.circle(g, sx, sy, 3.5);
+                    const sx = coin.x + Math.cos(ang) * (r + 4 * s);
+                    const sy = coin.y + Math.sin(ang) * (r + 4 * s);
+                    T.circle(g, sx, sy, Math.max(1.5, 3.5 * s));
                     g.fillStyle = '#bae6fd';
                     g.fill();
                 }
 
-                T.label('❄️', coin.x, coin.y + 1, { size: 16 });
-                T.label('FREEZE', coin.x, coin.y - r - 12, { size: 11, weight: 800, color: '#38bdf8' });
+                T.label('❄️', coin.x, coin.y + 1 * s, { size: Math.max(8, Math.round(16 * s)) });
+                T.label('FREEZE', coin.x, coin.y - r - 12 * s, { size: Math.max(7, Math.round(11 * s)), weight: 800, color: '#38bdf8' });
             } else if (coin.type === 'knock') {
                 g.shadowColor = '#f43f5e';
-                g.shadowBlur = 28;
+                g.shadowBlur = 28 * s;
                 T.circle(g, coin.x, coin.y, r);
                 g.fillStyle = '#be123c';
                 g.fill();
 
                 g.strokeStyle = '#fda4af';
-                g.lineWidth = 2.5;
+                g.lineWidth = Math.max(1.5, 2.5 * s);
                 g.stroke();
 
-                T.label('⚡', coin.x, coin.y + 1, { size: 17 });
-                T.label('MEGA KNOCK', coin.x, coin.y - r - 12, { size: 11, weight: 800, color: '#fb7185' });
+                T.label('⚡', coin.x, coin.y + 1 * s, { size: Math.max(8, Math.round(17 * s)) });
+                T.label('MEGA KNOCK', coin.x, coin.y - r - 12 * s, { size: Math.max(7, Math.round(11 * s)), weight: 800, color: '#fb7185' });
             } else if (coin.type === 'lava') {
                 g.shadowColor = '#ff4500';
-                g.shadowBlur = 32;
+                g.shadowBlur = 32 * s;
                 T.circle(g, coin.x, coin.y, r);
                 g.fillStyle = '#c2410c';
                 g.fill();
 
                 g.strokeStyle = '#fed7aa';
-                g.lineWidth = 2.5;
+                g.lineWidth = Math.max(1.5, 2.5 * s);
                 g.stroke();
 
-                T.label('🔥', coin.x, coin.y + 1, { size: 17 });
-                T.label('LAVA WALLS', coin.x, coin.y - r - 12, { size: 11, weight: 800, color: '#ff6b35' });
+                T.label('🔥', coin.x, coin.y + 1 * s, { size: Math.max(8, Math.round(17 * s)) });
+                T.label('LAVA WALLS', coin.x, coin.y - r - 12 * s, { size: Math.max(7, Math.round(11 * s)), weight: 800, color: '#ff6b35' });
             }
             g.restore();
         });
@@ -1374,7 +1483,7 @@ class BumperBrawl {
                 g.beginPath();
                 g.arc(p.x, p.y, cr, 0, Math.PI * 2);
                 g.strokeStyle = p.color;
-                g.lineWidth = 4 * (1 - prog);
+                g.lineWidth = Math.max(1, 4 * (1 - prog) * s);
                 g.stroke();
             } else {
                 T.circle(g, p.x, p.y, p.r * alpha);
@@ -1398,35 +1507,35 @@ class BumperBrawl {
             // Hit ripple ring
             if (e.hit > 0.02) {
                 g.save();
-                T.circle(g, e.x, e.y, e.r + 20 * e.hit);
+                T.circle(g, e.x, e.y, e.r + 20 * s * e.hit);
                 g.strokeStyle = 'rgba(255,255,255,' + (0.55 * e.hit) + ')';
-                g.lineWidth = 3;
+                g.lineWidth = Math.max(1.5, 3 * s);
                 g.stroke();
                 g.restore();
                 e.hit *= 0.88;
             }
 
-            const wobble = Math.sin(now / 260 + e.bob) * 2;
-            const r = e.r + (e.boost > 0 ? e.boost * 0.5 : 0) + wobble * 0.3;
+            const wobble = Math.sin(now / 260 + e.bob) * 2 * s;
+            const r = e.r + (e.boost > 0 ? e.boost * 0.5 * s : 0) + wobble * 0.3;
 
             // Player Aura (Freeze / Knock Power)
             if (hasFreeze) {
                 g.save();
-                T.circle(g, e.x, e.y, r + 8 + Math.sin(now / 150) * 3);
+                T.circle(g, e.x, e.y, r + 8 * s + Math.sin(now / 150) * 3 * s);
                 g.strokeStyle = 'rgba(56, 189, 248, 0.75)';
-                g.lineWidth = 3;
+                g.lineWidth = Math.max(1.5, 3 * s);
                 g.shadowColor = '#38bdf8';
-                g.shadowBlur = 18;
+                g.shadowBlur = 18 * s;
                 g.stroke();
                 g.restore();
             }
             if (hasKnock) {
                 g.save();
-                T.circle(g, e.x, e.y, r + 8 + Math.sin(now / 110) * 3);
+                T.circle(g, e.x, e.y, r + 8 * s + Math.sin(now / 110) * 3 * s);
                 g.strokeStyle = 'rgba(244, 63, 94, 0.85)';
-                g.lineWidth = 3;
+                g.lineWidth = Math.max(1.5, 3 * s);
                 g.shadowColor = '#f43f5e';
-                g.shadowBlur = 22;
+                g.shadowBlur = 22 * s;
                 g.stroke();
                 g.restore();
             }
@@ -1434,12 +1543,12 @@ class BumperBrawl {
             // Invulnerability shield bubble
             if (isInvuln) {
                 g.save();
-                const shPulse = Math.sin(now / 120) * 2;
-                T.circle(g, e.x, e.y, r + 10 + shPulse);
+                const shPulse = Math.sin(now / 120) * 2 * s;
+                T.circle(g, e.x, e.y, r + 10 * s + shPulse);
                 g.strokeStyle = 'rgba(251, 191, 36, 0.85)';
-                g.lineWidth = 3;
+                g.lineWidth = Math.max(1.5, 3 * s);
                 g.shadowColor = '#fbbf24';
-                g.shadowBlur = 16;
+                g.shadowBlur = 16 * s;
                 g.stroke();
                 g.restore();
             }
@@ -1447,12 +1556,12 @@ class BumperBrawl {
             // Player Body
             g.save();
             g.shadowColor = p.color;
-            g.shadowBlur = e.boost > 0 ? 32 : 16;
+            g.shadowBlur = (e.boost > 0 ? 32 : 16) * s;
             T.circle(g, e.x, e.y, r);
             g.fillStyle = p.color;
             g.fill();
             g.shadowBlur = 0;
-            g.lineWidth = 3.5;
+            g.lineWidth = Math.max(1.5, 3.5 * s);
             g.strokeStyle = 'rgba(255,255,255,0.92)';
             g.stroke();
             g.restore();
@@ -1463,66 +1572,67 @@ class BumperBrawl {
 
             if (isImg) {
                 const img = getAvatarImg(p.avatar);
+                const inset = Math.max(1.5, 3 * s);
                 if (img && img.complete && img.naturalWidth > 0) {
                     g.save();
                     g.beginPath();
-                    g.arc(e.x, e.y, r - 3, 0, Math.PI * 2);
+                    g.arc(e.x, e.y, Math.max(1, r - inset), 0, Math.PI * 2);
                     g.clip();
-                    g.drawImage(img, e.x - r + 3, e.y - r + 3, (r - 3) * 2, (r - 3) * 2);
+                    g.drawImage(img, e.x - r + inset, e.y - r + inset, (r - inset) * 2, (r - inset) * 2);
                     g.restore();
                 } else {
-                    g.font = '24px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                    g.font = Math.max(10, Math.round(24 * s)) + 'px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
                     g.textAlign = 'center';
                     g.textBaseline = 'middle';
-                    g.fillText('👤', e.x, e.y + 1);
+                    g.fillText('👤', e.x, e.y + 1 * s);
                 }
             } else {
-                g.font = '26px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+                g.font = Math.max(10, Math.round(26 * s)) + 'px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
                 g.textAlign = 'center';
                 g.textBaseline = 'middle';
-                g.fillText(p.avatar || '🎮', e.x, e.y + 1);
+                g.fillText(p.avatar || '🎮', e.x, e.y + 1 * s);
             }
 
             // FROZEN ICE BLOCK OVERLAY
             if (isFrozen) {
                 g.save();
-                const iceR = r + 6;
-                T.roundRect(g, e.x - iceR, e.y - iceR, iceR * 2, iceR * 2, 8);
+                const iceR = r + 6 * s;
+                T.roundRect(g, e.x - iceR, e.y - iceR, iceR * 2, iceR * 2, 8 * s);
                 g.fillStyle = 'rgba(186, 230, 253, 0.45)';
                 g.fill();
-                g.lineWidth = 3;
+                g.lineWidth = Math.max(1.5, 3 * s);
                 g.strokeStyle = '#bae6fd';
                 g.shadowColor = '#38bdf8';
-                g.shadowBlur = 18;
+                g.shadowBlur = 18 * s;
                 g.stroke();
 
                 // Cracking frost lines
                 g.beginPath();
                 g.moveTo(e.x - iceR * 0.6, e.y - iceR * 0.4);
-                g.lineTo(e.x - 2, e.y + 3);
+                g.lineTo(e.x - 2 * s, e.y + 3 * s);
                 g.lineTo(e.x + iceR * 0.7, e.y - iceR * 0.2);
                 g.strokeStyle = '#ffffff';
-                g.lineWidth = 2;
+                g.lineWidth = Math.max(1, 2 * s);
                 g.stroke();
 
                 const secLeft = ((e.frozenUntil - now) / 1000).toFixed(1);
-                T.label(`❄️ ${secLeft}s`, e.x, e.y - r - 48, { size: 14, weight: 800, color: '#38bdf8' });
+                T.label(`❄️ ${secLeft}s`, e.x, e.y - r - 48 * s, { size: Math.max(9, Math.round(14 * s)), weight: 800, color: '#38bdf8' });
                 g.restore();
             }
 
             // Power labels
             if (hasFreeze) {
-                T.label('❄️ FREEZE', e.x, e.y + r + 16, { size: 11, weight: 800, color: '#38bdf8' });
+                T.label('❄️ FREEZE', e.x, e.y + r + 16 * s, { size: Math.max(8, Math.round(11 * s)), weight: 800, color: '#38bdf8' });
             } else if (hasKnock) {
-                T.label('⚡ MEGA KNOCK', e.x, e.y + r + 16, { size: 11, weight: 800, color: '#fb7185' });
+                T.label('⚡ MEGA KNOCK', e.x, e.y + r + 16 * s, { size: Math.max(8, Math.round(11 * s)), weight: 800, color: '#fb7185' });
             }
 
             // Name & Score labels
-            T.label(p.name.toUpperCase(), e.x, e.y - r - 16, {
-                size: 12, weight: 600, color: 'rgba(255,255,255,0.85)'
+            T.label(p.name.toUpperCase(), e.x, e.y - r - 16 * s, {
+                size: Math.max(9, Math.round(12 * s)), weight: 600, color: 'rgba(255,255,255,0.85)'
             });
-            T.label(String(Math.round(this.scores[id] || 0)), e.x, e.y - r - 32, {
-                size: 18, color: '#fbbf24'
+            T.label(String(Math.round(this.scores[id] || 0)), e.x, e.y - r - 32 * s, {
+                size: Math.max(11, Math.round(18 * s)), color: '#fbbf24'
             });
         });
 
@@ -1531,8 +1641,8 @@ class BumperBrawl {
             const e = this.entities[id];
             if (e.dead) {
                 const sec = Math.max(0, ((e.respawnAt - now) / 1000)).toFixed(1);
-                T.label(`💀 ${e.player.name} RESPAWNING IN ${sec}s...`, view.w * 0.5, view.h * 0.5 + 40, {
-                    size: 14, weight: 700, color: '#ff4500'
+                T.label(`💀 ${e.player.name} RESPAWNING IN ${sec}s...`, view.w * 0.5, view.h * 0.5 + 40 * s, {
+                    size: Math.max(10, Math.round(14 * s)), weight: 700, color: '#ff4500'
                 });
             }
         });
@@ -1543,52 +1653,53 @@ class BumperBrawl {
     }
 
     renderHud(g, view, now) {
+        const s = this.getScale();
         const left = Math.max(0, Math.ceil((this.matchEndsAt - now) / 1000));
         const mm = String(Math.floor(left / 60)).padStart(2, '0');
         const ss = String(left % 60).padStart(2, '0');
 
         const isLava = this.lavaWallsEndsAt > now;
 
-        T.label(mm + ':' + ss, view.w * 0.5, 36, {
-            size: 40, color: (left <= 15 || isLava) ? '#f43f5e' : 'rgba(255,255,255,0.92)'
+        T.label(mm + ':' + ss, view.w * 0.5, 36 * s, {
+            size: Math.max(18, Math.round(40 * s)), color: (left <= 15 || isLava) ? '#f43f5e' : 'rgba(255,255,255,0.92)'
         });
 
         // Global Banner: Lava Walls Active or Sudden Death
         if (isLava) {
             const lavaSec = Math.max(0, ((this.lavaWallsEndsAt - now) / 1000)).toFixed(1);
             g.save();
-            const bw = 340;
-            const bh = 32;
+            const bw = 340 * s;
+            const bh = 32 * s;
             const bx = view.w * 0.5 - bw * 0.5;
-            const by = 58;
-            T.roundRect(g, bx, by, bw, bh, 6);
+            const by = 58 * s;
+            T.roundRect(g, bx, by, bw, bh, 6 * s);
             g.fillStyle = 'rgba(220, 38, 38, 0.85)';
             g.shadowColor = '#ff2200';
-            g.shadowBlur = 18;
+            g.shadowBlur = 18 * s;
             g.fill();
-            g.lineWidth = 2;
+            g.lineWidth = Math.max(1.5, 2 * s);
             g.strokeStyle = '#ffea00';
             g.stroke();
             g.restore();
 
-            T.label(`🔥 LAVA WALLS ACTIVE! ${lavaSec}s 🔥`, view.w * 0.5, 74, {
-                size: 14, weight: 800, color: '#ffffff'
+            T.label(`🔥 LAVA WALLS ACTIVE! ${lavaSec}s 🔥`, view.w * 0.5, 74 * s, {
+                size: Math.max(9, Math.round(14 * s)), weight: 800, color: '#ffffff'
             });
         } else if (this.phase === 'sudden') {
-            T.label('SUDDEN DEATH', view.w * 0.5, 70, { size: 14, weight: 800, color: '#f43f5e' });
+            T.label('SUDDEN DEATH', view.w * 0.5, 70 * s, { size: Math.max(9, Math.round(14 * s)), weight: 800, color: '#f43f5e' });
         }
 
         // Active Toasts / Killfeed (top-left)
         const activeToasts = this.toasts.filter(t => t.expiresAt > now);
         activeToasts.forEach((t, i) => {
-            const y = 28 + i * 26;
+            const y = (28 + i * 26) * s;
             g.save();
             g.globalAlpha = Math.min(1, (t.expiresAt - now) / 400);
-            T.roundRect(g, 28, y - 10, 290, 22, 6);
+            T.roundRect(g, 28 * s, y - 10 * s, 290 * s, 22 * s, 6 * s);
             g.fillStyle = 'rgba(6, 12, 28, 0.72)';
             g.fill();
-            T.label(t.text, 36, y + 1, {
-                size: 11, weight: 700, align: 'left', color: t.color
+            T.label(t.text, 36 * s, y + 1 * s, {
+                size: Math.max(8, Math.round(11 * s)), weight: 700, align: 'left', color: t.color
             });
             g.restore();
         });
@@ -1598,22 +1709,24 @@ class BumperBrawl {
         const top = rows.slice(0, 5);
 
         top.forEach((r, i) => {
-            const y = 28 + i * 28;
+            const y = (28 + i * 28) * s;
+            const rw = 182 * s;
+            const rx = view.w - rw - 28 * s;
             g.save();
             g.globalAlpha = 0.9;
-            T.roundRect(g, view.w - 210, y - 12, 182, 24, 6);
+            T.roundRect(g, rx, y - 12 * s, rw, 24 * s, 6 * s);
             g.fillStyle = 'rgba(6, 10, 24, 0.65)';
             g.fill();
             g.fillStyle = r.color;
-            g.fillRect(view.w - 210, y - 12, 3, 24);
+            g.fillRect(rx, y - 12 * s, 3 * s, 24 * s);
             g.restore();
 
             const rAvatar = (r.avatar && typeof r.avatar === 'string' && r.avatar.startsWith('data:image/')) ? '👤' : (r.avatar || '🎮');
-            T.label(rAvatar + ' ' + r.name, view.w - 200, y, {
-                size: 12, weight: 600, align: 'left', color: 'rgba(255,255,255,0.92)'
+            T.label(rAvatar + ' ' + r.name, rx + 10 * s, y, {
+                size: Math.max(9, Math.round(12 * s)), weight: 600, align: 'left', color: 'rgba(255,255,255,0.92)'
             });
-            T.label(String(r.score), view.w - 40, y, {
-                size: 14, align: 'right', color: '#fbbf24'
+            T.label(String(r.score), rx + rw - 12 * s, y, {
+                size: Math.max(10, Math.round(14 * s)), align: 'right', color: '#fbbf24'
             });
         });
     }
