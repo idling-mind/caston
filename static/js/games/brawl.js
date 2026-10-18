@@ -876,8 +876,15 @@ class BumperBrawl {
                 title: 'Bumper Brawl',
                 subtitle: '🔥 LAVA WALLS ACTIVE! STAY AWAY FROM WALLS! 🔥'
             });
+            if (this.lavaActivator) {
+                C.setLayout('dpad', {
+                    title: 'Bumper Brawl',
+                    subtitle: '🔥 YOUR LAVA WALLS ARE ACTIVE! You are immune!'
+                }, this.lavaActivator);
+            }
         } else if (!isLavaActive && this.lavaWasActive) {
             this.lavaWasActive = false;
+            this.lavaActivator = null;
             C.setLayout('dpad', {
                 title: 'Bumper Brawl',
                 subtitle: 'Joystick moves · A boosts · Grab special coins!'
@@ -1063,10 +1070,24 @@ class BumperBrawl {
                     }
                 }
 
-                // LETHAL LAVA WALL KILL
-                if (isLavaActive && now > e.invulnerableUntil) {
+                // LETHAL LAVA WALL KILL (Lava activator is immune to their own lava)
+                const isImmuneToLava = (this.lavaActivator === id) || (now <= e.invulnerableUntil);
+                if (isLavaActive && !isImmuneToLava) {
                     this.killPlayerWithLava(e, now);
                     return;
+                } else if (isLavaActive && this.lavaActivator === id && Math.random() < 0.25) {
+                    // Lava activator sparks safely off the lava
+                    this.particles.push({
+                        type: 'ember',
+                        x: e.x,
+                        y: e.y,
+                        vx: normal.nx * (2 + Math.random() * 3) * s,
+                        vy: normal.ny * (2 + Math.random() * 3) * s,
+                        r: (2 + Math.random() * 3) * s,
+                        life: 350 + Math.random() * 250,
+                        maxLife: 600,
+                        color: '#ffea00'
+                    });
                 }
             }
 
@@ -1211,6 +1232,10 @@ class BumperBrawl {
             C.vibrate('all', 120);
             this.addToast(`🔥 ${player.player.name} ACTIVATED LAVA WALLS!`, '#ff4500', 3200);
             this.spawnShockwave(player.x, player.y, '#ff4500');
+            C.setLayout('dpad', {
+                title: 'Bumper Brawl',
+                subtitle: '🔥 YOUR LAVA WALLS ARE ACTIVE! You are immune!'
+            }, id);
         }
     }
 
@@ -1589,6 +1614,20 @@ class BumperBrawl {
                 g.restore();
             }
 
+            // Lava Activator fiery shield aura
+            const isLavaActivator = (this.lavaActivator === e.id) && (this.lavaWallsEndsAt > now);
+            if (isLavaActivator) {
+                g.save();
+                const lavaPulse = Math.sin(now / 110) * 3 * s;
+                T.circle(g, e.x, e.y, r + 9 * s + lavaPulse);
+                g.strokeStyle = 'rgba(255, 69, 0, 0.85)';
+                g.lineWidth = Math.max(1.5, 3 * s);
+                g.shadowColor = '#ff4500';
+                g.shadowBlur = 22 * s;
+                g.stroke();
+                g.restore();
+            }
+
             // Player Body
             g.save();
             g.shadowColor = p.color;
@@ -1661,6 +1700,8 @@ class BumperBrawl {
                 T.label('❄️ FREEZE', e.x, e.y + r + 16 * s, { size: Math.max(8, Math.round(11 * s)), weight: 800, color: '#38bdf8' });
             } else if (hasKnock) {
                 T.label('⚡ MEGA KNOCK', e.x, e.y + r + 16 * s, { size: Math.max(8, Math.round(11 * s)), weight: 800, color: '#fb7185' });
+            } else if (isLavaActivator) {
+                T.label('🔥 LAVA IMMUNE', e.x, e.y + r + 16 * s, { size: Math.max(8, Math.round(11 * s)), weight: 800, color: '#ff4500' });
             }
 
             // Name & Score labels
