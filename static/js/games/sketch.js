@@ -14,9 +14,9 @@ const ROUNDS = 6;
 const REVEAL_MS = 4000;
 
 const POINTS_CONFIG = {
-    easy:   { guessBase: 600, speedBonus: 200, drawer: 350, failDrawer: 150 },
-    medium: { guessBase: 800, speedBonus: 300, drawer: 450, failDrawer: 200 },
-    hard:   { guessBase: 1000, speedBonus: 400, drawer: 600, failDrawer: 300 }
+    easy:   { guessBase: 600, speedBonus: 200, drawer: 350 },
+    medium: { guessBase: 800, speedBonus: 300, drawer: 450 },
+    hard:   { guessBase: 1000, speedBonus: 400, drawer: 600 }
 };
 
 const DEFAULT_WORDS = [
@@ -92,6 +92,8 @@ class SketchGuess {
         this.round = -1;
         this.order = [];
         this.drawerId = null;
+        this.lastDrawerId = null;
+        this.totalRounds = this.calculateTotalRounds();
         this.word = '';
         this.difficulty = 'easy';
         this.category = 'General';
@@ -165,20 +167,53 @@ class SketchGuess {
         return this.wordDecks[targetDifficulty].pop() || DEFAULT_WORDS[0];
     }
 
+    calculateTotalRounds() {
+        const count = Object.keys(C.players).length;
+        if (count <= 1) return ROUNDS;
+        if (count <= 4) return count * 2;
+        return count;
+    }
+
     /* ---------- setup ---------------------------------------------------- */
 
     buildOrder() {
         const ids = Object.keys(C.players);
         this.order = ids.slice();
-        for (let i = this.order.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const tmp = this.order[i]; this.order[i] = this.order[j]; this.order[j] = tmp;
+    }
+
+    getNextDrawerId() {
+        // Ensure any newly joined players are added to the sequential order
+        Object.keys(C.players).forEach(id => {
+            if (!this.order.includes(id)) {
+                this.order.push(id);
+            }
+        });
+
+        if (!this.order.length) return null;
+
+        let startIndex = 0;
+        if (this.lastDrawerId) {
+            const prevIndex = this.order.indexOf(this.lastDrawerId);
+            if (prevIndex !== -1) {
+                startIndex = (prevIndex + 1) % this.order.length;
+            }
         }
+
+        // Search in sequence starting from startIndex for the next connected player
+        for (let i = 0; i < this.order.length; i++) {
+            const idx = (startIndex + i) % this.order.length;
+            const candidateId = this.order[idx];
+            if (C.players[candidateId]) {
+                return candidateId;
+            }
+        }
+        return null;
     }
 
     onPlayersSync() {
         Object.keys(C.players).forEach(id => {
             if (this.scores[id] === undefined) this.scores[id] = 0;
+            if (!this.order.includes(id)) this.order.push(id);
         });
 
         if (!C.players[this.drawerId] && this.phase !== 'done') {
@@ -208,17 +243,26 @@ class SketchGuess {
     /* ---------- flow ----------------------------------------------------- */
 
     beginRound() {
+        clearTimeout(this.timeoutId);
+        this.timeoutId = null;
+
         this.round++;
 
-        if (this.round >= ROUNDS || !Object.keys(C.players).length) {
+        if (this.round >= this.totalRounds || !Object.keys(C.players).length) {
             this.finish();
             return;
         }
 
-        this.buildOrder();
-        this.drawerId = this.order[this.round % this.order.length];
+        const nextDrawer = this.getNextDrawerId();
+        if (!nextDrawer) {
+            this.finish();
+            return;
+        }
 
-        const targetDiff = this.getTargetDifficulty(this.round, ROUNDS);
+        this.drawerId = nextDrawer;
+        this.lastDrawerId = nextDrawer;
+
+        const targetDiff = this.getTargetDifficulty(this.round, this.totalRounds);
         const wordObj = this.pickWord(targetDiff);
         this.word = wordObj.word;
         this.difficulty = wordObj.difficulty;
@@ -580,11 +624,7 @@ class SketchGuess {
         this.accepting = false;
         this.phase = 'timeup';
 
-        // The artist still earns credit for a clean, readable sketch nobody solved.
-        const cfg = this.pointsConfig || POINTS_CONFIG.medium;
-        if (this.solvedBy === null && C.players[this.drawerId]) {
-            this.scores[this.drawerId] = (this.scores[this.drawerId] || 0) + cfg.failDrawer;
-        }
+        // Neither the artist nor guessers receive points if the word was not guessed.
 
         C.chord([392, 330], 150, 'square');
         this.render();
@@ -604,7 +644,7 @@ class SketchGuess {
 
         C.hud(T.results({
             title: 'Sketch & Guess',
-            kicker: ROUNDS + ' rounds drawn',
+            kicker: (this.totalRounds || ROUNDS) + ' rounds drawn',
             rows: T.sorted(C.players, this.scores),
             footer: 'Leader: press A to pick the next game'
         }));
@@ -677,6 +717,7 @@ class SketchGuess {
 
                     <div class="sk__word">
                         <div class="sk__meta">
+                            <span class="tag tag--round">Round ${this.round + 1}/${this.totalRounds}</span>
                             <span class="tag tag--difficulty tag--${this.difficulty}">${this.difficulty.toUpperCase()}</span>
                             <span class="tag tag--category">${C.escapeHtml(this.category)}</span>
                             <span class="tag tag--pts">+${this.pointsConfig.guessBase} pts</span>
@@ -744,6 +785,8 @@ class SketchGuess {
         this.revealOrder = [];
         this.revealedIndices = new Set();
         this.revealedCount = 0;
+        this.order = [];
+        this.lastDrawerId = null;
     }
 }
 
