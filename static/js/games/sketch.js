@@ -162,12 +162,13 @@ class SketchGuess {
 
     getBoardRect() {
         const v = C.view;
-        const topOffset = 118;
-        const bottomOffset = 22;
-        const availH = Math.max(100, v.h - topOffset - bottomOffset);
+        const scale = (v && v.scale) || C.scale || 1;
+        const topOffset = 118 * scale;
+        const bottomOffset = 22 * scale;
+        const availH = Math.max(100 * scale, v.h - topOffset - bottomOffset);
 
         // Maximum width centered on screen that leaves clearance for the right-hand guesses panel
-        const maxCenteredW = Math.max(100, Math.min(v.w - 48, v.w - 600));
+        const maxCenteredW = Math.max(100 * scale, Math.min(v.w - 48 * scale, v.w - 600 * scale));
 
         const aspect = (typeof this.aspect === 'number' && this.aspect > 0.1 && this.aspect < 10) ? this.aspect : (4 / 3);
 
@@ -258,6 +259,7 @@ class SketchGuess {
     drawSegment(x0, y0, x1, y1, color) {
         const b = this.getBoardRect();
         const g = C.ctx;
+        const scale = (C.view && C.view.scale) || C.scale || 1;
 
         g.save();
         g.beginPath();
@@ -265,7 +267,7 @@ class SketchGuess {
         g.clip();
 
         g.strokeStyle = color || '#1d4ed8';
-        g.lineWidth = Math.max(3.5, b.h * 0.012);
+        g.lineWidth = Math.max(3.5 * scale, b.h * 0.012);
         g.lineCap = 'round';
         g.lineJoin = 'round';
         g.beginPath();
@@ -279,13 +281,14 @@ class SketchGuess {
         this.paintBoard();
         const b = this.getBoardRect();
         const g = C.ctx;
+        const scale = (C.view && C.view.scale) || C.scale || 1;
 
         g.save();
         g.beginPath();
         g.rect(b.x, b.y, b.w, b.h);
         g.clip();
 
-        g.lineWidth = Math.max(3.5, b.h * 0.012);
+        g.lineWidth = Math.max(3.5 * scale, b.h * 0.012);
         g.lineCap = 'round';
         g.lineJoin = 'round';
 
