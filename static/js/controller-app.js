@@ -432,6 +432,16 @@ function switchLayout(layout, state) {
         padStrokes = [];
         currentGuessers = state.guessers || [];
         if (el.secretWord) el.secretWord.textContent = state.word || 'DRAW';
+        const eyebrow = doc.querySelector('.draw-secret__eyebrow');
+        if (eyebrow) {
+            if (state.difficulty) {
+                const diffLabel = state.difficulty.toUpperCase();
+                const catLabel = state.category ? ` · ${state.category}` : '';
+                eyebrow.textContent = `Draw this word (${diffLabel}${catLabel})`;
+            } else {
+                eyebrow.textContent = 'Draw this word';
+            }
+        }
         requestAnimationFrame(setupPad);
     } else {
         closeVerbalModal();

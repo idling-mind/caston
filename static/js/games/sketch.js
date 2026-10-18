@@ -12,15 +12,77 @@ const T = C.tools;
 const ROUND_MS = 90000;
 const ROUNDS = 6;
 const REVEAL_MS = 4000;
-const GUESS_POINTS = 700;
-const DRAWER_POINTS = 400;
 
-const WORDS = [
-    'BICYCLE', 'PIZZA', 'ROBOT', 'CASTLE', 'VOLCANO', 'GIRAFFE', 'SNOWMAN',
-    'HELICOPTER', 'ELEPHANT', 'GUITAR', 'UMBRELLA', 'PENGUIN', 'ROCKET',
-    'LIGHTHOUSE', 'CACTUS', 'BALLOON', 'CROCODILE', 'TELESCOPE', 'TEAPOT',
-    'DINOSAUR', 'SKATEBOARD', 'JELLYFISH', 'WINDMILL', 'SUBMARINE'
+const POINTS_CONFIG = {
+    easy:   { guessBase: 600, speedBonus: 200, drawer: 350, failDrawer: 150 },
+    medium: { guessBase: 800, speedBonus: 300, drawer: 450, failDrawer: 200 },
+    hard:   { guessBase: 1000, speedBonus: 400, drawer: 600, failDrawer: 300 }
+};
+
+const DEFAULT_WORDS = [
+    { word: 'PIZZA', difficulty: 'easy', category: 'Food & Drink' },
+    { word: 'BICYCLE', difficulty: 'easy', category: 'Vehicles' },
+    { word: 'SNOWMAN', difficulty: 'easy', category: 'Nature & Weather' },
+    { word: 'ELEPHANT', difficulty: 'easy', category: 'Animals' },
+    { word: 'GUITAR', difficulty: 'easy', category: 'Everyday Objects' },
+    { word: 'UMBRELLA', difficulty: 'easy', category: 'Everyday Objects' },
+    { word: 'BALLOON', difficulty: 'easy', category: 'Everyday Objects' },
+    { word: 'CAT', difficulty: 'easy', category: 'Animals' },
+    { word: 'LIGHTHOUSE', difficulty: 'medium', category: 'Places & Buildings' },
+    { word: 'HELICOPTER', difficulty: 'medium', category: 'Vehicles & Transport' },
+    { word: 'TELESCOPE', difficulty: 'medium', category: 'Science & Tech' },
+    { word: 'SUBMARINE', difficulty: 'medium', category: 'Vehicles & Transport' },
+    { word: 'VOLCANO', difficulty: 'medium', category: 'Nature & Weather' },
+    { word: 'DINOSAUR', difficulty: 'medium', category: 'Animals' },
+    { word: 'SKATEBOARD', difficulty: 'medium', category: 'Sports & Fun' },
+    { word: 'JELLYFISH', difficulty: 'medium', category: 'Animals' },
+    { word: 'WINDMILL', difficulty: 'medium', category: 'Places & Buildings' },
+    { word: 'BLACK HOLE', difficulty: 'hard', category: 'Science & Space' },
+    { word: 'TIME TRAVEL', difficulty: 'hard', category: 'Abstract & Actions' },
+    { word: 'AVALANCHE', difficulty: 'hard', category: 'Nature & Weather' },
+    { word: 'DRAGON', difficulty: 'hard', category: 'Fantasy & Lore' },
+    { word: 'CHANDELIER', difficulty: 'hard', category: 'Everyday Objects' },
+    { word: 'STATUE OF LIBERTY', difficulty: 'hard', category: 'Places & Buildings' }
 ];
+
+function getWordBank() {
+    return (C && C.SKETCH_WORDS && C.SKETCH_WORDS.length >= 20)
+        ? C.SKETCH_WORDS
+        : DEFAULT_WORDS;
+}
+
+function normalizeText(str) {
+    return String(str || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function isCorrectGuess(guess, target) {
+    const g = normalizeText(guess);
+    const t = normalizeText(target);
+    if (!g || !t) return false;
+    if (g === t) return true;
+    // Handle standard plural forms (+S, +ES)
+    if (g + 'S' === t || t + 'S' === g) return true;
+    if (g + 'ES' === t || t + 'ES' === g) return true;
+    return false;
+}
+
+function isCloseGuess(guess, target) {
+    const g = normalizeText(guess);
+    const t = normalizeText(target);
+    if (!g || !t || g === t) return false;
+    if (g.length < 4 || Math.abs(g.length - t.length) > 1) return false;
+
+    // Single character substitution
+    if (g.length === t.length) {
+        let diffs = 0;
+        for (let i = 0; i < g.length; i++) {
+            if (g[i] !== t[i]) diffs++;
+            if (diffs > 1) return false;
+        }
+        return diffs === 1;
+    }
+    return false;
+}
 
 class SketchGuess {
     constructor(ctx) {
@@ -31,6 +93,9 @@ class SketchGuess {
         this.order = [];
         this.drawerId = null;
         this.word = '';
+        this.difficulty = 'easy';
+        this.category = 'General';
+        this.pointsConfig = POINTS_CONFIG.easy;
         this.guesses = [];
         this.solvedBy = null;
         this.phase = 'idle';
@@ -38,11 +103,66 @@ class SketchGuess {
         this.timeoutId = null;
         this.strokes = [];
         this.aspect = 4 / 3;
+        this.revealOrder = [];
+        this.revealedIndices = new Set();
+        this.revealedCount = 0;
 
         Object.keys(C.players).forEach(id => { this.scores[id] = 0; });
+        this.buildWordDecks();
         this.buildOrder();
         this.beginRound();
         this.startClock();
+    }
+
+    buildWordDecks() {
+        const bank = getWordBank();
+        this.wordDecks = { easy: [], medium: [], hard: [] };
+
+        bank.forEach(item => {
+            const diff = (item.difficulty || 'medium').toLowerCase();
+            const entry = {
+                word: item.word,
+                difficulty: diff,
+                category: item.category || 'General'
+            };
+            if (this.wordDecks[diff]) {
+                this.wordDecks[diff].push(entry);
+            } else {
+                this.wordDecks.medium.push(entry);
+            }
+        });
+
+        // Fisher-Yates shuffle each deck
+        Object.keys(this.wordDecks).forEach(diff => {
+            const arr = this.wordDecks[diff];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+            }
+        });
+    }
+
+    getTargetDifficulty(roundIndex, totalRounds) {
+        const third = Math.max(1, Math.floor(totalRounds / 3));
+        if (roundIndex < third) return 'easy';
+        if (roundIndex < third * 2) return 'medium';
+        return 'hard';
+    }
+
+    pickWord(targetDifficulty) {
+        const deck = this.wordDecks[targetDifficulty];
+        if (deck && deck.length > 0) {
+            return deck.pop();
+        }
+        // Fallback: search non-empty decks
+        for (const diff of ['medium', 'easy', 'hard']) {
+            if (this.wordDecks[diff] && this.wordDecks[diff].length > 0) {
+                return this.wordDecks[diff].pop();
+            }
+        }
+        // If exhausted, rebuild decks
+        this.buildWordDecks();
+        return this.wordDecks[targetDifficulty].pop() || DEFAULT_WORDS[0];
     }
 
     /* ---------- setup ---------------------------------------------------- */
@@ -97,7 +217,43 @@ class SketchGuess {
 
         this.buildOrder();
         this.drawerId = this.order[this.round % this.order.length];
-        this.word = WORDS[(this.round * 7 + Math.floor(Math.random() * 5)) % WORDS.length];
+
+        const targetDiff = this.getTargetDifficulty(this.round, ROUNDS);
+        const wordObj = this.pickWord(targetDiff);
+        this.word = wordObj.word;
+        this.difficulty = wordObj.difficulty;
+        this.category = wordObj.category;
+        this.pointsConfig = POINTS_CONFIG[this.difficulty] || POINTS_CONFIG.medium;
+
+        // Collect alphabetic letter positions for clues
+        const eligible = [];
+        for (let i = 0; i < this.word.length; i++) {
+            const ch = this.word[i];
+            if (ch >= 'A' && ch <= 'Z') {
+                eligible.push(i);
+            }
+        }
+
+        // Maximum 3 letters revealed as clues across the round
+        let maxClues = 3;
+        if (eligible.length <= 4) {
+            maxClues = 1;
+        } else if (eligible.length <= 6) {
+            maxClues = 2;
+        } else {
+            maxClues = 3;
+        }
+
+        // Shuffle eligible positions randomly
+        for (let i = eligible.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = eligible[i]; eligible[i] = eligible[j]; eligible[j] = tmp;
+        }
+
+        this.revealOrder = eligible.slice(0, maxClues);
+        this.revealedIndices = new Set();
+        this.revealedCount = 0;
+
         this.guesses = [];
         this.solvedBy = null;
         this.solvedVerbal = false;
@@ -114,18 +270,75 @@ class SketchGuess {
             if (id === this.drawerId) {
                 C.setLayout('draw', {
                     title: 'You are drawing',
-                    subtitle: 'Illustrate: ' + this.word,
+                    subtitle: `Illustrate: ${this.word} · ${this.difficulty.toUpperCase()}`,
                     word: this.word,
+                    difficulty: this.difficulty,
+                    category: this.category,
                     guessers: guessers
                 }, id);
             } else {
-                C.setLayout('guess', { title: 'Guess the sketch', subtitle: drawerName + ' is drawing' }, id);
+                C.setLayout('guess', {
+                    title: 'Guess the sketch',
+                    subtitle: `${drawerName} is drawing · ${this.difficulty.toUpperCase()}`
+                }, id);
             }
         });
 
         this.paintBoard();
         this.render();
         C.chord([523, 659], 110, 'triangle');
+    }
+
+    getClueThresholds(count) {
+        if (count === 1) return [0.50];
+        if (count === 2) return [0.40, 0.70];
+        return [0.35, 0.60, 0.80];
+    }
+
+    checkClueReveal() {
+        if (!this.accepting || this.phase !== 'drawing') return;
+        if (!this.revealOrder || !this.revealOrder.length) return;
+
+        const elapsed = performance.now() - this.roundStart;
+        const ratio = elapsed / ROUND_MS;
+        const thresholds = this.getClueThresholds(this.revealOrder.length);
+
+        let targetCount = 0;
+        for (let i = 0; i < thresholds.length; i++) {
+            if (ratio >= thresholds[i]) {
+                targetCount = i + 1;
+            }
+        }
+        targetCount = Math.min(targetCount, this.revealOrder.length);
+
+        if (targetCount > this.revealedCount) {
+            while (this.revealedCount < targetCount) {
+                this.revealedIndices.add(this.revealOrder[this.revealedCount]);
+                this.revealedCount++;
+            }
+            C.tone(659, 100, 'triangle');
+            const wordVal = document.getElementById('sk-word-value');
+            if (wordVal) {
+                wordVal.textContent = this.getHintString();
+                wordVal.classList.remove('has-clue-pop');
+                void wordVal.offsetWidth;
+                wordVal.classList.add('has-clue-pop');
+            }
+        }
+    }
+
+    getHintString() {
+        if (this.phase === 'solved' || this.phase === 'timeup') {
+            return this.word;
+        }
+        return this.word.split('').map((c, idx) => {
+            if (c === ' ') return '·';
+            if (c === '-') return '-';
+            if (this.revealedIndices && this.revealedIndices.has(idx)) {
+                return c;
+            }
+            return '_';
+        }).join(' ');
     }
 
     startClock() {
@@ -136,6 +349,7 @@ class SketchGuess {
                 this.timeUp();
             } else if (this.accepting) {
                 this.updateClock();
+                this.checkClueReveal();
             }
             this.rafId = requestAnimationFrame(tick);
         };
@@ -224,13 +438,14 @@ class SketchGuess {
         const p = C.players[winnerId];
         if (!p || winnerId === this.drawerId) return;
 
+        const cfg = this.pointsConfig || POINTS_CONFIG.medium;
         const elapsed = performance.now() - this.roundStart;
         const speed = Math.max(0, 1 - elapsed / ROUND_MS);
-        const gained = Math.round(GUESS_POINTS + 300 * speed);
+        const gained = Math.round(cfg.guessBase + cfg.speedBonus * speed);
         this.scores[winnerId] = (this.scores[winnerId] || 0) + gained;
 
         if (C.players[this.drawerId]) {
-            this.scores[this.drawerId] = (this.scores[this.drawerId] || 0) + DRAWER_POINTS;
+            this.scores[this.drawerId] = (this.scores[this.drawerId] || 0) + cfg.drawer;
             C.toController(this.drawerId, { type: 'score_update', score: this.scores[this.drawerId] });
             C.vibrate(this.drawerId, 70);
         }
@@ -337,13 +552,26 @@ class SketchGuess {
         if (!text) return;
         if (this.solvedBy === playerId) return;
 
-        if (text === this.word) {
+        if (isCorrectGuess(text, this.word)) {
             this.solveRound(playerId, false);
             return;
         }
 
-        C.tone(340, 70, 'sine');
-        this.guesses.unshift({ name: p.name, avatar: p.avatar, text: text, correct: false });
+        const close = isCloseGuess(text, this.word);
+        if (close) {
+            C.tone(480, 80, 'sine');
+            C.vibrate(playerId, 40);
+        } else {
+            C.tone(340, 70, 'sine');
+        }
+
+        this.guesses.unshift({
+            name: p.name,
+            avatar: p.avatar,
+            text: text,
+            correct: false,
+            close: close
+        });
         this.guesses = this.guesses.slice(0, 6);
         this.renderGuesses();
     }
@@ -353,8 +581,9 @@ class SketchGuess {
         this.phase = 'timeup';
 
         // The artist still earns credit for a clean, readable sketch nobody solved.
+        const cfg = this.pointsConfig || POINTS_CONFIG.medium;
         if (this.solvedBy === null && C.players[this.drawerId]) {
-            this.scores[this.drawerId] = (this.scores[this.drawerId] || 0) + DRAWER_POINTS;
+            this.scores[this.drawerId] = (this.scores[this.drawerId] || 0) + cfg.failDrawer;
         }
 
         C.chord([392, 330], 150, 'square');
@@ -408,9 +637,7 @@ class SketchGuess {
     render() {
         const drawer = C.players[this.drawerId];
         const drawerName = drawer ? drawer.name : 'Waiting';
-        const hint = this.phase === 'solved' || this.phase === 'timeup'
-            ? this.word
-            : this.word.split('').map((c) => (c === ' ' ? '·' : '_')).join(' ');
+        const hint = this.getHintString();
 
         let statusText = 'Time left';
         if (this.phase === 'solved') {
@@ -435,7 +662,7 @@ class SketchGuess {
 
         const wordEyebrow = this.phase === 'solved'
             ? (this.solvedVerbal ? 'Verbal guess accepted!' : 'Solved!')
-            : (this.phase === 'timeup' ? 'The word was' : 'Word hint · ' + this.word.length + ' letters');
+            : (this.phase === 'timeup' ? 'The secret word was' : 'Word hint · ' + this.word.length + ' letters');
 
         C.hud(`
             <div class="sk">
@@ -449,8 +676,13 @@ class SketchGuess {
                     </div>
 
                     <div class="sk__word">
+                        <div class="sk__meta">
+                            <span class="tag tag--difficulty tag--${this.difficulty}">${this.difficulty.toUpperCase()}</span>
+                            <span class="tag tag--category">${C.escapeHtml(this.category)}</span>
+                            <span class="tag tag--pts">+${this.pointsConfig.guessBase} pts</span>
+                        </div>
+                        <span class="sk__word-value ${this.phase === 'solved' ? 'is-solved' : ''}" id="sk-word-value">${hint}</span>
                         <span class="eyebrow">${wordEyebrow}</span>
-                        <span class="sk__word-value ${this.phase === 'solved' ? 'is-solved' : ''}">${hint}</span>
                     </div>
 
                     <div class="sk__clock">
@@ -484,10 +716,14 @@ class SketchGuess {
             return '<p class="dim t-sm">Type your guess on your phone…</p>';
         }
         return this.guesses.map(g => `
-            <div class="sk__guess${g.correct ? ' is-correct' : ''}">
+            <div class="sk__guess${g.correct ? ' is-correct' : ''}${g.close ? ' is-close' : ''}">
                 <span class="sk__guess-face">${T.avatar(g.avatar)}</span>
                 <span class="sk__guess-name">${C.escapeHtml(g.name)}</span>
-                <span class="sk__guess-text">${C.escapeHtml(g.text)}${g.verbal ? '<span class="sk__guess-tag">🗣️ Verbal</span>' : ''}</span>
+                <span class="sk__guess-text">
+                    ${C.escapeHtml(g.text)}
+                    ${g.verbal ? '<span class="sk__guess-tag">🗣️ Verbal</span>' : ''}
+                    ${g.close ? '<span class="sk__guess-tag sk__guess-tag--close">⚡ Close!</span>' : ''}
+                </span>
             </div>
         `).join('');
     }
@@ -505,6 +741,9 @@ class SketchGuess {
         this.rafId = null;
         this.timeoutId = null;
         this.strokes = [];
+        this.revealOrder = [];
+        this.revealedIndices = new Set();
+        this.revealedCount = 0;
     }
 }
 
@@ -533,6 +772,38 @@ C.registerGame({
             text-transform: uppercase;
             letter-spacing: 0.04em;
             vertical-align: middle;
+        }
+        .sk__guess-tag--close {
+            background: color-mix(in srgb, var(--c-amber) 24%, transparent) !important;
+            color: var(--c-amber) !important;
+            border-color: color-mix(in srgb, var(--c-amber) 45%, transparent) !important;
+        }
+        .sk__guess.is-close {
+            background: color-mix(in srgb, var(--c-amber) 14%, transparent);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-amber) 45%, transparent);
+        }
+        .sk__meta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 2px;
+        }
+        .sk__meta .tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: var(--r-xs, 4px);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        @keyframes clue-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); color: var(--accent); }
+            100% { transform: scale(1); }
+        }
+        .has-clue-pop {
+            animation: clue-pop 0.35s ease;
         }
     `,
     create: (ctx) => new SketchGuess(ctx)
