@@ -118,21 +118,25 @@
 
 .q-card__picks {
     display: flex;
-    gap: 4px;
+    gap: 6px;
+    align-items: center;
     flex: none;
+    margin-left: auto;
 }
 
 .q-card__face {
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     display: grid;
     place-items: center;
-    font-size: 16px;
-    background: color-mix(in srgb, var(--ring-color) 20%, transparent);
-    border: 2px solid var(--ring-color);
-    animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    font-size: 18px;
+    background: color-mix(in srgb, var(--ring-color) 25%, #ffffff);
+    border: 2.5px solid var(--ring-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3);
     overflow: hidden;
+    flex: none;
 }
 
 .q-card__face img {
@@ -224,6 +228,20 @@
     gap: 7px;
     box-shadow: 0 4px 14px color-mix(in srgb, var(--c-emerald) 35%, transparent);
     animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.tag--choices {
+    background: color-mix(in srgb, var(--accent) 26%, var(--bg-base)) !important;
+    color: #ffffff !important;
+    border-color: var(--accent) !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    padding: 6px 14px !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+    animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
 
 .q-check-pulse {

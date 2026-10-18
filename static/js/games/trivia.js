@@ -10,7 +10,7 @@ const C = w.CastOn;
 const T = C.tools;
 
 const QUESTION_MS = 15000;
-const REVEAL_MS = 5200;
+const REVEAL_MS = 5000;
 const QUESTIONS_PER_MATCH = 10;
 
 const OPTION_COLORS = ['#f43f5e', '#2563eb', '#f59e0b', '#10b981'];
@@ -102,9 +102,10 @@ class FamilyTrivia {
         this.order = shuffledDeck();
         this.qIndex = -1;
         this.accepting = false;
-        this.phase = 'idle';
+        this.phase = 'idle'; // 'idle' | 'asking' | 'choices' | 'reveal' | 'done'
         this.rafId = null;
         this.timeoutId = null;
+        this.revealTimeoutId = null;
         this.roundResultsHtml = '';
         this.allGuessesIn = false;
 
@@ -138,6 +139,11 @@ class FamilyTrivia {
             return;
         }
 
+        clearTimeout(this.timeoutId);
+        clearTimeout(this.revealTimeoutId);
+        this.timeoutId = null;
+        this.revealTimeoutId = null;
+
         this.answers = {};
         this.accepting = true;
         this.phase = 'asking';
@@ -164,10 +170,10 @@ class FamilyTrivia {
         const tick = () => {
             if (this.phase === 'done') return;
 
-            if (this.accepting) {
+            if (this.accepting && this.phase === 'asking') {
                 const elapsed = performance.now() - this.questionStart;
                 if (elapsed >= QUESTION_MS) {
-                    this.reveal();
+                    this.showChoices();
                 } else {
                     this.updateClock(elapsed);
                 }
@@ -215,30 +221,53 @@ class FamilyTrivia {
             elapsedSec: (elapsed / 1000).toFixed(1)
         });
 
-        // Update the display of who has answered without showing their choices
+        // Update footer guess tracker (keeps choice secret while answering)
         this.markPicks();
 
         const total = Object.keys(C.players).length;
         const answeredCount = Object.keys(this.answers).length;
 
         // When all connected players have submitted their guess:
-        // Show "All have made their guesses!", play cue, and reveal after a brief pause
+        // Show "All have made their guesses!", then reveal choices
         if (total > 0 && answeredCount >= total) {
             this.allGuessesIn = true;
             this.markPicks();
             C.tone(784, 90, 'triangle');
             setTimeout(() => {
-                if (this.phase === 'asking') this.reveal();
-            }, 800);
+                if (this.phase === 'asking') this.showChoices();
+            }, 350);
         }
     }
 
-    /* ---------- scoring & reveal ----------------------------------------- */
+    /* ---------- step 1: show user choices -------------------------------- */
+
+    showChoices() {
+        if (!this.accepting && this.phase !== 'asking') return;
+        this.accepting = false;
+        this.phase = 'choices';
+
+        // Play suspense lock-in sound
+        C.chord([523, 659], 90, 'triangle');
+
+        // Render the board showing who chose which option (correct answer still hidden)
+        this.renderBoard();
+
+        // Reveal the correct answer with a short suspense delay (1.6s)
+        this.revealTimeoutId = setTimeout(() => {
+            if (this.phase === 'choices') {
+                this.reveal();
+            }
+        }, 1600);
+    }
+
+    /* ---------- step 2: reveal correct answer & award points ------------- */
 
     reveal() {
-        if (!this.accepting) return;
+        if (this.phase === 'reveal' || this.phase === 'done') return;
         this.accepting = false;
         this.phase = 'reveal';
+        clearTimeout(this.revealTimeoutId);
+        this.revealTimeoutId = null;
 
         const item = this.item;
         const ptsCfg = getPointsConfig(item.difficulty);
@@ -362,7 +391,9 @@ class FamilyTrivia {
         Object.keys(C.players).forEach(id => {
             if (this.scores[id] === undefined) this.scores[id] = 0;
         });
-        if (this.phase === 'asking' || this.phase === 'reveal') this.renderBoard();
+        if (this.phase === 'asking' || this.phase === 'choices' || this.phase === 'reveal') {
+            this.renderBoard();
+        }
     }
 
     markPicks() {
@@ -402,19 +433,38 @@ class FamilyTrivia {
         if (this.qIndex < 0 || this.qIndex >= this.order.length) return;
 
         const item = this.item;
-        const revealed = this.phase === 'reveal';
+        const isChoices = this.phase === 'choices';
+        const isReveal = this.phase === 'reveal';
+        const showPicks = isChoices || isReveal;
         const ptsCfg = getPointsConfig(item.difficulty);
 
-        // DO NOT show who guessed what! Option cards only display key and text.
-        // During reveal, the correct option shows a winner badge/tick.
+        // Render option cards
+        // When in 'choices' or 'reveal' phase, render the player avatars on their chosen cards!
+        // Only in 'reveal' phase is the correct answer marked as winner and incorrect cards dimmed.
         const cards = item.options.map((opt, i) => {
             const isAnswer = i === item.answer;
+
+            let picksHtml = '';
+            if (showPicks) {
+                const pickedPlayers = Object.keys(this.answers)
+                    .filter(id => this.answers[id].choice === i)
+                    .map(id => {
+                        const p = C.players[id];
+                        return p ? `<span class="q-card__face" style="--ring-color:${p.color}">${T.avatar(p.avatar)}</span>` : '';
+                    }).join('');
+
+                if (pickedPlayers) {
+                    picksHtml = `<span class="q-card__picks" id="q-picks-${i}">${pickedPlayers}</span>`;
+                }
+            }
+
             return `
-                <div class="q-card${revealed && !isAnswer ? ' is-dim' : ''}${revealed && isAnswer ? ' is-winner' : ''}"
+                <div class="q-card${isReveal && !isAnswer ? ' is-dim' : ''}${isReveal && isAnswer ? ' is-winner' : ''}"
                      style="--card-accent:${OPTION_COLORS[i]}">
                     <span class="q-card__key">${LETTERS[i]}</span>
                     <span class="q-card__text">${C.escapeHtml(opt)}</span>
-                    ${revealed && isAnswer ? `<span class="q-card__tick">${C.icon('check')}</span>` : ''}
+                    ${picksHtml}
+                    ${isReveal && isAnswer ? `<span class="q-card__tick">${C.icon('check')}</span>` : ''}
                 </div>`;
         }).join('');
 
@@ -423,11 +473,19 @@ class FamilyTrivia {
         const allAnswered = totalPlayers > 0 && answeredCount >= totalPlayers;
 
         let statusHtml = '';
-        if (revealed) {
+        if (isReveal) {
             statusHtml = `
                 <div class="q-reveal-banner">
                     <span class="eyebrow" style="margin-right:4px">Results:</span>
                     ${this.roundResultsHtml || '<span class="dim t-xs">No answers recorded</span>'}
+                </div>
+            `;
+        } else if (isChoices) {
+            statusHtml = `
+                <div class="q-status-wrap">
+                    <span class="tag tag--choices">
+                        <span class="q-check-pulse">✓</span>All guesses in · Revealing answer…
+                    </span>
                 </div>
             `;
         } else {
@@ -457,6 +515,16 @@ class FamilyTrivia {
             `;
         }
 
+        let clockDisplay = Math.ceil(QUESTION_MS / 1000) + 's';
+        let clockLabel = 'Time left';
+        if (isReveal) {
+            clockDisplay = 'A+';
+            clockLabel = 'Answer';
+        } else if (isChoices) {
+            clockDisplay = '•••';
+            clockLabel = 'Revealing';
+        }
+
         C.hud(`
             <div class="q-screen">
                 <div class="q-screen__top">
@@ -470,12 +538,12 @@ class FamilyTrivia {
                         <h2 class="q-screen__question">${C.escapeHtml(item.q)}</h2>
                     </div>
                     <div class="q-screen__clock">
-                        <span class="numeral" id="q-clock">${revealed ? 'A+' : Math.ceil(QUESTION_MS / 1000) + 's'}</span>
-                        <span class="eyebrow">${revealed ? 'Answer' : 'Time left'}</span>
+                        <span class="numeral" id="q-clock">${clockDisplay}</span>
+                        <span class="eyebrow">${clockLabel}</span>
                     </div>
                 </div>
 
-                <div class="timer-bar"><span id="q-bar" style="width:100%"></span></div>
+                <div class="timer-bar"><span id="q-bar" style="width:${isChoices ? '0%' : '100%'}"></span></div>
 
                 <div class="q-grid">${cards}</div>
 
@@ -496,8 +564,10 @@ class FamilyTrivia {
         this.accepting = false;
         if (this.rafId) cancelAnimationFrame(this.rafId);
         clearTimeout(this.timeoutId);
+        clearTimeout(this.revealTimeoutId);
         this.rafId = null;
         this.timeoutId = null;
+        this.revealTimeoutId = null;
     }
 }
 
@@ -514,3 +584,4 @@ C.registerGame({
 });
 
 })(window);
+
