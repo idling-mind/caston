@@ -239,6 +239,63 @@ textarea {
 
 .pad-header .tag--crown svg { width: 12px; height: 12px; }
 
+.crown-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--c-amber);
+    flex: none;
+}
+
+.crown-icon.hidden { display: none !important; }
+
+.crown-icon svg {
+    width: 17px;
+    height: 17px;
+    filter: drop-shadow(0 1px 3px rgba(245, 158, 11, 0.45));
+}
+
+.room-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: var(--r-sm);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    line-height: 1;
+}
+
+.room-pill__label {
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+}
+
+.room-pill__code {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+}
+
+.btn--circle {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+}
+
+.btn--circle svg {
+    width: 18px;
+    height: 18px;
+}
+
 .pad-header__actions {
     display: flex;
     align-items: center;
@@ -451,12 +508,8 @@ textarea {
     height: 18px;
 }
 
-/* ---------- Stat strip -------------------------------------------------- */
-
-.pad-stats { flex: none; padding: 12px 18px 0; }
-
-.pad-stats .stats__value { font-size: 20px; }
-.pad-stats .stats__label { font-size: 9.5px; }
+/* Stat strip removed to maximize gameplay canvas area */
+.pad-stats { display: none !important; }
 
 /* ---------- Layout host ------------------------------------------------- */
 
@@ -825,57 +878,136 @@ textarea {
    Sketch pad
    ========================================================================== */
 
-.layout--draw { gap: 12px; }
+.layout--draw {
+    gap: 10px;
+    padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+}
 
-.draw-bar {
+.draw-stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--r-md);
+    background: #ffffff;
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-tile);
+}
+
+/* Merged top toolbar */
+.draw-toolbar {
     flex: none;
+    height: 50px;
+    padding: 0 10px 0 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: var(--r-md);
+    gap: 10px;
     background: var(--card);
+    border-bottom: 1px solid var(--card-line);
+    border-radius: var(--r-md) var(--r-md) 0 0;
+}
+
+.draw-colors {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px;
+    overflow: visible;
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--swatch);
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    flex: none;
+    padding: 0;
+    touch-action: manipulation;
+    transition: transform 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.15s ease;
+}
+
+.color-swatch:active {
+    transform: scale(0.92);
+}
+
+.color-swatch.is-selected {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--swatch);
+}
+
+.draw-clear-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm);
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--card-ink) 7%, transparent);
     color: var(--card-ink);
     border: 1px solid var(--card-line);
+    cursor: pointer;
+    flex: none;
+    padding: 0;
+    touch-action: manipulation;
+    transition: background 0.14s ease, transform 0.14s ease, color 0.14s ease;
 }
 
-.draw-bar .eyebrow { color: var(--card-ink-2); }
-
-.draw-bar__word {
-    margin: 4px 0 0;
-    font-family: var(--font-display);
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--c-blue);
-    line-height: 1;
+.draw-clear-btn:active {
+    transform: scale(0.92);
+    background: color-mix(in srgb, var(--c-rose) 20%, transparent);
+    color: var(--c-rose);
 }
 
-.draw-bar .btn { padding: 10px 13px; font-size: 11px; }
-.draw-bar .btn--ghost {
-    border-color: var(--card-line);
-    color: var(--card-ink);
-    background: color-mix(in srgb, var(--card-ink) 6%, transparent);
+.draw-clear-btn svg {
+    width: 17px;
+    height: 17px;
 }
 
 .draw-pad {
     flex: 1;
     min-height: 0;
     width: 100%;
-    border-radius: var(--r-md);
-    background: #fff;
-    border: 1px solid var(--card-line);
-    box-shadow: var(--shadow-tile);
+    background: #ffffff;
     touch-action: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
-.draw-hint {
+/* Secret word centered at bottom of canvas */
+.draw-secret {
     flex: none;
-    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    font-size: 11.5px;
-    color: var(--ink-3);
+    padding: 8px 16px;
+    border-radius: var(--r-md);
+    background: var(--card);
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-tile);
+}
+
+.draw-secret__eyebrow {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--card-ink-2);
+}
+
+.draw-secret__word {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--c-blue);
+    line-height: 1.15;
+    margin-top: 1px;
 }
 
 /* ==========================================================================

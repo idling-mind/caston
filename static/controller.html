@@ -130,11 +130,10 @@
                 <div class="pad-header__name">
                     <span class="row" style="gap:8px">
                         <span class="display" id="player-label">Player</span>
-                        <span class="tag tag--crown hidden" id="vip-badge">
+                        <span class="crown-icon hidden" id="vip-badge" title="Room Leader" aria-label="Room Leader">
                             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <path d="M2.5 4.5 6 16h12l3.5-11.5-5.75 6.25L12 4 8.25 10.75z"/>
                             </svg>
-                            Leader
                         </span>
                     </span>
                     <span class="dim t-xs" id="game-status-label">Ready for action</span>
@@ -142,34 +141,19 @@
             </div>
 
             <div class="pad-header__actions">
-                <button id="home-btn" class="btn btn--ghost hidden" type="button">
+                <div class="room-pill" title="Room code">
+                    <span class="room-pill__label">ROOM</span>
+                    <span class="room-pill__code" id="stat-room-code">----</span>
+                </div>
+                <button id="home-btn" class="btn btn--icon btn--circle btn--ghost hidden" type="button" aria-label="Exit to Lobby" title="Exit to Lobby">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="m3 9.5 9-7.5 9 7.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                         <path d="M9.5 22v-8h5v8"/>
                     </svg>
-                    <span>Lobby</span>
                 </button>
             </div>
         </header>
-
-        <!-- ---------- Stat strip ---------- -->
-        <div class="pad-stats">
-            <div class="stats">
-                <div class="stats__cell">
-                    <div class="stats__label">Room</div>
-                    <div class="stats__value" id="stat-room-code">----</div>
-                </div>
-                <div class="stats__cell">
-                    <div class="stats__label">Role</div>
-                    <div class="stats__value" id="stat-role">Player</div>
-                </div>
-                <div class="stats__cell">
-                    <div class="stats__label">Points</div>
-                    <div class="stats__value" id="stat-score">0</div>
-                </div>
-            </div>
-        </div>
 
         <!-- =============================================================== -->
         <!-- LAYOUT: D-PAD + ARCADE BUTTONS                                  -->
@@ -235,24 +219,36 @@
         <!-- LAYOUT: SKETCH PAD                                              -->
         <!-- =============================================================== -->
         <section id="layout-draw" class="layout layout--draw hidden">
-            <div class="draw-bar">
-                <div>
-                    <p class="eyebrow">Draw this</p>
-                    <p class="draw-bar__word" id="secret-word-label">----</p>
+            <div class="draw-stage">
+                <!-- Merged top toolbar -->
+                <div class="draw-toolbar">
+                    <div class="draw-colors" id="draw-colors">
+                        <button class="color-swatch is-selected" type="button" data-color="#1d4ed8" style="--swatch:#1d4ed8" aria-label="Blue" title="Blue"></button>
+                        <button class="color-swatch" type="button" data-color="#111827" style="--swatch:#111827" aria-label="Black" title="Black"></button>
+                        <button class="color-swatch" type="button" data-color="#e11d48" style="--swatch:#e11d48" aria-label="Red" title="Red"></button>
+                        <button class="color-swatch" type="button" data-color="#10b981" style="--swatch:#10b981" aria-label="Green" title="Green"></button>
+                        <button class="color-swatch" type="button" data-color="#f59e0b" style="--swatch:#f59e0b" aria-label="Amber" title="Amber"></button>
+                        <button class="color-swatch" type="button" data-color="#8b5cf6" style="--swatch:#8b5cf6" aria-label="Purple" title="Purple"></button>
+                    </div>
+
+                    <button class="draw-clear-btn" id="clear-pad" type="button" aria-label="Clear drawing" title="Clear canvas">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 6h18"/><path d="M18 6v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6"/>
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                    </button>
                 </div>
-                <button class="btn btn--ghost" id="clear-pad" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 6h18"/><path d="M18 6v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6"/>
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                    </svg>
-                    <span>Clear</span>
-                </button>
+
+                <!-- Drawing canvas -->
+                <canvas id="draw-pad" class="draw-pad"></canvas>
             </div>
 
-            <canvas id="draw-pad" class="draw-pad"></canvas>
-
-            <p class="draw-hint">Your strokes stream to the TV as you draw.</p>
+            <!-- Name to be guessed at bottom, aligned in center -->
+            <div class="draw-secret">
+                <span class="draw-secret__eyebrow">Draw this word</span>
+                <span class="draw-secret__word" id="secret-word-label">----</span>
+            </div>
         </section>
 
         <!-- =============================================================== -->

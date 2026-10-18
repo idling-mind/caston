@@ -373,6 +373,7 @@ function switchLayout(layout, state) {
     }
 
     if (layout === 'draw') {
+        padStrokes = [];
         if (el.secretWord) el.secretWord.textContent = state.word || 'DRAW';
         requestAnimationFrame(setupPad);
     }
@@ -671,6 +672,10 @@ function setupJoystick() {
 
     w.addEventListener('resize', () => {
         baseRect = null;
+        const drawLayout = doc.getElementById('layout-draw');
+        if (drawLayout && !drawLayout.classList.contains('hidden')) {
+            setupPad();
+        }
     });
 }
 
@@ -742,6 +747,22 @@ let padBound = false;
 let drawing = false;
 let last = null;
 let padCtx = null;
+let padStrokes = [];
+let activeDrawColor = '#1d4ed8';
+
+function initDrawColors() {
+    doc.querySelectorAll('.color-swatch[data-color]').forEach(swatch => {
+        swatch.addEventListener('click', (e) => {
+            e.preventDefault();
+            buzz(14);
+            activeDrawColor = swatch.getAttribute('data-color') || '#1d4ed8';
+            doc.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('is-selected'));
+            swatch.classList.add('is-selected');
+            if (padCtx) padCtx.strokeStyle = activeDrawColor;
+        });
+    });
+}
+initDrawColors();
 
 function setupPad() {
     const pad = doc.getElementById('draw-pad');
@@ -758,12 +779,34 @@ function setupPad() {
     padCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     padCtx.lineCap = 'round';
     padCtx.lineJoin = 'round';
-    padCtx.strokeStyle = '#1d4ed8';
+    padCtx.strokeStyle = activeDrawColor;
     padCtx.lineWidth = Math.max(3, cssH * 0.012);
 
-    // Clear local + remote canvases when the pad is (re)created.
     padCtx.fillStyle = '#ffffff';
     padCtx.fillRect(0, 0, cssW, cssH);
+
+    const padAspect = cssW / cssH;
+    send({
+        action: 'draw_pad_init',
+        aspect: padAspect
+    });
+
+    if (padStrokes.length > 0) {
+        padCtx.save();
+        padCtx.lineWidth = Math.max(3, cssH * 0.012);
+        padCtx.lineCap = 'round';
+        padCtx.lineJoin = 'round';
+        for (let i = 0; i < padStrokes.length; i++) {
+            const s = padStrokes[i];
+            padCtx.strokeStyle = s[4] || activeDrawColor;
+            padCtx.beginPath();
+            padCtx.moveTo(s[0] * cssW, s[1] * cssH);
+            padCtx.lineTo(s[2] * cssW, s[3] * cssH);
+            padCtx.stroke();
+        }
+        padCtx.restore();
+        padCtx.strokeStyle = activeDrawColor;
+    }
 
     if (padBound) return;
     padBound = true;
@@ -782,6 +825,23 @@ function setupPad() {
         last = pos(e);
         try { pad.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
         buzz(12);
+
+        const r = pad.getBoundingClientRect();
+        const ctx = pad.getContext('2d');
+        ctx.strokeStyle = activeDrawColor;
+        ctx.beginPath();
+        ctx.moveTo(last.x * r.width, last.y * r.height);
+        ctx.lineTo(last.x * r.width, last.y * r.height);
+        ctx.stroke();
+
+        padStrokes.push([last.x, last.y, last.x, last.y, activeDrawColor]);
+        send({
+            action: 'draw_stroke',
+            x0: last.x, y0: last.y,
+            x1: last.x, y1: last.y,
+            color: activeDrawColor,
+            aspect: r.width / r.height
+        });
     });
 
     pad.addEventListener('pointermove', (e) => {
@@ -792,16 +852,19 @@ function setupPad() {
         const r = pad.getBoundingClientRect();
         const ctx = pad.getContext('2d');
 
+        ctx.strokeStyle = activeDrawColor;
         ctx.beginPath();
         ctx.moveTo(last.x * r.width, last.y * r.height);
         ctx.lineTo(next.x * r.width, next.y * r.height);
         ctx.stroke();
 
+        padStrokes.push([last.x, last.y, next.x, next.y, activeDrawColor]);
         send({
             action: 'draw_stroke',
             x0: last.x, y0: last.y,
             x1: next.x, y1: next.y,
-            color: '#1d4ed8'
+            color: activeDrawColor,
+            aspect: r.width / r.height
         });
         last = next;
     });
@@ -820,6 +883,7 @@ function setupPad() {
 
 if (el.clearPad) {
     el.clearPad.addEventListener('click', () => {
+        padStrokes = [];
         const pad = doc.getElementById('draw-pad');
         if (pad && padCtx) {
             const r = pad.getBoundingClientRect();
@@ -829,9 +893,12 @@ if (el.clearPad) {
             padCtx.fillStyle = '#ffffff';
             padCtx.fillRect(0, 0, r.width, r.height);
             padCtx.restore();
+            buzz(20);
+            send({ action: 'draw_stroke', clear: true, aspect: r.width / r.height });
+        } else {
+            buzz(20);
+            send({ action: 'draw_stroke', clear: true });
         }
-        buzz(20);
-        send({ action: 'draw_stroke', clear: true });
     });
 }
 

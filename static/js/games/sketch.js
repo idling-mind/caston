@@ -37,6 +37,7 @@ class SketchGuess {
         this.rafId = null;
         this.timeoutId = null;
         this.strokes = [];
+        this.aspect = 4 / 3;
 
         Object.keys(C.players).forEach(id => { this.scores[id] = 0; });
         this.buildOrder();
@@ -129,10 +130,52 @@ class SketchGuess {
 
     /* ---------- input ---------------------------------------------------- */
 
+    onResize(view) {
+        this.redrawStrokes();
+    }
+
+    getBoardRect() {
+        const v = C.view;
+        const topOffset = 118;
+        const bottomOffset = 22;
+        const availH = Math.max(100, v.h - topOffset - bottomOffset);
+
+        // Maximum width centered on screen that leaves clearance for the right-hand guesses panel
+        const maxCenteredW = Math.max(100, Math.min(v.w - 48, v.w - 600));
+
+        const aspect = (typeof this.aspect === 'number' && this.aspect > 0.1 && this.aspect < 10) ? this.aspect : (4 / 3);
+
+        let bw = availH * aspect;
+        let bh = availH;
+
+        if (bw > maxCenteredW) {
+            bw = maxCenteredW;
+            bh = bw / aspect;
+        }
+
+        // Exact horizontal center on the full TV screen
+        const bx = (v.w - bw) / 2;
+        // Exact vertical center in the stage area below the top HUD
+        const by = topOffset + (availH - bh) / 2;
+
+        return { x: bx, y: by, w: bw, h: bh };
+    }
+
     onInput(playerId, data) {
-        if (data.action === 'draw_stroke' && playerId === this.drawerId) {
-            this.onStroke(data);
-            return;
+        if (playerId === this.drawerId) {
+            if (data.action === 'draw_pad_init') {
+                if (typeof data.aspect === 'number' && data.aspect > 0) {
+                    if (Math.abs(data.aspect - (this.aspect || 0)) > 0.01) {
+                        this.aspect = data.aspect;
+                        this.redrawStrokes();
+                    }
+                }
+                return;
+            }
+            if (data.action === 'draw_stroke') {
+                this.onStroke(data);
+                return;
+            }
         }
 
         if (data.action === 'submit_guess' && this.accepting && playerId !== this.drawerId) {
@@ -140,35 +183,75 @@ class SketchGuess {
         }
     }
 
-    onStroke(data) {
+    drawSegment(x0, y0, x1, y1, color) {
+        const b = this.getBoardRect();
         const g = C.ctx;
 
-        if (data.clear) {
-            this.strokes = [];
-            this.paintBoard();
-            g.clearRect(0, 0, C.view.w, C.view.h);
-            return;
-        }
-
-        const v = C.view;
-        const x0 = data.x0 * v.w;
-        const y0 = data.y0 * v.h;
-        const x1 = data.x1 * v.w;
-        const y1 = data.y1 * v.h;
-
-        this.strokes.push([x0, y0, x1, y1, data.color]);
-        if (this.strokes.length > 4000) this.strokes.shift();
-
         g.save();
-        g.strokeStyle = data.color || '#111827';
-        g.lineWidth = Math.max(4, v.h * 0.008);
+        g.beginPath();
+        g.rect(b.x, b.y, b.w, b.h);
+        g.clip();
+
+        g.strokeStyle = color || '#1d4ed8';
+        g.lineWidth = Math.max(3.5, b.h * 0.012);
         g.lineCap = 'round';
         g.lineJoin = 'round';
         g.beginPath();
-        g.moveTo(x0, y0);
-        g.lineTo(x1, y1);
+        g.moveTo(b.x + x0 * b.w, b.y + y0 * b.h);
+        g.lineTo(b.x + x1 * b.w, b.y + y1 * b.h);
         g.stroke();
         g.restore();
+    }
+
+    redrawStrokes() {
+        this.paintBoard();
+        const b = this.getBoardRect();
+        const g = C.ctx;
+
+        g.save();
+        g.beginPath();
+        g.rect(b.x, b.y, b.w, b.h);
+        g.clip();
+
+        g.lineWidth = Math.max(3.5, b.h * 0.012);
+        g.lineCap = 'round';
+        g.lineJoin = 'round';
+
+        for (let i = 0; i < this.strokes.length; i++) {
+            const s = this.strokes[i];
+            g.strokeStyle = s[4] || '#1d4ed8';
+            g.beginPath();
+            g.moveTo(b.x + s[0] * b.w, b.y + s[1] * b.h);
+            g.lineTo(b.x + s[2] * b.w, b.y + s[3] * b.h);
+            g.stroke();
+        }
+        g.restore();
+    }
+
+    onStroke(data) {
+        if (data.clear) {
+            this.strokes = [];
+            this.paintBoard();
+            return;
+        }
+
+        if (typeof data.aspect === 'number' && data.aspect > 0) {
+            if (Math.abs(data.aspect - (this.aspect || 0)) > 0.01) {
+                this.aspect = data.aspect;
+                this.redrawStrokes();
+            }
+        }
+
+        const x0 = Math.min(1, Math.max(0, Number(data.x0) || 0));
+        const y0 = Math.min(1, Math.max(0, Number(data.y0) || 0));
+        const x1 = Math.min(1, Math.max(0, Number(data.x1) || 0));
+        const y1 = Math.min(1, Math.max(0, Number(data.y1) || 0));
+        const color = data.color || '#1d4ed8';
+
+        this.strokes.push([x0, y0, x1, y1, color]);
+        if (this.strokes.length > 4000) this.strokes.shift();
+
+        this.drawSegment(x0, y0, x1, y1, color);
     }
 
     onGuess(playerId, rawText) {
@@ -223,6 +306,7 @@ class SketchGuess {
     finish() {
         this.phase = 'done';
         this.accepting = false;
+        C.ctx.clearRect(0, 0, C.view.w, C.view.h);
 
         C.setLayout('dpad', {
             title: 'Sketch & Guess',
@@ -244,15 +328,14 @@ class SketchGuess {
     paintBoard() {
         const v = C.view;
         const g = C.ctx;
-        g.save();
-        g.setTransform(1, 0, 0, 1, 0, 0);
-        g.fillStyle = '#f8fafc';
-        g.fillRect(0, 0, C.canvas.width, C.canvas.height);
-        g.restore();
 
-        // Paper texture: a light dot grid so the board reads as a sketchpad.
         g.save();
-        g.fillStyle = 'rgba(15,23,42,0.055)';
+        // Fill entire screen with the canvas paper color (#ffffff) for full-screen illusion
+        g.fillStyle = '#ffffff';
+        g.fillRect(0, 0, v.w, v.h);
+
+        // Dot grid paper texture across the full screen
+        g.fillStyle = 'rgba(15, 23, 42, 0.055)';
         const step = 26;
         for (let x = step; x < v.w; x += step) {
             for (let y = step; y < v.h; y += step) {
@@ -349,6 +432,7 @@ class SketchGuess {
         clearTimeout(this.timeoutId);
         this.rafId = null;
         this.timeoutId = null;
+        this.strokes = [];
     }
 }
 
