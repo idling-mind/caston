@@ -63,7 +63,26 @@ class SketchGuess {
 
         if (!C.players[this.drawerId] && this.phase !== 'done') {
             this.beginRound();
+            return;
         }
+
+        if (this.phase === 'drawing' && this.drawerId && C.players[this.drawerId]) {
+            C.toController(this.drawerId, {
+                type: 'update_guessers',
+                guessers: this.getGuessersList()
+            });
+        }
+    }
+
+    getGuessersList() {
+        return Object.values(C.players)
+            .filter(p => p.id !== this.drawerId)
+            .map(p => ({
+                id: p.id,
+                name: p.name,
+                avatar: p.avatar,
+                color: p.color
+            }));
     }
 
     /* ---------- flow ----------------------------------------------------- */
@@ -81,6 +100,7 @@ class SketchGuess {
         this.word = WORDS[(this.round * 7 + Math.floor(Math.random() * 5)) % WORDS.length];
         this.guesses = [];
         this.solvedBy = null;
+        this.solvedVerbal = false;
         this.strokes = [];
         this.phase = 'drawing';
         this.accepting = true;
@@ -88,10 +108,16 @@ class SketchGuess {
 
         const drawer = C.players[this.drawerId];
         const drawerName = drawer ? drawer.name : 'Player';
+        const guessers = this.getGuessersList();
 
         Object.keys(C.players).forEach(id => {
             if (id === this.drawerId) {
-                C.setLayout('draw', { title: 'You are drawing', subtitle: 'Illustrate: ' + this.word, word: this.word }, id);
+                C.setLayout('draw', {
+                    title: 'You are drawing',
+                    subtitle: 'Illustrate: ' + this.word,
+                    word: this.word,
+                    guessers: guessers
+                }, id);
             } else {
                 C.setLayout('guess', { title: 'Guess the sketch', subtitle: drawerName + ' is drawing' }, id);
             }
@@ -176,11 +202,57 @@ class SketchGuess {
                 this.onStroke(data);
                 return;
             }
+            if (data.action === 'accept_guess' && this.accepting) {
+                this.solveRound(data.guesserId, true);
+                return;
+            }
+            if ((this.phase === 'solved' || this.phase === 'timeup') && data.action === 'submit_guess') {
+                clearTimeout(this.timeoutId);
+                this.beginRound();
+                return;
+            }
         }
 
         if (data.action === 'submit_guess' && this.accepting && playerId !== this.drawerId) {
             this.onGuess(playerId, data.text);
         }
+    }
+
+    solveRound(winnerId, isVerbal = false) {
+        if (!this.accepting) return;
+        const p = C.players[winnerId];
+        if (!p || winnerId === this.drawerId) return;
+
+        const elapsed = performance.now() - this.roundStart;
+        const speed = Math.max(0, 1 - elapsed / ROUND_MS);
+        const gained = Math.round(GUESS_POINTS + 300 * speed);
+        this.scores[winnerId] = (this.scores[winnerId] || 0) + gained;
+
+        if (C.players[this.drawerId]) {
+            this.scores[this.drawerId] = (this.scores[this.drawerId] || 0) + DRAWER_POINTS;
+            C.toController(this.drawerId, { type: 'score_update', score: this.scores[this.drawerId] });
+            C.vibrate(this.drawerId, 70);
+        }
+
+        this.solvedBy = winnerId;
+        this.solvedVerbal = !!isVerbal;
+
+        C.toController(winnerId, { type: 'score_update', score: this.scores[winnerId] });
+        C.vibrate(winnerId, 140);
+        C.chord([784, 988, 1175], 130, 'triangle');
+
+        this.guesses.unshift({
+            name: p.name,
+            avatar: p.avatar,
+            text: this.word,
+            correct: true,
+            verbal: !!isVerbal
+        });
+        this.accepting = false;
+        this.phase = 'solved';
+        this.render();
+
+        this.timeoutId = setTimeout(() => this.beginRound(), REVEAL_MS);
     }
 
     drawSegment(x0, y0, x1, y1, color) {
@@ -263,22 +335,7 @@ class SketchGuess {
         if (this.solvedBy === playerId) return;
 
         if (text === this.word) {
-            const elapsed = performance.now() - this.roundStart;
-            const speed = Math.max(0, 1 - elapsed / ROUND_MS);
-            const gained = Math.round(GUESS_POINTS + 300 * speed);
-            this.scores[playerId] = (this.scores[playerId] || 0) + gained;
-            this.solvedBy = playerId;
-
-            C.toController(playerId, { type: 'score_update', score: this.scores[playerId] });
-            C.vibrate(playerId, 140);
-            C.chord([784, 988, 1175], 130, 'triangle');
-
-            this.guesses.unshift({ name: p.name, avatar: p.avatar, text: text, correct: true });
-            this.accepting = false;
-            this.phase = 'solved';
-            this.render();
-
-            this.timeoutId = setTimeout(() => this.beginRound(), REVEAL_MS);
+            this.solveRound(playerId, false);
             return;
         }
 
@@ -352,9 +409,17 @@ class SketchGuess {
             ? this.word
             : this.word.split('').map((c) => (c === ' ' ? '·' : '_')).join(' ');
 
-        const statusText = this.phase === 'solved'
-            ? 'Solved!'
-            : (this.phase === 'timeup' ? 'Time up' : 'Time left');
+        let statusText = 'Time left';
+        if (this.phase === 'solved') {
+            const winner = C.players[this.solvedBy];
+            if (winner) {
+                statusText = this.solvedVerbal ? `${C.escapeHtml(winner.name)} guessed verbally!` : `${C.escapeHtml(winner.name)} solved!`;
+            } else {
+                statusText = 'Solved!';
+            }
+        } else if (this.phase === 'timeup') {
+            statusText = 'Time up';
+        }
 
         // Once the round is decided the artist is the only one still typing.
         if (this.phase === 'solved' || this.phase === 'timeup') {
@@ -364,6 +429,10 @@ class SketchGuess {
                 prefill: this.word
             }, this.drawerId);
         }
+
+        const wordEyebrow = this.phase === 'solved'
+            ? (this.solvedVerbal ? 'Verbal guess accepted!' : 'Solved!')
+            : (this.phase === 'timeup' ? 'The word was' : 'Word hint · ' + this.word.length + ' letters');
 
         C.hud(`
             <div class="sk">
@@ -377,7 +446,7 @@ class SketchGuess {
                     </div>
 
                     <div class="sk__word">
-                        <span class="eyebrow">${this.phase === 'solved' || this.phase === 'timeup' ? 'The word was' : 'Word hint · ' + this.word.length + ' letters'}</span>
+                        <span class="eyebrow">${wordEyebrow}</span>
                         <span class="sk__word-value ${this.phase === 'solved' ? 'is-solved' : ''}">${hint}</span>
                     </div>
 
@@ -415,7 +484,7 @@ class SketchGuess {
             <div class="sk__guess${g.correct ? ' is-correct' : ''}">
                 <span class="sk__guess-face">${T.avatar(g.avatar)}</span>
                 <span class="sk__guess-name">${C.escapeHtml(g.name)}</span>
-                <span class="sk__guess-text">${C.escapeHtml(g.text)}</span>
+                <span class="sk__guess-text">${C.escapeHtml(g.text)}${g.verbal ? '<span class="sk__guess-tag">🗣️ Verbal</span>' : ''}</span>
             </div>
         `).join('');
     }
@@ -445,6 +514,24 @@ C.registerGame({
     description: 'One artist, one hundred strokes. Sketch the secret prompt on your phone while the room races to name it.',
     accent: '#10b981',
     icon: 'palette',
+    css: `
+        .sk__guess-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: var(--r-xs, 4px);
+            background: color-mix(in srgb, var(--c-emerald) 24%, transparent);
+            color: var(--c-emerald);
+            border: 1px solid color-mix(in srgb, var(--c-emerald) 45%, transparent);
+            margin-left: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            vertical-align: middle;
+        }
+    `,
     create: (ctx) => new SketchGuess(ctx)
 });
 

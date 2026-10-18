@@ -49,8 +49,16 @@ const el = {
     secretWord: doc.getElementById('secret-word-label'),
     clearPad: doc.getElementById('clear-pad'),
     guessInput: doc.getElementById('guess-input'),
-    guessSubmit: doc.getElementById('guess-submit')
+    guessSubmit: doc.getElementById('guess-submit'),
+
+    drawAcceptBtn: doc.getElementById('draw-accept-btn'),
+    verbalModal: doc.getElementById('verbal-modal'),
+    verbalModalClose: doc.getElementById('verbal-modal-close'),
+    cancelVerbalBtn: doc.getElementById('cancel-verbal-btn'),
+    verbalPlayersList: doc.getElementById('verbal-players-list')
 };
+
+let currentGuessers = [];
 
 const PRESET_AVATARS = [
     '🦊', '🐼', '🦁', '🐸', '🐙', '🦄', '🦖', '🤖',
@@ -285,6 +293,13 @@ function handleMessage(msg) {
             if (el.statScore) el.statScore.textContent = (msg.score || 0).toLocaleString();
             break;
 
+        case 'update_guessers':
+            currentGuessers = msg.guessers || [];
+            if (el.verbalModal && !el.verbalModal.classList.contains('hidden')) {
+                renderVerbalPlayers();
+            }
+            break;
+
         case 'trivia_locked':
             if (el.status && msg.elapsedSec) {
                 el.status.textContent = '✓ Guess locked in (' + msg.elapsedSec + 's)';
@@ -323,6 +338,7 @@ function onRoomClosed() {
         try { ws.close(); } catch (e) { /* already closing */ }
         ws = null;
     }
+    closeVerbalModal();
     if (el.shell) el.shell.classList.add('hidden');
     if (el.joinScreen) el.joinScreen.classList.remove('hidden');
     showError('The console closed this room. Ask for a new code, or reload the TV.');
@@ -414,8 +430,11 @@ function switchLayout(layout, state) {
 
     if (layout === 'draw') {
         padStrokes = [];
+        currentGuessers = state.guessers || [];
         if (el.secretWord) el.secretWord.textContent = state.word || 'DRAW';
         requestAnimationFrame(setupPad);
+    } else {
+        closeVerbalModal();
     }
 
     if (layout === 'guess' && el.guessInput) {
@@ -1146,6 +1165,80 @@ function initJoinAvatar() {
 }
 
 /* ==========================================================================
+   Verbal Guess Modal
+   ========================================================================== */
+
+function renderVerbalPlayers() {
+    if (!el.verbalPlayersList) return;
+    el.verbalPlayersList.innerHTML = '';
+
+    if (!currentGuessers || !currentGuessers.length) {
+        el.verbalPlayersList.innerHTML = '<p class="dim t-sm" style="text-align:center;padding:16px 0;">No other players connected.</p>';
+        return;
+    }
+
+    currentGuessers.forEach(p => {
+        const btn = doc.createElement('button');
+        btn.type = 'button';
+        btn.className = 'verbal-player-card';
+        btn.style.setProperty('--player-accent', p.color || 'var(--accent)');
+
+        const av = doc.createElement('span');
+        av.className = 'avatar avatar--sm';
+        av.style.setProperty('--ring-color', p.color || 'var(--accent)');
+        renderAvatarToElement(av, p.avatar);
+
+        const name = doc.createElement('span');
+        name.className = 'verbal-player-card__name';
+        name.textContent = p.name || 'Player';
+
+        const tag = doc.createElement('span');
+        tag.className = 'verbal-player-card__tag';
+        tag.textContent = 'Award Win ✓';
+
+        btn.appendChild(av);
+        btn.appendChild(name);
+        btn.appendChild(tag);
+
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            buzz(45);
+            send({ action: 'accept_guess', guesserId: p.id });
+            closeVerbalModal();
+        });
+
+        el.verbalPlayersList.appendChild(btn);
+    });
+}
+
+function openVerbalModal() {
+    renderVerbalPlayers();
+    if (el.verbalModal) el.verbalModal.classList.remove('hidden');
+    buzz(20);
+}
+
+function closeVerbalModal() {
+    if (el.verbalModal) el.verbalModal.classList.add('hidden');
+}
+
+function initVerbalModal() {
+    if (el.drawAcceptBtn) {
+        el.drawAcceptBtn.addEventListener('click', openVerbalModal);
+    }
+    if (el.verbalModalClose) {
+        el.verbalModalClose.addEventListener('click', closeVerbalModal);
+    }
+    if (el.cancelVerbalBtn) {
+        el.cancelVerbalBtn.addEventListener('click', closeVerbalModal);
+    }
+    if (el.verbalModal) {
+        el.verbalModal.addEventListener('click', (e) => {
+            if (e.target === el.verbalModal) closeVerbalModal();
+        });
+    }
+}
+
+/* ==========================================================================
    Wiring
    ========================================================================== */
 
@@ -1169,6 +1262,7 @@ if (el.name) {
 
 initJoinAvatar();
 initProfileModal();
+initVerbalModal();
 
 // Auto-connect when a room code arrived via the QR link.
 if (roomCode.length === 4) {

@@ -248,10 +248,20 @@
                 <canvas id="draw-pad" class="draw-pad"></canvas>
             </div>
 
-            <!-- Name to be guessed at bottom, aligned in center -->
-            <div class="draw-secret">
-                <span class="draw-secret__eyebrow">Draw this word</span>
-                <span class="draw-secret__word" id="secret-word-label">----</span>
+            <!-- Bottom bar: Secret word + Accept Verbal Guess button -->
+            <div class="draw-footer">
+                <div class="draw-secret">
+                    <span class="draw-secret__eyebrow">Draw this word</span>
+                    <span class="draw-secret__word" id="secret-word-label">----</span>
+                </div>
+                <button id="draw-accept-btn" class="draw-accept-btn" type="button" title="Accept a verbal guess from someone in the room" aria-label="Accept verbal guess">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" x2="12" y1="19" y2="22"/>
+                    </svg>
+                    <span>Accept Guess</span>
+                </button>
             </div>
         </section>
 
@@ -340,6 +350,35 @@
             <footer class="modal-card__foot">
                 <button id="cancel-profile-btn" class="btn btn--ghost btn--block" type="button">Cancel</button>
                 <button id="save-profile-btn" class="btn btn--primary btn--block" type="button">Save changes</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODAL — ACCEPT VERBAL GUESS                                           -->
+    <!-- ===================================================================== -->
+    <div id="verbal-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="verbal-modal-title">
+        <div class="modal-card">
+            <header class="modal-card__head">
+                <div>
+                    <p class="eyebrow is-accent">Verbal Guess</p>
+                    <h2 id="verbal-modal-title" class="display t-md">Who answered correctly?</h2>
+                </div>
+                <button id="verbal-modal-close" class="btn btn--ghost btn--icon" type="button" aria-label="Close dialog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="modal-card__body">
+                <p class="dim t-xs" style="margin-top:-6px;">Tap the player who shouted the correct answer:</p>
+                <div class="verbal-players-list" id="verbal-players-list"></div>
+            </div>
+
+            <footer class="modal-card__foot">
+                <button id="cancel-verbal-btn" class="btn btn--ghost btn--block" type="button">Cancel</button>
             </footer>
         </div>
     </div>

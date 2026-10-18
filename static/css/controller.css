@@ -1024,9 +1024,17 @@ textarea {
     box-shadow: none;
 }
 
-/* Secret word centered at bottom of canvas */
-.draw-secret {
+/* Bottom bar: Secret word + Accept Verbal Guess action */
+.draw-footer {
     flex: none;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.draw-secret {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1055,6 +1063,108 @@ textarea {
     color: var(--c-blue);
     line-height: 1.15;
     margin-top: 1px;
+}
+
+.draw-accept-btn {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--c-emerald) 18%, var(--card));
+    color: var(--c-emerald);
+    border: 1.5px solid color-mix(in srgb, var(--c-emerald) 55%, transparent);
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: var(--shadow-tile);
+    transition: transform 0.1s ease, background 0.15s ease, filter 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.draw-accept-btn:active {
+    transform: scale(0.96);
+    background: var(--c-emerald);
+    color: #ffffff;
+}
+
+.draw-accept-btn svg {
+    width: 20px;
+    height: 20px;
+    flex: none;
+}
+
+/* Verbal Guess selection modal */
+.verbal-players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px;
+}
+
+.verbal-player-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--card-ink) 5%, transparent);
+    border: 1.5px solid var(--card-line);
+    color: var(--card-ink);
+    cursor: pointer;
+    touch-action: manipulation;
+    text-align: left;
+    width: 100%;
+    transition: transform 0.1s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.verbal-player-card:hover,
+.verbal-player-card:focus-visible {
+    background: color-mix(in srgb, var(--player-accent, var(--accent)) 12%, transparent);
+    border-color: var(--player-accent, var(--accent));
+}
+
+.verbal-player-card:active {
+    transform: scale(0.97);
+    background: color-mix(in srgb, var(--player-accent, var(--accent)) 22%, transparent);
+    border-color: var(--player-accent, var(--accent));
+}
+
+.verbal-player-card .avatar {
+    flex: none;
+    border-color: var(--ring-color, var(--line-strong));
+}
+
+.verbal-player-card__name {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.verbal-player-card__tag {
+    flex: none;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--c-emerald);
+    background: color-mix(in srgb, var(--c-emerald) 14%, transparent);
+    padding: 4px 8px;
+    border-radius: var(--r-sm);
+    border: 1px solid color-mix(in srgb, var(--c-emerald) 30%, transparent);
 }
 
 /* ==========================================================================
@@ -1125,9 +1235,12 @@ textarea {
 
     /* Give the sketch pad as much height as possible on a short screen. */
     .layout--draw { padding: 10px 18px calc(10px + env(safe-area-inset-bottom)); gap: 8px; }
-    .layout--draw .draw-bar { padding: 8px 12px; }
-    .layout--draw .draw-bar__word { font-size: 18px; margin-top: 2px; }
-    .layout--draw .draw-hint,
+    .layout--draw .draw-footer { gap: 8px; }
+    .layout--draw .draw-secret { padding: 4px 12px; }
+    .layout--draw .draw-secret__eyebrow { font-size: 8px; }
+    .layout--draw .draw-secret__word { font-size: 16px; margin-top: 0; }
+    .layout--draw .draw-accept-btn { padding: 0 12px; font-size: 12px; gap: 6px; }
+    .layout--draw .draw-accept-btn svg { width: 16px; height: 16px; }
     .layout--draw ~ .pad-foot { display: none; }
 }
 
