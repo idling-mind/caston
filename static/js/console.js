@@ -624,6 +624,16 @@ function onControllerInput(playerId, data) {
         return;
     }
 
+    // When any active game has ended, pressing A (by the leader) returns to lobby to pick the next game
+    if (state.game && (state.game.ended || state.game.phase === 'done' || state.game.finished)) {
+        if (data.action === 'btn' && data.button === 'A' && data.state === 'down') {
+            if (!state.vipId || playerId === state.vipId) {
+                returnToLobby();
+                return;
+            }
+        }
+    }
+
     if (state.game && state.game.onInput) state.game.onInput(playerId, data);
 }
 
@@ -793,6 +803,15 @@ CastOn.toController = toController;
 CastOn.vibrate = vibrate;
 CastOn.tone = tone;
 CastOn.chord = chord;
+CastOn.sound = {
+    tone: (freq, ms, type) => tone(freq, ms, type),
+    chord: (freqs, ms, type) => chord(freqs, ms, type),
+    blip: () => tone(580, 80, 'sine'),
+    pop: () => tone(420, 60, 'triangle'),
+    success: () => chord([523, 659, 784], 140, 'triangle'),
+    fail: () => chord([311, 293], 180, 'sawtooth'),
+    fanfare: () => chord([392, 523, 659, 784], 220, 'triangle')
+};
 CastOn.escapeHtml = escapeHtml;
 CastOn.themeMeta = themeMeta;
 CastOn.fitCanvas = fitCanvas;

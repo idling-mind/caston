@@ -224,6 +224,11 @@ class SketchGuess {
         this.phase = 'done';
         this.accepting = false;
 
+        C.setLayout('dpad', {
+            title: 'Sketch & Guess',
+            subtitle: 'Leader: press A to pick the next game'
+        });
+
         C.hud(T.results({
             title: 'Sketch & Guess',
             kicker: ROUNDS + ' rounds drawn',

@@ -194,10 +194,9 @@ class FamilyTrivia {
         this.phase = 'done';
         this.accepting = false;
 
-        C.setLayout('trivia', {
+        C.setLayout('dpad', {
             title: 'Trivia complete',
-            subtitle: 'Leader: press A for the next game',
-            options: ['—', '—', '—', '—']
+            subtitle: 'Leader: press A for the next game'
         });
 
         C.hud(T.results({
