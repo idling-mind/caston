@@ -277,6 +277,10 @@ function handleMessage(msg) {
             buzz(msg.ms || 45);
             break;
 
+        case 'reset_input':
+            resetControls();
+            break;
+
         case 'score_update':
             if (el.statScore) el.statScore.textContent = (msg.score || 0).toLocaleString();
             break;
@@ -366,9 +370,15 @@ function onJoined(msg) {
    ========================================================================== */
 
 const LAYOUT_IDS = ['dpad', 'trivia', 'draw', 'guess'];
+let currentActiveLayout = null;
 
 function switchLayout(layout, state) {
     if (LAYOUT_IDS.indexOf(layout) === -1) layout = 'dpad';
+
+    if (currentActiveLayout && currentActiveLayout !== layout) {
+        resetControls();
+    }
+    currentActiveLayout = layout;
 
     LAYOUT_IDS.forEach(id => {
         const node = doc.getElementById('layout-' + id);
@@ -472,6 +482,8 @@ function renderExtras(extras) {
    Multi-touch support with pointer capture: hold or drag joystick with one
    thumb while tapping A/B arcade buttons with the other thumb.
    ========================================================================== */
+
+let resetJoystick = null;
 
 function setupJoystick() {
     const zone = doc.getElementById('joystick-zone');
@@ -707,6 +719,8 @@ function setupJoystick() {
             setupPad();
         }
     });
+
+    resetJoystick = () => onPointerUp(null);
 }
 
 function bindHoldButton(btn, button) {
@@ -734,6 +748,21 @@ setupJoystick();
 doc.querySelectorAll('.arcade__btn[data-btn]').forEach(btn => {
     bindHoldButton(btn, btn.getAttribute('data-btn'));
 });
+
+function resetControls() {
+    if (typeof resetJoystick === 'function') {
+        resetJoystick();
+    }
+    doc.querySelectorAll('.arcade__btn[data-btn]').forEach(btn => {
+        if (btn.classList.contains('is-pressed')) {
+            btn.classList.remove('is-pressed');
+            const button = btn.getAttribute('data-btn');
+            if (button) {
+                send({ action: 'btn', button: button, state: 'up' });
+            }
+        }
+    });
+}
 
 /* ==========================================================================
    Trivia buzzers

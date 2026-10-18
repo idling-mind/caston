@@ -720,7 +720,11 @@ class BumperBrawl {
                 frozenUntil: 0,
                 frozenBy: null,
                 lastHitBy: null,
-                lastHitAt: 0
+                lastHitAt: 0,
+                inputs: {},
+                jx: 0,
+                jy: 0,
+                useJoystick: false
             };
             if (this.scores[id] === undefined) this.scores[id] = 0;
         });
@@ -805,7 +809,23 @@ class BumperBrawl {
         }
 
         const e = this.entities[id];
-        if (!e || e.dead) return;
+        if (!e) return;
+
+        // If player is dead, only accept input releases/neutralizations, never new directions or actions
+        if (e.dead) {
+            if (data.action === 'joystick') {
+                if (data.active === false || (data.x === 0 && data.y === 0)) {
+                    e.jx = 0;
+                    e.jy = 0;
+                    e.useJoystick = false;
+                }
+            } else if (data.action === 'btn') {
+                if (data.state === 'up' && e.inputs) {
+                    e.inputs[data.button] = false;
+                }
+            }
+            return;
+        }
 
         // Record inputs continuously so player state is never lost
         if (data.action === 'joystick') {
@@ -817,7 +837,7 @@ class BumperBrawl {
             if (['UP', 'DOWN', 'LEFT', 'RIGHT'].includes(button)) {
                 e.inputs = e.inputs || {};
                 e.inputs[button] = state === 'down';
-            } else if (button === 'A' && state === 'down' && e.frozenUntil <= performance.now()) {
+            } else if (button === 'A' && state === 'down' && !e.dead && e.frozenUntil <= performance.now()) {
                 e.boost = 14;
                 C.vibrate(id, 30);
                 C.tone(680, 80, 'sawtooth');
@@ -950,7 +970,13 @@ class BumperBrawl {
                     e.r = this.getPlayerR();
                     e.vx = 0;
                     e.vy = 0;
+                    e.boost = 0;
+                    e.inputs = {};
+                    e.jx = 0;
+                    e.jy = 0;
+                    e.useJoystick = false;
                     e.invulnerableUntil = now + 3500;
+                    C.toController(e.id, { type: 'reset_input' });
                     C.sound.tone(523, 160, 'triangle');
                     this.addToast(`${e.player.name} RESPAWNED!`, e.player.color, 1800);
                 }
@@ -1228,7 +1254,17 @@ class BumperBrawl {
         player.respawnAt = now + 2400;
         player.vx = 0;
         player.vy = 0;
+        player.boost = 0;
+        player.inputs = {};
+        player.jx = 0;
+        player.jy = 0;
+        player.useJoystick = false;
+        player.frozenUntil = 0;
+        player.frozenBy = null;
+        player.freezePowerUntil = 0;
+        player.knockPowerUntil = 0;
 
+        C.toController(player.id, { type: 'reset_input' });
         C.chord([160, 110, 80], 350, 'sawtooth');
         C.vibrate(player.id, 450);
         this.screenShake = 14 * s;
