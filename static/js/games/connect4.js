@@ -3,7 +3,12 @@
    - Screen-filling slot grid dynamically tailored to fill the TV stage.
    - Multi-player support (2–8 players, plus smart AI bots for solo/demo play).
    - Supports both Turn-Based rotation and Simultaneous Blitz mode (toggle with X).
-   - Game lasts until the first player connects 4 horizontally, vertically, or diagonally.
+   - Clear visual hierarchy:
+       * Top-Left: Prominent segmented Mode Switcher with explicit [X] callout
+       * Top-Center: Dedicated Turn Spotlight with visual progress bar & circular shot clock
+       * Top-Right: Player cards with 4-dot connection progress meters (●●○○)
+       * Drop Rail: Player column droppers with live draining countdown ring
+       * Bottom Bar: Dedicated control legend with arcade keycap badges
    ========================================================================== */
 (function (w) {
 'use strict';
@@ -45,10 +50,11 @@ class Connect4Game extends CastOn.Game {
 
         // Modes: 'turns' (classic rotation) or 'blitz' (simultaneous with cooldown)
         this.mode = 'turns';
+        this.modeBannerUntil = 0;
 
         // Board dimensions computed to fill the screen space with slots
         this.cols = 18;
-        this.rows = 9;
+        this.rows = 8;
         this.grid = []; // grid[row][col] = { playerId, color, avatar, name, placedAt } | null
 
         this.playerState = {}; // playerId -> { col, heldDir, nextMoveAt, cooldownUntil, pieces, blocks, bestChain }
@@ -56,6 +62,7 @@ class Connect4Game extends CastOn.Game {
         this.turnOrder = [];
         this.turnIndex = 0;
         this.turnStartedAt = performance.now();
+        this.lastTickSec = -1;
 
         this.fallingDiscs = []; // animated discs currently dropping into slots
         this.particles = [];
@@ -90,12 +97,12 @@ class Connect4Game extends CastOn.Game {
     initBoardDimensions() {
         const v = this.ctx.view || { w: 1280, h: 656 };
         const s = this.getScale();
-        const availW = Math.max(400, v.w - 24 * s);
-        const availH = Math.max(240, v.h - 76 * s);
+        const availW = Math.max(400, v.w - 28 * s);
+        const availH = Math.max(240, v.h - 122 * s);
 
-        // Target ~62px per slot at 1280x720 reference scale so slots are large, crisp, and fill the screen
-        const targetCell = 62 * s;
-        this.rows = Math.max(7, Math.min(11, Math.round(availH / targetCell)));
+        // Target ~64px per slot at 1280x720 reference scale so slots are large, crisp, and fill the screen
+        const targetCell = 64 * s;
+        this.rows = Math.max(7, Math.min(10, Math.round(availH / targetCell)));
         this.cols = Math.max(12, Math.min(22, Math.round(this.rows * (availW / availH))));
     }
 
@@ -112,6 +119,7 @@ class Connect4Game extends CastOn.Game {
         this.winCelebrationUntil = 0;
         this.screenShake = 0;
         this.turnStartedAt = performance.now();
+        this.lastTickSec = -1;
 
         this.ctx.setOverlay('');
 
@@ -136,7 +144,6 @@ class Connect4Game extends CastOn.Game {
         const realPlayers = Object.assign({}, this.ctx.players || {});
         const keys = Object.keys(realPlayers);
         if (keys.length === 1) {
-            // Add a rival bot if only 1 player is in the room so solo play works immediately
             const p0 = realPlayers[keys[0]];
             const botColor = (p0 && p0.color && p0.color.toLowerCase() === '#f43f5e') ? '#10b981' : '#f43f5e';
             realPlayers[BOT_FALLBACK.id] = Object.assign({}, BOT_FALLBACK, { color: botColor });
@@ -190,14 +197,14 @@ class Connect4Game extends CastOn.Game {
     }
 
     onResize(view) {
-        // Logical grid stays intact; geometry scales dynamically in computeLayout()
+        // Logical grid stays intact; geometry scales dynamically in computeBoardLayout()
     }
 
     updateControllerLayouts() {
         const participants = this.getAllParticipants();
         const activeId = this.getCurrentTurnPlayerId();
         const activePlayer = participants[activeId];
-        const modeLabel = this.mode === 'turns' ? 'Mode: Blitz' : 'Mode: Turns';
+        const modeLabel = this.mode === 'turns' ? 'Switch to Blitz' : 'Switch to Turns';
         const extras = [
             { button: 'X', label: modeLabel },
             { button: 'Y', label: 'Reset Board' }
@@ -212,7 +219,6 @@ class Connect4Game extends CastOn.Game {
             return;
         }
 
-        // Turn-based mode: give general layout, then customize active player's status
         const waitingTitle = activePlayer
             ? `⏳ ${activePlayer.name}'s Turn`
             : 'Connect 4';
@@ -240,6 +246,7 @@ class Connect4Game extends CastOn.Game {
         if (!this.turnOrder.length) return;
         this.turnIndex = (this.turnIndex + 1) % this.turnOrder.length;
         this.turnStartedAt = performance.now();
+        this.lastTickSec = -1;
         const nextId = this.getCurrentTurnPlayerId();
         if (nextId && this.playerState[nextId]) {
             this.playerState[nextId].botThinkUntil = performance.now() + 650 + Math.random() * 450;
@@ -286,10 +293,9 @@ class Connect4Game extends CastOn.Game {
             }
         }
 
-        let col = st.col;
-        let targetRow = this.getLowestEmptyRow(col);
+        const col = st.col;
+        const targetRow = this.getLowestEmptyRow(col);
 
-        // If the chosen column is full, sound an error buzzer (or if turn timeout, pick nearest open column)
         if (targetRow === -1) {
             this.ctx.sound.fail();
             return false;
@@ -308,7 +314,6 @@ class Connect4Game extends CastOn.Game {
         st.cooldownUntil = now + BLITZ_COOLDOWN_MS;
         st.pieces = (st.pieces || 0) + 1;
 
-        // Check if this placement blocked an opponent's 3-in-a-row threat!
         const blockedOpponent = this.wouldCompleteFourForOther(targetRow, col, playerId);
 
         const cellData = {
@@ -322,7 +327,6 @@ class Connect4Game extends CastOn.Game {
         this.grid[targetRow][col] = cellData;
         this.lastMove = { r: targetRow, c: col, playerId: playerId };
 
-        // Spawn smooth falling disc animation
         this.fallingDiscs.push({
             r: targetRow,
             c: col,
@@ -337,7 +341,6 @@ class Connect4Game extends CastOn.Game {
 
         this.ctx.sound.tone(340 + (this.rows - targetRow) * 28, 75, 'triangle');
 
-        // Score calculation for leaderboard engagement
         const chainInfo = this.CheckBestLineAt(targetRow, col, playerId);
         st.bestChain = Math.max(st.bestChain || 0, chainInfo.maxLen);
         let movePts = 25 + Math.max(0, (chainInfo.maxLen - 1) * 40);
@@ -349,7 +352,6 @@ class Connect4Game extends CastOn.Game {
             this.scores[playerId] += movePts;
         }
 
-        // Check if this player connected 4!
         if (chainInfo.winningCells && chainInfo.winningCells.length >= 4) {
             this.winningLine = chainInfo.winningCells;
             this.winner = player;
@@ -362,7 +364,6 @@ class Connect4Game extends CastOn.Game {
             return true;
         }
 
-        // Check if the entire board is full (draw)
         if (this.isBoardFull()) {
             this.isDraw = true;
             this.winCelebrationUntil = now + 2400;
@@ -395,10 +396,10 @@ class Connect4Game extends CastOn.Game {
 
     CheckBestLineAt(r, c, playerId) {
         const dirs = [
-            { dr: 0, dc: 1 },  // Horizontal
-            { dr: 1, dc: 0 },  // Vertical
-            { dr: 1, dc: 1 },  // Diagonal \
-            { dr: 1, dc: -1 }  // Diagonal /
+            { dr: 0, dc: 1 },
+            { dr: 1, dc: 0 },
+            { dr: 1, dc: 1 },
+            { dr: 1, dc: -1 }
         ];
 
         let maxLen = 1;
@@ -407,7 +408,6 @@ class Connect4Game extends CastOn.Game {
         for (const { dr, dc } of dirs) {
             const cells = [{ r, c }];
 
-            // Forward
             for (let step = 1; step < 8; step++) {
                 const nr = r + dr * step;
                 const nc = c + dc * step;
@@ -420,7 +420,6 @@ class Connect4Game extends CastOn.Game {
                 }
             }
 
-            // Backward
             for (let step = 1; step < 8; step++) {
                 const nr = r - dr * step;
                 const nc = c - dc * step;
@@ -454,12 +453,10 @@ class Connect4Game extends CastOn.Game {
         }
         if (!validCols.length) return 0;
 
-        // 1. Can bot win immediately?
         for (const { c, r } of validCols) {
             if (this.CheckBestLineAt(r, c, botId).maxLen >= 4) return c;
         }
 
-        // 2. Must bot block an opponent from winning on their next drop?
         const participants = this.getAllParticipants();
         for (const { c, r } of validCols) {
             for (const otherId of Object.keys(participants)) {
@@ -468,7 +465,6 @@ class Connect4Game extends CastOn.Game {
             }
         }
 
-        // 3. Score heuristic: build 3-in-a-row / 2-in-a-row or block opponent's 3-in-a-row
         let bestScore = -Infinity;
         let bestCandidates = [];
 
@@ -484,7 +480,6 @@ class Connect4Game extends CastOn.Game {
                 else if (oppChain === 2) score += 18;
             }
 
-            // Avoid giving an opponent a winning slot directly above (r - 1, c)
             if (r > 0) {
                 for (const otherId of Object.keys(participants)) {
                     if (otherId === botId) continue;
@@ -494,7 +489,6 @@ class Connect4Game extends CastOn.Game {
                 }
             }
 
-            // Slight preference for columns near existing pieces or center
             const centerBias = 1 - Math.abs(c - (this.cols - 1) / 2) / (this.cols / 2);
             score += centerBias * 4 + Math.random() * 6;
 
@@ -514,7 +508,6 @@ class Connect4Game extends CastOn.Game {
 
         const participants = this.getAllParticipants();
 
-        // Handle held directional auto-repeat for all players
         for (const [id, st] of Object.entries(this.playerState)) {
             if (st.heldDir !== 0 && now >= st.nextMoveAt) {
                 this.moveColumn(id, st.heldDir);
@@ -529,8 +522,15 @@ class Connect4Game extends CastOn.Game {
             const st = this.playerState[activeId];
             if (!activePlayer || !st) return;
 
-            // Check if this seat is an AI bot or a non-VIP demo player
+            const remMs = Math.max(0, TURN_TIME_MS - (now - this.turnStartedAt));
+            const remSec = Math.ceil(remMs / 1000);
+
+            // Subtle audio tick during the final 3 seconds of a human turn
             const isAutoBot = activePlayer.__bot || (activePlayer.__demo && !activePlayer.is_vip && !st.humanInteracted);
+            if (!isAutoBot && remSec <= 3 && remSec >= 1 && remSec !== this.lastTickSec) {
+                this.lastTickSec = remSec;
+                this.ctx.sound.tone(remSec === 1 ? 880 : 660, 55, 'sine');
+            }
 
             if (isAutoBot && now >= (st.botThinkUntil || 0)) {
                 const targetCol = this.chooseBestBotColumn(activeId);
@@ -545,7 +545,6 @@ class Connect4Game extends CastOn.Game {
                 return;
             }
 
-            // Turn shot clock expiration: auto-drop in current or nearest open column
             if (now - this.turnStartedAt >= TURN_TIME_MS) {
                 let row = this.getLowestEmptyRow(st.col);
                 if (row === -1) {
@@ -565,7 +564,6 @@ class Connect4Game extends CastOn.Game {
                 }
             }
         } else {
-            // Blitz mode: let AI bots & non-VIP demo seats play at a fun pace
             for (const [id, p] of Object.entries(participants)) {
                 const st = this.playerState[id];
                 if (!st) continue;
@@ -591,13 +589,14 @@ class Connect4Game extends CastOn.Game {
     onInput(playerId, data) {
         if (!this.running) return;
 
-        // Leader shortcuts (X = toggle Turn/Blitz mode, Y = reset board)
         const isVip = !this.ctx.vipId || playerId === this.ctx.vipId;
         if (data.action === 'btn' && data.state === 'down' && isVip) {
             if (data.button === 'X' && !this.ended) {
                 this.mode = this.mode === 'turns' ? 'blitz' : 'turns';
                 this.turnStartedAt = performance.now();
-                this.ctx.sound.chord([523, 659], 100, 'triangle');
+                this.lastTickSec = -1;
+                this.modeBannerUntil = performance.now() + 1800;
+                this.ctx.sound.chord(this.mode === 'blitz' ? [523, 659, 784] : [659, 523], 100, 'triangle');
                 this.updateControllerLayouts();
                 return;
             }
@@ -653,15 +652,15 @@ class Connect4Game extends CastOn.Game {
 
     computeBoardLayout(view) {
         const s = this.getScale();
-        const padX = 12 * s;
-        const topHudH = 38 * s;
-        const dropZoneH = 34 * s;
-        const padBot = 10 * s;
+        const padX = 14 * s;
+        const topHudH = 64 * s;     // Top dashboard with pill elements
+        const dropZoneH = 34 * s;   // Column dropper track above the board
+        const botBarH = 40 * s;     // Dedicated bottom controls legend bar with generous padding
 
         const boardX = padX;
         const boardY = topHudH + dropZoneH;
         const boardW = Math.max(200, view.w - padX * 2);
-        const boardH = Math.max(150, view.h - boardY - padBot);
+        const boardH = Math.max(150, view.h - boardY - botBarH);
 
         const cellW = boardW / this.cols;
         const cellH = boardH / this.rows;
@@ -669,8 +668,10 @@ class Connect4Game extends CastOn.Game {
 
         return {
             s,
+            padX,
             topHudH,
             dropZoneH,
+            botBarH,
             boardX,
             boardY,
             boardW,
@@ -716,12 +717,10 @@ class Connect4Game extends CastOn.Game {
         g.save();
         if (alpha != null && alpha < 1) g.globalAlpha = alpha;
 
-        // Outer disc body
         this.ctx.graphics.circle(g, cx, cy, r);
         g.fillStyle = color;
         g.fill();
 
-        // Top-left 3D specular highlight gradient
         const grad = g.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.05, cx, cy, r);
         grad.addColorStop(0, 'rgba(255, 255, 255, 0.38)');
         grad.addColorStop(0.55, 'rgba(255, 255, 255, 0.0)');
@@ -730,19 +729,16 @@ class Connect4Game extends CastOn.Game {
         g.fillStyle = grad;
         g.fill();
 
-        // Inner coin ridge
         this.ctx.graphics.circle(g, cx, cy, r * 0.78);
         g.strokeStyle = 'rgba(255, 255, 255, 0.28)';
         g.lineWidth = Math.max(1, 1.5 * s);
         g.stroke();
 
-        // Outer crisp border
         this.ctx.graphics.circle(g, cx, cy, r);
         g.strokeStyle = 'rgba(255, 255, 255, 0.55)';
         g.lineWidth = Math.max(1, 1.6 * s);
         g.stroke();
 
-        // Player Avatar inside disc
         if (avatar) {
             if (typeof avatar === 'string' && (avatar.startsWith('data:image/') || avatar.startsWith('http') || avatar.startsWith('/'))) {
                 const img = getAvatarImg(avatar);
@@ -766,105 +762,374 @@ class Connect4Game extends CastOn.Game {
         g.restore();
     }
 
+    /**
+     * Draw a pill container (radius = h / 2)
+     */
+    drawPill(g, x, y, w, h, fillStyle, strokeStyle, lineWidth) {
+        this.ctx.graphics.roundRect(g, x, y, w, h, h / 2);
+        if (fillStyle) {
+            g.fillStyle = fillStyle;
+            g.fill();
+        }
+        if (strokeStyle) {
+            g.strokeStyle = strokeStyle;
+            g.lineWidth = lineWidth || 1;
+            g.stroke();
+        }
+    }
+
+    /**
+     * Structured Top Dashboard:
+     *   1. Left: Single game mode pill (without redundant X button)
+     *   2. Center: Prominent Circular Shot Clock containing active player's avatar inside with name on top
+     *   3. Right: Player pills with avatar, name, and 4-dot chain progress circles
+     */
     drawTopHud(g, view, layout, now) {
         const s = layout.s;
         const participants = this.getAllParticipants();
         const ids = Object.keys(participants);
         const padX = layout.boardX;
-        const hudY = 6 * s;
-        const hudH = 28 * s;
+        const hudY = 10 * s;
+        const hudH = 46 * s;
 
-        // Left: Mode pill + Turn / Status readout
-        const modeText = this.mode === 'turns' ? 'TURN-BASED' : '⚡ BLITZ FREE-FOR-ALL';
-        g.font = `700 ${Math.round(11 * s)}px "Space Grotesk", sans-serif`;
-        const modeW = g.measureText(modeText).width + 20 * s;
+        /* =================================================================
+           ZONE 1 (LEFT): GAME MODE PILL
+           ================================================================= */
+        const isTurns = this.mode === 'turns';
+        const modeLabel = isTurns ? '🎯 TURN-BASED' : '⚡ BLITZ CHAOS';
+        g.font = `700 ${Math.round(12.5 * s)}px "Space Grotesk", sans-serif`;
+        const modePillW = g.measureText(modeLabel).width + 36 * s;
+        const modePillH = 36 * s;
+        const modePillY = hudY + (hudH - modePillH) / 2;
 
-        this.ctx.graphics.roundRect(g, padX, hudY, modeW, hudH, 6 * s);
-        g.fillStyle = this.mode === 'turns' ? 'rgba(37, 99, 235, 0.28)' : 'rgba(245, 158, 11, 0.28)';
-        g.fill();
-        g.strokeStyle = this.mode === 'turns' ? 'rgba(96, 165, 250, 0.55)' : 'rgba(251, 191, 36, 0.65)';
-        g.lineWidth = 1 * s;
-        g.stroke();
+        this.drawPill(
+            g,
+            padX,
+            modePillY,
+            modePillW,
+            modePillH,
+            isTurns ? 'rgba(37, 99, 235, 0.22)' : 'rgba(217, 119, 6, 0.22)',
+            isTurns ? '#3b82f6' : '#f59e0b',
+            1.6 * s
+        );
 
-        this.ctx.graphics.label(modeText, padX + modeW / 2, hudY + hudH / 2, {
-            size: Math.round(10.5 * s),
+        this.ctx.graphics.label(modeLabel, padX + modePillW / 2, modePillY + modePillH / 2, {
+            size: Math.round(12.5 * s),
             weight: 700,
-            color: this.mode === 'turns' ? '#93c5fd' : '#fde047'
+            color: isTurns ? '#93c5fd' : '#fde047'
         });
 
-        // Status / Active Turn Banner
-        const statusX = padX + modeW + 12 * s;
+        /* =================================================================
+           ZONE 2 (CENTER): UNIFIED TURN SPOTLIGHT PILL WITH TIMER CIRCLE
+           ================================================================= */
+        const centerX = view.w / 2;
+
         if (this.winningLine && this.winner) {
+            const winPillW = 320 * s;
+            const winPillH = 38 * s;
+            const winPillY = hudY + (hudH - winPillH) / 2;
+            this.drawPill(g, centerX - winPillW / 2, winPillY, winPillW, winPillH, 'rgba(234, 179, 8, 0.22)', '#fde047', 2 * s);
+            this.drawDisc(g, centerX - winPillW / 2 + 20 * s, winPillY + winPillH / 2, 13 * s, this.winner.color, this.winner.avatar, 1, s);
             this.ctx.graphics.label(
                 `🏆 ${this.winner.name.toUpperCase()} CONNECTS 4!`,
-                statusX,
-                hudY + hudH / 2,
-                { size: Math.round(15 * s), weight: 700, color: '#fde047', align: 'left' }
+                centerX + 10 * s,
+                winPillY + winPillH / 2,
+                { size: Math.round(14 * s), weight: 700, color: '#fde047' }
             );
         } else if (this.isDraw) {
+            const drawPillW = 280 * s;
+            const drawPillH = 38 * s;
+            const drawPillY = hudY + (hudH - drawPillH) / 2;
+            this.drawPill(g, centerX - drawPillW / 2, drawPillY, drawPillW, drawPillH, 'rgba(30, 41, 59, 0.85)', '#94a3b8', 1.5 * s);
             this.ctx.graphics.label(
-                'BOARD FULL — DRAW GAME! (Press Y to Reset)',
-                statusX,
-                hudY + hudH / 2,
-                { size: Math.round(14 * s), weight: 700, color: '#f8fafc', align: 'left' }
+                'BOARD FULL — DRAW GAME!',
+                centerX,
+                drawPillY + drawPillH / 2,
+                { size: Math.round(14 * s), weight: 700, color: '#f8fafc' }
             );
-        } else if (this.mode === 'turns') {
+        } else if (isTurns) {
             const activeId = this.getCurrentTurnPlayerId();
             const activeP = participants[activeId];
-            const remSec = Math.max(0, Math.ceil((TURN_TIME_MS - (now - this.turnStartedAt)) / 1000));
-            if (activeP) {
-                // Active player turn pill
-                this.ctx.graphics.circle(g, statusX + 8 * s, hudY + hudH / 2, 6 * s);
-                g.fillStyle = activeP.color;
-                g.fill();
+            const elapsed = Math.max(0, now - this.turnStartedAt);
+            const remMs = Math.max(0, TURN_TIME_MS - elapsed);
+            const pct = Math.max(0, Math.min(1, remMs / TURN_TIME_MS));
+            const remSec = Math.ceil(remMs / 1000);
 
-                this.ctx.graphics.label(
-                    `${activeP.name}'s Turn (${remSec}s) · ◀ ▶ Aim · A Drop · X Mode`,
-                    statusX + 20 * s,
-                    hudY + hudH / 2,
-                    { size: Math.round(12.5 * s), weight: 700, color: '#f8fafc', align: 'left' }
+            let timerColor = '#10b981';
+            if (remSec <= 3) timerColor = '#f43f5e';
+            else if (remSec <= 5) timerColor = '#f59e0b';
+
+            const isUrgent = remSec <= 3;
+            const urgentPulse = isUrgent ? (0.5 + 0.5 * Math.sin(now * 0.02)) : 0;
+
+            if (activeP) {
+                const turnH = 40 * s;
+                const turnY = hudY + (hudH - turnH) / 2;
+                const turnMidY = turnY + turnH / 2;
+                const pillR = turnH / 2; // Radius of pill end caps (20*s)
+
+                const nameText = `${activeP.name}'s Turn`;
+                g.font = `700 ${Math.round(14 * s)}px "Space Grotesk", sans-serif`;
+                const nameW = g.measureText(nameText).width;
+
+                const circleR = 14.5 * s; // Inset of 5.5*s from outer pill cap
+                const secBadgeH = circleR * 2; // 29*s, matching the timer's vertical extent and 5.5*s inset
+                const secBadgeR = secBadgeH / 2; // 14.5*s
+                const secBadgeW = 38 * s;
+                const gap = 12 * s;
+
+                // Relative offsets from startX:
+                // circleCxRel = pillR (left arc center)
+                // Right arc center will be at startX + totalW - pillR
+                // Right badge's right semicircular cap has center at startX + totalW - pillR!
+                // So secX + secBadgeW - secBadgeR = totalW - pillR => secX = totalW - pillR - secBadgeW + secBadgeR
+                // And totalW:
+                const circleCxRel = pillR;
+                const nameLeftRel = circleCxRel + circleR + gap;
+                const secLeftRel = nameLeftRel + nameW + gap;
+                const totalW = secLeftRel + (secBadgeW - secBadgeR) + pillR;
+                const startX = centerX - totalW / 2;
+
+                // Main unified spotlight pill
+                this.drawPill(
+                    g,
+                    startX,
+                    turnY,
+                    totalW,
+                    turnH,
+                    isUrgent ? 'rgba(225, 29, 72, 0.25)' : 'rgba(15, 23, 42, 0.88)',
+                    isUrgent ? '#f43f5e' : (activeP.color || '#3b82f6'),
+                    isUrgent ? 2 * s : 1.4 * s
                 );
+
+                // 1. Left: Concentric circular timer with avatar inside
+                const circleCx = startX + circleCxRel;
+                const circleCy = turnMidY;
+
+                // Track ring
+                this.ctx.graphics.circle(g, circleCx, circleCy, circleR);
+                g.fillStyle = 'rgba(2, 6, 23, 0.9)';
+                g.fill();
+                g.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+                g.lineWidth = 2.8 * s;
+                g.stroke();
+
+                // Draining progress arc
+                g.beginPath();
+                g.arc(circleCx, circleCy, circleR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct, false);
+                g.strokeStyle = timerColor;
+                g.lineWidth = 3.2 * s;
+                g.lineCap = 'round';
+                g.stroke();
+
+                // Player avatar inside circle
+                this.drawDisc(g, circleCx, circleCy, circleR * 0.72, activeP.color, activeP.avatar, 1, s);
+
+                // 2. Middle: Player name
+                const nameX = startX + nameLeftRel;
+                this.ctx.graphics.label(nameText, nameX, turnMidY, {
+                    size: Math.round(14 * s),
+                    weight: 700,
+                    color: '#ffffff',
+                    align: 'left'
+                });
+
+                // 3. Right: Concentric countdown pill
+                const secX = startX + secLeftRel;
+                const secY = turnMidY - secBadgeH / 2;
+
+                this.drawPill(
+                    g,
+                    secX,
+                    secY,
+                    secBadgeW,
+                    secBadgeH,
+                    isUrgent ? '#e11d48' : 'rgba(2, 6, 23, 0.9)',
+                    timerColor,
+                    1.4 * s
+                );
+
+                const numScale = isUrgent ? (1 + urgentPulse * 0.12) : 1;
+                this.ctx.graphics.label(`${remSec}s`, secX + secBadgeW / 2, turnMidY, {
+                    size: Math.round(12 * s * numScale),
+                    weight: 700,
+                    color: '#ffffff'
+                });
             }
         } else {
-            this.ctx.graphics.label(
-                'Everyone drops at once! First to Connect 4 wins · ◀ ▶ Aim · A Drop · X Mode',
-                statusX,
-                hudY + hudH / 2,
-                { size: Math.round(12.5 * s), weight: 600, color: '#cbd5e1', align: 'left' }
-            );
+            // Blitz Free-For-All center info pill
+            let threatPlayer = null;
+            for (const id of ids) {
+                const st = this.playerState[id];
+                if (st && st.bestChain >= 3) {
+                    threatPlayer = participants[id];
+                    break;
+                }
+            }
+
+            const blitzPillW = 340 * s;
+            const blitzPillH = 36 * s;
+            const blitzPillY = hudY + (hudH - blitzPillH) / 2;
+
+            if (threatPlayer) {
+                this.drawPill(g, centerX - blitzPillW / 2, blitzPillY, blitzPillW, blitzPillH, 'rgba(180, 83, 9, 0.3)', '#fbbf24', 1.8 * s);
+                this.ctx.graphics.label(`⚠️ ${threatPlayer.name} has 3-in-a-row! Block!`, centerX, blitzPillY + blitzPillH / 2, {
+                    size: Math.round(13 * s),
+                    weight: 700,
+                    color: '#fde047'
+                });
+            } else {
+                this.drawPill(g, centerX - blitzPillW / 2, blitzPillY, blitzPillW, blitzPillH, 'rgba(15, 23, 42, 0.82)', 'rgba(245, 158, 11, 0.5)', 1.5 * s);
+                this.ctx.graphics.label('⚡ All players drop simultaneously!', centerX, blitzPillY + blitzPillH / 2, {
+                    size: Math.round(13 * s),
+                    weight: 700,
+                    color: '#f8fafc'
+                });
+            }
         }
 
-        // Right: Compact Player Chips showing best chain & disc count
-        let rightX = view.w - padX;
-        for (let i = ids.length - 1; i >= 0; i--) {
-            const id = ids[i];
-            const p = participants[id];
-            const st = this.playerState[id] || {};
-            const isTurn = this.mode === 'turns' && id === this.getCurrentTurnPlayerId() && !this.winningLine;
-            const label = `${p.name} (${st.bestChain || 0}/4)`;
+        /* =================================================================
+           ZONE 3 (RIGHT): PLAYER PILLS & 4-DOT PROGRESS CIRCLES
+           ================================================================= */
+        const rightAreaMinX = centerX + 180 * s;
+        const availRightW = view.w - padX - rightAreaMinX;
+        if (availRightW > 90 * s && ids.length > 0) {
+            const maxCards = Math.min(ids.length, Math.max(1, Math.floor(availRightW / (110 * s))));
+            const cardGap = 8 * s;
+            const cardW = Math.min(136 * s, (availRightW - cardGap * (maxCards - 1)) / maxCards);
+            const cardH = 36 * s;
+            const cardY = hudY + (hudH - cardH) / 2;
+            let currX = view.w - padX - (cardW * maxCards + cardGap * (maxCards - 1));
 
-            g.font = `700 ${Math.round(11.5 * s)}px "Space Grotesk", sans-serif`;
-            const chipW = Math.min(155 * s, g.measureText(label).width + 32 * s);
-            rightX -= chipW;
-            if (rightX < statusX + 260 * s) break; // Never overlap status text
+            for (let i = 0; i < maxCards; i++) {
+                const id = ids[i];
+                const p = participants[id];
+                const st = this.playerState[id] || {};
+                const isTurn = isTurns && id === this.getCurrentTurnPlayerId() && !this.winningLine;
+                const chain = Math.min(4, st.bestChain || 0);
 
-            this.ctx.graphics.roundRect(g, rightX, hudY, chipW, hudH, 999);
-            g.fillStyle = isTurn ? 'rgba(255, 255, 255, 0.16)' : 'rgba(15, 23, 42, 0.65)';
-            g.fill();
-            g.strokeStyle = p.color;
-            g.lineWidth = (isTurn ? 2.2 : 1.2) * s;
-            g.stroke();
+                this.drawPill(
+                    g,
+                    currX,
+                    cardY,
+                    cardW,
+                    cardH,
+                    isTurn ? 'rgba(30, 58, 138, 0.55)' : 'rgba(15, 23, 42, 0.78)',
+                    isTurn ? p.color : 'rgba(148, 163, 184, 0.28)',
+                    (isTurn ? 2 : 1.2) * s
+                );
 
-            this.drawDisc(g, rightX + 14 * s, hudY + hudH / 2, 9 * s, p.color, p.avatar, 1, s);
+                this.drawDisc(g, currX + cardH / 2, cardY + cardH / 2, 11 * s, p.color, p.avatar, 1, s);
 
-            this.ctx.graphics.label(label, rightX + 27 * s, hudY + hudH / 2, {
-                size: Math.round(11 * s),
+                g.save();
+                g.font = `700 ${Math.round(11 * s)}px "Space Grotesk", sans-serif`;
+                let nameStr = p.name || 'Player';
+                const maxNameW = cardW - cardH - 12 * s;
+                while (nameStr.length > 3 && g.measureText(nameStr).width > maxNameW) {
+                    nameStr = nameStr.slice(0, -1);
+                }
+                g.restore();
+
+                this.ctx.graphics.label(nameStr, currX + cardH + 2 * s, cardY + 11 * s, {
+                    size: Math.round(11 * s),
+                    weight: 700,
+                    color: isTurn ? '#ffffff' : '#cbd5e1',
+                    align: 'left'
+                });
+
+                // 4-Dot Connect Progress (Circles)
+                const dotStartX = currX + cardH + 4 * s;
+                const dotY = cardY + 25 * s;
+                const dotSpacing = 11 * s;
+                for (let d = 0; d < 4; d++) {
+                    const filled = d < chain;
+                    this.ctx.graphics.circle(g, dotStartX + d * dotSpacing, dotY, 3.4 * s);
+                    g.fillStyle = filled ? p.color : 'rgba(148, 163, 184, 0.25)';
+                    g.fill();
+                    if (filled) {
+                        g.strokeStyle = '#ffffff';
+                        g.lineWidth = 0.8 * s;
+                        g.stroke();
+                    }
+                }
+
+                currX += cardW + cardGap;
+            }
+        }
+    }
+
+    /**
+     * Dedicated Bottom Control Legend Bar with ample top and bottom padding and pill badges
+     */
+    drawBottomBar(g, view, layout) {
+        const s = layout.s;
+        const totalBarH = layout.botBarH;
+        const yTop = view.h - totalBarH;
+        const pillH = 24 * s;
+        const pillY = yTop + (totalBarH - pillH) / 2;
+
+        const items = [
+            { key: '◀ ▶', label: 'Aim Column' },
+            { key: 'A', label: 'Drop Disc', accent: '#10b981' },
+            { key: 'X', label: this.mode === 'turns' ? 'Switch to Blitz' : 'Switch to Turn-Based', accent: '#38bdf8' },
+            { key: 'Y', label: 'Reset Board' }
+        ];
+
+        g.font = `600 ${Math.round(11.5 * s)}px "Inter", sans-serif`;
+        let totalW = 0;
+        const measured = items.map(item => {
+            g.font = `700 ${Math.round(11 * s)}px "Space Grotesk", sans-serif`;
+            const keyW = Math.max(pillH, g.measureText(item.key).width + 14 * s);
+            g.font = `600 ${Math.round(11.5 * s)}px "Inter", sans-serif`;
+            const labelW = g.measureText(item.label).width;
+            const fullPillW = keyW + labelW + 12 * s;
+            totalW += fullPillW;
+            return { item, keyW, labelW, fullPillW };
+        });
+        const gap = 16 * s;
+        totalW += gap * (items.length - 1);
+
+        let currX = (view.w - totalW) / 2;
+        for (const m of measured) {
+            // Pill container for each shortcut
+            this.drawPill(
+                g,
+                currX,
+                pillY,
+                m.fullPillW,
+                pillH,
+                'rgba(15, 23, 42, 0.72)',
+                'rgba(148, 163, 184, 0.28)',
+                1.2 * s
+            );
+
+            // Circular/pill key bubble inside
+            this.drawPill(
+                g,
+                currX + 2 * s,
+                pillY + 2 * s,
+                m.keyW - 4 * s,
+                pillH - 4 * s,
+                m.item.accent || 'rgba(51, 65, 85, 0.95)',
+                null,
+                0
+            );
+
+            this.ctx.graphics.label(m.item.key, currX + 2 * s + (m.keyW - 4 * s) / 2, pillY + pillH / 2, {
+                size: Math.round(10.5 * s),
                 weight: 700,
-                color: isTurn ? '#ffffff' : '#e2e8f0',
-                align: 'left'
+                color: m.item.accent ? '#0f172a' : '#f8fafc'
             });
 
-            rightX -= 6 * s;
+            this.ctx.graphics.label(m.item.label, currX + m.keyW + 4 * s, pillY + pillH / 2, {
+                size: Math.round(11.5 * s),
+                weight: 600,
+                color: '#cbd5e1',
+                align: 'left',
+                display: false
+            });
+
+            currX += m.fullPillW + gap;
         }
     }
 
@@ -874,7 +1139,6 @@ class Connect4Game extends CastOn.Game {
         const ids = Object.keys(participants);
         const activeTurnId = this.getCurrentTurnPlayerId();
 
-        // Group cursors by column so multiple players aiming at the same column fan out cleanly
         const byCol = new Map();
         for (const id of ids) {
             const st = this.playerState[id];
@@ -883,13 +1147,13 @@ class Connect4Game extends CastOn.Game {
             byCol.get(st.col).push(id);
         }
 
-        const cursorCenterY = layout.topHudH + layout.dropZoneH * 0.48;
-        const tokenR = Math.min(13 * s, layout.slotR * 0.62);
+        const cursorCenterY = layout.topHudH + layout.dropZoneH * 0.46;
+        const tokenR = Math.min(13.5 * s, layout.slotR * 0.64);
 
         for (const [col, colPlayerIds] of byCol.entries()) {
             const baseCx = layout.colCenterX(col);
             const count = colPlayerIds.length;
-            const spread = Math.min(16 * s, (layout.cellW * 0.7) / Math.max(1, count));
+            const spread = Math.min(18 * s, (layout.cellW * 0.72) / Math.max(1, count));
 
             colPlayerIds.forEach((id, idx) => {
                 const p = participants[id];
@@ -911,22 +1175,20 @@ class Connect4Game extends CastOn.Game {
                 g.fillStyle = p.color;
                 g.fill();
 
-                // Token disc
-                this.drawDisc(g, cx, cy, tokenR, p.color, p.avatar, isTurn ? 1 : 0.62, s);
+                this.drawDisc(g, cx, cy, tokenR, p.color, p.avatar, isTurn ? 1 : 0.55, s);
 
-                // In Blitz mode, draw cooldown recharge arc if cooling down
-                if (this.mode === 'blitz' && now < st.cooldownUntil) {
+                // Subtle active indicator ring in turn mode (without duplicate timer text or duplicate draining ring)
+                if (this.mode === 'turns' && id === activeTurnId && !this.winningLine) {
+                    this.ctx.graphics.circle(g, cx, cy, tokenR + 3 * s);
+                    g.strokeStyle = '#fde047';
+                    g.lineWidth = 2 * s;
+                    g.stroke();
+                } else if (this.mode === 'blitz' && now < st.cooldownUntil) {
                     const pct = 1 - (st.cooldownUntil - now) / BLITZ_COOLDOWN_MS;
                     g.beginPath();
-                    g.arc(cx, cy, tokenR + 2.5 * s, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, Math.min(1, pct)));
+                    g.arc(cx, cy, tokenR + 2.8 * s, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, Math.min(1, pct)));
                     g.strokeStyle = '#fde047';
-                    g.lineWidth = 2.2 * s;
-                    g.stroke();
-                } else if (this.mode === 'turns' && id === activeTurnId && !this.winningLine) {
-                    // Glowing active turn halo
-                    this.ctx.graphics.circle(g, cx, cy, tokenR + 3.5 * s);
-                    g.strokeStyle = '#fde047';
-                    g.lineWidth = 2.2 * s;
+                    g.lineWidth = 2.4 * s;
                     g.stroke();
                 }
             });
@@ -966,7 +1228,7 @@ class Connect4Game extends CastOn.Game {
         const hiddenGridCells = new Set();
         for (let i = this.fallingDiscs.length - 1; i >= 0; i--) {
             const fd = this.fallingDiscs[i];
-            fd.velRow += 0.0024 * dt; // Gravity in rows/ms^2
+            fd.velRow += 0.0024 * dt;
             fd.currRow += fd.velRow * dt;
 
             if (fd.currRow >= fd.r) {
@@ -993,7 +1255,6 @@ class Connect4Game extends CastOn.Game {
             if (pt.alpha <= 0) this.particles.splice(i, 1);
         }
 
-        // Trigger results modal after celebration delay
         if ((this.winningLine || this.isDraw) && !this.resultsShown && now >= this.winCelebrationUntil) {
             this.endGame();
         }
@@ -1008,7 +1269,7 @@ class Connect4Game extends CastOn.Game {
         }
         this.ctx.graphics.arenaBackdrop(view);
 
-        // 2. Top HUD & Column Drop Cursors
+        // 2. Top 3-Zone Dashboard & Column Drop Cursors
         this.drawTopHud(g, view, layout, now);
         this.drawColumnCursors(g, layout, now);
 
@@ -1036,11 +1297,9 @@ class Connect4Game extends CastOn.Game {
                 const isPrimary = this.mode === 'turns' ? (id === activeTurnId) : true;
                 const colX = layout.boardX + st.col * layout.cellW;
 
-                // Subtle vertical column highlight beam
                 g.fillStyle = isPrimary ? 'rgba(255, 255, 255, 0.055)' : 'rgba(255, 255, 255, 0.02)';
                 g.fillRect(colX + 2 * s, layout.boardY + 2 * s, layout.cellW - 4 * s, layout.boardH - 4 * s);
 
-                // Ghost landing indicator in the lowest open slot for this player
                 const landR = this.getLowestEmptyRow(st.col);
                 if (landR !== -1 && isPrimary) {
                     const gx = layout.colCenterX(st.col);
@@ -1070,18 +1329,15 @@ class Connect4Game extends CastOn.Game {
                 const cell = this.grid[r][c];
                 const isFalling = hiddenGridCells.has(key);
 
-                // Recessed circular slot cutout
                 this.ctx.graphics.circle(g, cx, cy, layout.slotR);
                 g.fillStyle = 'rgba(4, 9, 20, 0.86)';
                 g.fill();
 
-                // Slot inner bezel rim
                 this.ctx.graphics.circle(g, cx, cy, layout.slotR);
                 g.strokeStyle = 'rgba(148, 163, 184, 0.22)';
                 g.lineWidth = 1.4 * s;
                 g.stroke();
 
-                // Column number watermark on top row of empty slots for easy scanning
                 if (r === 0 && (!cell || isFalling)) {
                     this.ctx.graphics.label(String(c + 1), cx, cy, {
                         size: Math.round(layout.slotR * 0.55),
@@ -1104,7 +1360,6 @@ class Connect4Game extends CastOn.Game {
                         s
                     );
 
-                    // Last dropped piece indicator ring
                     if (this.lastMove && this.lastMove.r === r && this.lastMove.c === c && !this.winningLine) {
                         this.ctx.graphics.circle(g, cx, cy, layout.slotR * 0.98);
                         g.strokeStyle = '#ffffff';
@@ -1112,7 +1367,6 @@ class Connect4Game extends CastOn.Game {
                         g.stroke();
                     }
 
-                    // Winning 4-in-a-row golden halo
                     if (isWinCell) {
                         this.ctx.graphics.circle(g, cx, cy, layout.slotR * 1.04 * pulse);
                         g.strokeStyle = '#fde047';
@@ -1165,6 +1419,31 @@ class Connect4Game extends CastOn.Game {
             g.restore();
         }
 
+        // 8. Transient Mode Switch Confirmation Toast
+        if (now < this.modeBannerUntil) {
+            const bw = 340 * s;
+            const bh = 46 * s;
+            const bx = (view.w - bw) / 2;
+            const by = layout.boardY + 18 * s;
+            g.save();
+            this.ctx.graphics.roundRect(g, bx, by, bw, bh, 10 * s);
+            g.fillStyle = 'rgba(2, 6, 23, 0.92)';
+            g.fill();
+            g.strokeStyle = this.mode === 'turns' ? '#60a5fa' : '#fbbf24';
+            g.lineWidth = 2 * s;
+            g.stroke();
+            this.ctx.graphics.label(
+                this.mode === 'turns' ? '🎯 SWITCHED TO TURN-BASED MODE' : '⚡ SWITCHED TO BLITZ FREE-FOR-ALL',
+                bx + bw / 2,
+                by + bh / 2,
+                { size: Math.round(13.5 * s), weight: 700, color: '#ffffff' }
+            );
+            g.restore();
+        }
+
+        // 9. Bottom Controls Legend Bar
+        this.drawBottomBar(g, view, layout);
+
         g.restore();
 
         this.rafId = requestAnimationFrame(this.loop);
@@ -1192,4 +1471,3 @@ CastOn.registerGame({
 });
 
 })(window);
-
