@@ -9,14 +9,15 @@
     flex-direction: column;
 }
 
-/* Layout wrapper used by trivia and sketch */
+/* Layout wrapper used by trivia */
 .q-screen {
-    flex: 1;
-    min-height: 0;
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     gap: 16px;
     padding: 24px var(--gutter) 20px;
+    zoom: var(--tv-scale, 1);
 }
 
 /* ---------- Trivia ------------------------------------------------------ */
@@ -30,7 +31,7 @@
 
 .q-screen__question {
     font-family: var(--font-display);
-    font-size: clamp(26px, 2.7vw, 34px);
+    font-size: clamp(26px, 2.4rem, 34px);
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -214,6 +215,11 @@
     align-items: center;
     gap: 12px;
     min-width: 0;
+    flex: 1 1 auto;
+}
+
+.q-status-wrap .tag {
+    flex: none;
 }
 
 .tag--all-guesses {
@@ -262,6 +268,12 @@
     gap: 10px;
     overflow-x: auto;
     padding: 2px 0;
+    min-width: 0;
+    scrollbar-width: none;
+}
+
+.q-players-status::-webkit-scrollbar {
+    display: none;
 }
 
 .q-player-chip {
@@ -279,6 +291,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     opacity: 1 !important;
     transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    flex: none;
 }
 
 .q-player-chip.is-waiting {
@@ -343,6 +356,12 @@
     overflow-x: auto;
     min-width: 0;
     padding: 2px 0;
+    flex: 1 1 auto;
+    scrollbar-width: none;
+}
+
+.q-reveal-banner::-webkit-scrollbar {
+    display: none;
 }
 
 .q-reveal-chip {
@@ -421,6 +440,7 @@
     gap: 8px;
     overflow: hidden;
     min-width: 0;
+    flex: 0 0 auto;
 }
 
 .rail__item {

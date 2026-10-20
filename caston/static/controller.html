@@ -347,6 +347,54 @@
             </div>
         </section>
 
+                <!-- =============================================================== -->
+        <!-- LAYOUT: MYSTERY DICE (Snakes & Ladders)                        -->
+        <!-- =============================================================== -->
+        <section id="layout-dice" class="layout layout--dice hidden">
+            <div class="dice-pad-card">
+                <header class="dice-pad-card__head">
+                    <span class="eyebrow is-accent" id="dice-pad-eyebrow">YOUR TURN</span>
+                    <h2 class="display t-md" id="dice-pad-title">Pick a Mystery Die</h2>
+                    <p class="muted t-xs" id="dice-pad-subtitle">Choose 1 of the 6 hidden faces to reveal your roll!</p>
+                </header>
+
+                <div class="dice-grid" id="dice-grid">
+                    <button class="dice-btn" data-dice="0" type="button" aria-label="Mystery Die 1">
+                        <span class="dice-btn__mark">?</span>
+                        <span class="dice-btn__label">Die 1</span>
+                    </button>
+                    <button class="dice-btn" data-dice="1" type="button" aria-label="Mystery Die 2">
+                        <span class="dice-btn__mark">?</span>
+                        <span class="dice-btn__label">Die 2</span>
+                    </button>
+                    <button class="dice-btn" data-dice="2" type="button" aria-label="Mystery Die 3">
+                        <span class="dice-btn__mark">?</span>
+                        <span class="dice-btn__label">Die 3</span>
+                    </button>
+                    <button class="dice-btn" data-dice="3" type="button" aria-label="Mystery Die 4">
+                        <span class="dice-btn__mark">?</span>
+                        <span class="dice-btn__label">Die 4</span>
+                    </button>
+                    <button class="dice-btn" data-dice="4" type="button" aria-label="Mystery Die 5">
+                        <span class="dice-btn__mark">?</span>
+                        <span class="dice-btn__label">Die 5</span>
+                    </button>
+                    <button class="dice-btn" data-dice="5" type="button" aria-label="Mystery Die 6">
+                        <span class="dice-btn__mark">?</span>
+                        <span class="dice-btn__label">Die 6</span>
+                    </button>
+                </div>
+
+                <div class="dice-waiting-banner hidden" id="dice-waiting-box">
+                    <div class="avatar avatar--md pulse-avatar" id="dice-turn-avatar">🎲</div>
+                    <div style="min-width:0;text-align:left">
+                        <div class="t-sm" style="font-weight:700" id="dice-turn-name">Player's Turn</div>
+                        <div class="dim t-xs" id="dice-turn-status">Choosing a mystery die...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <p class="pad-foot" id="pad-foot">Keep this page open — it is your controller.</p>
     </div>
 

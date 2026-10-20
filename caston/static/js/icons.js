@@ -48,7 +48,10 @@
         'help-circle': '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
         'gamepad': '<path d="M6 12h4M8 10v4"/><circle cx="15.5" cy="11" r=".8" fill="currentColor"/><circle cx="18" cy="13.5" r=".8" fill="currentColor"/><rect x="2" y="6" width="20" height="12" rx="5"/>',
         eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
-        grid: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.6" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.6" fill="currentColor"/>'
+        grid: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.6" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.6" fill="currentColor"/>',
+        dice: '<rect width="18" height="18" x="3" y="3" rx="3"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/>',
+        snake: '<path d="M6 19c0-2.5 2-4 5-4s5-2 5-4.5c0-2-1.5-3.5-3.5-3.5a3.5 3.5 0 0 0-3.5 3.5"/><path d="M12.5 7c.8-.8 1.5-1 2.5-1 1.7 0 3 1.3 3 3 0 2-1.5 3-3.5 3"/><circle cx="17" cy="8.5" r=".75" fill="currentColor"/><path d="M20 7.5l2-1M20 7.5l2 1"/>',
+        ladder: '<path d="M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10"/>'
     };
 
     /**

@@ -1515,3 +1515,126 @@ textarea {
 @media (orientation: landscape) and (max-height: 560px) {
     body.pad:has(.layout--draw:not(.hidden)) .pad-foot { display: none; }
 }
+
+/* ==========================================================================
+   Mystery Dice Pad (Snakes & Ladders)
+   ========================================================================== */
+
+.layout--dice {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    width: 100%;
+    height: 100%;
+}
+
+.dice-pad-card {
+    width: min(420px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px 20px;
+    border-radius: var(--r-xl);
+    background: var(--card);
+    color: var(--card-ink);
+    border: 1px solid var(--card-line);
+    box-shadow: var(--shadow-pop);
+}
+
+.dice-pad-card__head {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dice-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+    width: 100%;
+    transition: opacity 0.2s ease;
+}
+
+.dice-grid.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.dice-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 96px;
+    padding: 12px 8px;
+    border-radius: var(--r-lg);
+    background: color-mix(in srgb, var(--accent) 12%, var(--card));
+    color: var(--card-ink);
+    border: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    box-shadow: var(--shadow-tile);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.12s ease, border-color 0.12s ease, filter 0.12s ease;
+}
+
+.dice-btn:active {
+    transform: scale(0.94);
+    filter: brightness(1.2);
+}
+
+.dice-btn__mark {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.dice-btn__label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--card-ink-2);
+}
+
+.dice-btn.is-selected {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 16px var(--accent);
+    transform: scale(1.04);
+}
+
+.dice-btn.is-selected .dice-btn__mark,
+.dice-btn.is-selected .dice-btn__label {
+    color: #ffffff;
+}
+
+.dice-btn.is-dimmed {
+    opacity: 0.4;
+    filter: grayscale(0.5);
+}
+
+.dice-waiting-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--card-ink) 6%, transparent);
+    border: 1px solid var(--card-line);
+}
+
+.pulse-avatar {
+    animation: avatarPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes avatarPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}

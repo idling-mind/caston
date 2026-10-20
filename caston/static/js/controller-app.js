@@ -385,7 +385,7 @@ function onJoined(msg) {
    Layout switching
    ========================================================================== */
 
-const LAYOUT_IDS = ['dpad', 'joystick', 'trivia', 'draw', 'guess'];
+const LAYOUT_IDS = ['dpad', 'joystick', 'trivia', 'draw', 'guess', 'dice'];
 let currentActiveLayout = null;
 
 function switchLayout(layout, state) {
@@ -419,6 +419,35 @@ function switchLayout(layout, state) {
     if (state.subtitle && layout !== 'draw') {
         const foot = doc.getElementById('pad-foot');
         if (foot) foot.textContent = state.subtitle;
+    }
+
+    if (layout === 'dice') {
+        const isMyTurn = !state.waiting;
+        const grid = doc.getElementById('dice-grid');
+        const waitBox = doc.getElementById('dice-waiting-box');
+        const eyebrow = doc.getElementById('dice-pad-eyebrow');
+        const title = doc.getElementById('dice-pad-title');
+        const subtitle = doc.getElementById('dice-pad-subtitle');
+        if (eyebrow) eyebrow.textContent = isMyTurn ? 'YOUR TURN' : 'WAITING';
+        if (title) title.textContent = state.title || (isMyTurn ? 'Pick a Mystery Die' : 'Wait for your turn');
+        if (subtitle) subtitle.textContent = state.subtitle || (isMyTurn ? 'Choose 1 of the 6 hidden faces to reveal your roll!' : 'Watching the board...');
+
+        if (grid) grid.classList.toggle('is-disabled', !isMyTurn);
+        if (waitBox) {
+            waitBox.classList.toggle('hidden', isMyTurn);
+            const nameEl = doc.getElementById('dice-turn-name');
+            const statusEl = doc.getElementById('dice-turn-status');
+            const avatarEl = doc.getElementById('dice-turn-avatar');
+            if (nameEl) nameEl.textContent = state.currentTurnName || "Player's Turn";
+            if (statusEl) statusEl.textContent = state.currentTurnStatus || "Choosing a mystery die...";
+            if (avatarEl && state.currentTurnAvatar) {
+                renderAvatarToElement(avatarEl, state.currentTurnAvatar);
+            }
+        }
+        doc.querySelectorAll('.dice-btn').forEach(btn => {
+            btn.classList.remove('is-selected', 'is-dimmed');
+            btn.disabled = !isMyTurn;
+        });
     }
 
     if (layout === 'trivia') {
@@ -951,6 +980,9 @@ doc.querySelectorAll('.arcade__btn[data-btn]').forEach(btn => {
 });
 
 function resetControls() {
+    doc.querySelectorAll('.dice-btn[data-dice]').forEach(b => {
+        b.classList.remove('is-selected', 'is-dimmed');
+    });
     if (typeof resetDpad === 'function') {
         resetDpad();
     }
@@ -967,6 +999,30 @@ function resetControls() {
         }
     });
 }
+
+/* ==========================================================================
+   Mystery Dice pad
+   ========================================================================== */
+
+doc.querySelectorAll('.dice-btn[data-dice]').forEach(btn => {
+    btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (btn.disabled || btn.classList.contains('is-selected')) return;
+        buzz(35);
+        const idx = Number(btn.getAttribute('data-dice'));
+        send({ action: 'pick_dice', index: idx });
+
+        doc.querySelectorAll('.dice-btn[data-dice]').forEach(b => {
+            if (b === btn) {
+                b.classList.add('is-selected');
+                b.classList.remove('is-dimmed');
+            } else {
+                b.classList.add('is-dimmed');
+                b.classList.remove('is-selected');
+            }
+        });
+    });
+});
 
 /* ==========================================================================
    Trivia buzzers

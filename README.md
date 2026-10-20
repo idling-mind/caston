@@ -26,6 +26,7 @@ CastOn includes several built-in party games ready to play out of the box:
 | **🧠 Family Trivia** | 1–8 | 4-Color Arcade Buzzers | Fast-paced trivia quiz across multiple fun categories. Earn bonus points for fast answers and building answer streaks. |
 | **🎨 Sketch & Guess** | 2–8 | Touch Canvas Drawing & Text Input | Pictionary-style party fun! One player draws secret prompts with real-time vector streaming, while others race to guess the word. |
 | **🔴 Connect 4** | 2 (vs AI/PVP) | Tactile D-Pad (`LEFT`, `RIGHT`, `A`) | The classic vertical disc-drop strategy board game with smooth turn indicators and celebratory animations. |
+| **🐍 Snakes & Ladders** | 1–8 | Mystery Dice & D-Pad | Slither past realistic serpents with 3D scales and exotic patterns, climb golden stairs, and race to 100 before only one player remains! |
 
 ---
 
@@ -130,6 +131,7 @@ When started, CastOn detects your local IP address and displays a startup banner
    - **Family Trivia**: 4 colored buzzer buttons.
    - **Sketch & Guess**: Touch drawing pad for the artist, text input for guessers.
    - **Connect 4**: Tactile D-Pad (`LEFT`, `RIGHT`, `A`).
+   - **Snakes & Ladders**: 6 Mystery Dice Cards on TV + Phone controller touch grid or D-Pad.
 
 5. **Return to Lobby**:  
    The VIP can tap the persistent **`🏠 Lobby`** button in the top-right header of their mobile controller at any time to exit the active game and return all players to the main TV lobby.

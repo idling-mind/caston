@@ -23,7 +23,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 app = FastAPI(title="CastOn Game Console Platform")
 
 BASE_DIR = Path(__file__).parent
-STATIC_DIR = BASE_DIR / "static"
+STATIC_DIR = (BASE_DIR / "caston" / "static") if (BASE_DIR / "caston" / "static").exists() else (BASE_DIR / "static")
 SERVER_START_TIME = int(time.time())
 
 def get_asset_version() -> str:
