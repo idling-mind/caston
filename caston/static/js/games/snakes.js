@@ -807,7 +807,6 @@ class SnakesAndLaddersGame extends CastOn.Game {
                 this.bannerMessage = `🎉 ${this.getCurrentPlayer().name} rolled 1 and entered the arena!`;
                 this.bannerUntil = performance.now() + 2500;
                 this.sound.playEnterArena();
-                this.spawnCelebrationConfetti();
             } else {
                 // Cannot enter without 1: stay at gate with a small bounce
                 this.hopSteps = [0];
@@ -2278,7 +2277,6 @@ class SnakesAndLaddersGame extends CastOn.Game {
                 this.phase = 'revealed';
                 this.revealedAt = timestamp;
                 this.sound.playRevealChord();
-                this.spawnCelebrationConfetti();
             }
         } else if (this.phase === 'revealed') {
             // Pause 800ms after reveal before coins start moving
