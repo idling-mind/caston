@@ -14,8 +14,8 @@
 ### Running the console
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe app.py        # or run_lan.bat on Windows
+.\.venv\Scripts\python.exe -m pip install -e .    # or -r requirements.txt
+.\.venv\Scripts\caston.exe                       # or python -m caston / python app.py / run_lan.bat
 ```
 Open `http://<LAN-IP>:8000/tv` on the TV and `http://<LAN-IP>:8000/controller` on
 each phone. `python -m http.server` is **not** enough — the WebSocket endpoints
@@ -25,6 +25,44 @@ only exist in the FastAPI app.
 
 ## 2. Directory Structure
 
+`	ext
+d:\najeem\dev\caston\
+├── pyproject.toml             # Python PEP 517/621 package specification
+├── README.md                  # Project overview, quickstart & usage guide
+├── LICENSE                    # MIT License
+├── app.py                     # Backward-compatibility launcher
+├── requirements.txt           # Python dependencies (fastapi, uvicorn, websockets)
+├── run_lan.bat                # Windows batch launcher for local execution
+├── AGENTS.md                  # This architectural specification document
+├── tools/
+│   └── vendor_fonts.ps1       # One-off script that downloads the web fonts locally
+└── caston/                    # Main Python package
+    ├── __init__.py            # Package exports and version metadata
+    ├── __main__.py            # Module entry point (python -m caston)
+    ├── cli.py                 # CLI argument parsing and server banner
+    ├── server.py              # FastAPI server, Room state manager, WebSocket router
+    └── static/                # Static assets bundled with the package
+        ├── tv.html            # Big-screen shell: top bar, lobby, game stage, overlay
+        ├── controller.html    # Mobile shell: join screen + all four layout hosts
+        ├── css/
+        │   ├── design.css     # Design system: tokens, themes, typography, primitives
+        │   ├── console.css    # TV-only: top bar, lobby, tiles, room band
+        │   ├── controller.css # Phone-only: join form, D-Pad, buzzers, sketch pad
+        │   └── game.css       # In-game TV overlays (trivia board, sketch HUD, results)
+        ├── js/
+        │   ├── icons.js       # Inline SVG icon sprite — replaces the Lucide CDN
+        │   ├── qr.js          # Dependency-free QR encoder + themed canvas renderer
+        │   ├── console.js     # TV engine: websocket, room state, theming, lobby
+        │   ├── controller-app.js # Mobile client: websocket, layouts, pointer input
+        │   └── games/
+        │       ├── gametools.js # Shared canvas helpers and TV overlay fragments
+        │       ├── brawl.js     # Game: Bumper Brawl
+        │       ├── connect4.js  # Game: Connect 4
+        │       ├── trivia.js    # Game: Family Trivia
+        │       └── sketch.js    # Game: Sketch & Guess
+        └── vendor/
+            └── fonts/         # Self-hosted woff2 subsets + generated fonts.css
+`
 ```text
 d:\najeem\dev\caston\
 ├── app.py                     # FastAPI server, Room state manager, WebSocket router
