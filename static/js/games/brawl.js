@@ -606,7 +606,7 @@ class BumperBrawl {
         this.nextKnockCoinAt = this.startTime + 17000;
         this.nextLavaCoinAt = this.startTime + 26000;
 
-        C.setLayout('dpad', {
+        C.setLayout('joystick', {
             title: 'Bumper Brawl',
             subtitle: 'Joystick moves · A boosts · Grab special coins!'
         });
@@ -872,12 +872,12 @@ class BumperBrawl {
         // Detect Lava Wall activation/expiration for controller notifications
         if (isLavaActive && !this.lavaWasActive) {
             this.lavaWasActive = true;
-            C.setLayout('dpad', {
+            C.setLayout('joystick', {
                 title: 'Bumper Brawl',
                 subtitle: '🔥 LAVA WALLS ACTIVE! STAY AWAY FROM WALLS! 🔥'
             });
             if (this.lavaActivator) {
-                C.setLayout('dpad', {
+                C.setLayout('joystick', {
                     title: 'Bumper Brawl',
                     subtitle: '🔥 YOUR LAVA WALLS ARE ACTIVE! You are immune!'
                 }, this.lavaActivator);
@@ -885,7 +885,7 @@ class BumperBrawl {
         } else if (!isLavaActive && this.lavaWasActive) {
             this.lavaWasActive = false;
             this.lavaActivator = null;
-            C.setLayout('dpad', {
+            C.setLayout('joystick', {
                 title: 'Bumper Brawl',
                 subtitle: 'Joystick moves · A boosts · Grab special coins!'
             });
@@ -1212,7 +1212,7 @@ class BumperBrawl {
             this.scores[id] = (this.scores[id] || 0) + 15;
             C.chord([987, 1318, 1760], 180, 'triangle');
             C.vibrate(id, 70);
-            C.setLayout('dpad', { title: 'Bumper Brawl', subtitle: '❄️ FREEZE TOUCH ACTIVE! Ram rivals!' }, id);
+            C.setLayout('joystick', { title: 'Bumper Brawl', subtitle: '❄️ FREEZE TOUCH ACTIVE! Ram rivals!' }, id);
             this.addToast(`❄️ ${player.player.name} GOT FREEZE TOUCH!`, '#38bdf8', 2800);
             this.spawnShockwave(player.x, player.y, '#38bdf8');
         } else if (coin.type === 'knock') {
@@ -1220,7 +1220,7 @@ class BumperBrawl {
             this.scores[id] = (this.scores[id] || 0) + 15;
             C.tone(90, 200, 'sawtooth');
             C.vibrate(id, 90);
-            C.setLayout('dpad', { title: 'Bumper Brawl', subtitle: '⚡ MEGA KNOCK ACTIVE! Ram rivals with insane force!' }, id);
+            C.setLayout('joystick', { title: 'Bumper Brawl', subtitle: '⚡ MEGA KNOCK ACTIVE! Ram rivals with insane force!' }, id);
             this.addToast(`⚡ ${player.player.name} GOT MEGA KNOCK!`, '#f43f5e', 2800);
             this.spawnShockwave(player.x, player.y, '#f43f5e');
         } else if (coin.type === 'lava') {
@@ -1232,7 +1232,7 @@ class BumperBrawl {
             C.vibrate('all', 120);
             this.addToast(`🔥 ${player.player.name} ACTIVATED LAVA WALLS!`, '#ff4500', 3200);
             this.spawnShockwave(player.x, player.y, '#ff4500');
-            C.setLayout('dpad', {
+            C.setLayout('joystick', {
                 title: 'Bumper Brawl',
                 subtitle: '🔥 YOUR LAVA WALLS ARE ACTIVE! You are immune!'
             }, id);
@@ -1246,12 +1246,12 @@ class BumperBrawl {
 
         C.chord([1400, 1050, 700], 180, 'sawtooth');
         C.vibrate(victim.id, 350);
-        C.setLayout('dpad', { title: 'Bumper Brawl', subtitle: '❄️ YOU ARE FROZEN! Thawing in 3s...' }, victim.id);
+        C.setLayout('joystick', { title: 'Bumper Brawl', subtitle: '❄️ YOU ARE FROZEN! Thawing in 3s...' }, victim.id);
         this.addToast(`❄️ ${attacker.player.name} FROZE ${victim.player.name}!`, '#38bdf8', 2400);
 
         setTimeout(() => {
             if (this.running && !this.ended) {
-                C.setLayout('dpad', { title: 'Bumper Brawl', subtitle: 'Joystick moves · A boosts · Grab special coins!' }, victim.id);
+                C.setLayout('joystick', { title: 'Bumper Brawl', subtitle: 'Joystick moves · A boosts · Grab special coins!' }, victim.id);
             }
         }, FREEZE_HIT_DURATION_MS);
 
@@ -1350,7 +1350,7 @@ class BumperBrawl {
         this.phase = 'done';
         C.chord([523, 659, 784], 180, 'triangle');
 
-        C.setLayout('dpad', {
+        C.setLayout('joystick', {
             title: 'Bumper Brawl',
             subtitle: 'Leader: press A to pick the next game'
         });

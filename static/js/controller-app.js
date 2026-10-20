@@ -385,7 +385,7 @@ function onJoined(msg) {
    Layout switching
    ========================================================================== */
 
-const LAYOUT_IDS = ['dpad', 'trivia', 'draw', 'guess'];
+const LAYOUT_IDS = ['dpad', 'joystick', 'trivia', 'draw', 'guess'];
 let currentActiveLayout = null;
 
 function switchLayout(layout, state) {
@@ -403,9 +403,15 @@ function switchLayout(layout, state) {
 
     if (state.title && el.status) el.status.textContent = state.title;
 
-    // Secondary D-Pad buttons are declared by the TV in `state.extras`, so a
+    // Secondary gamepad buttons are declared by the TV in `state.extras`, so a
     // game can add or drop its own without a client change.
-    renderExtras(layout === 'dpad' ? state.extras : null);
+    renderExtras((layout === 'dpad' || layout === 'joystick') ? state.extras : null);
+
+    const actionText = state.actionLabel || state.action || 'Action';
+    const hintDpad = doc.getElementById('dpad-hint-text');
+    const hintJoy = doc.getElementById('joystick-hint-text');
+    if (hintDpad) hintDpad.textContent = actionText;
+    if (hintJoy) hintJoy.textContent = actionText;
 
     // Subtitle explains the current game; the footer is the only place with room
     // for a full sentence. The draw pad already shows the word in its own bar, so
@@ -478,32 +484,197 @@ let lastExtras = null;
 
 /* Secondary buttons the TV asks for at runtime (the lobby's theme cycle). */
 function renderExtras(extras) {
-    if (!el.extras) return;
+    const containers = doc.querySelectorAll('.arcade__shoulders');
+    if (!containers.length) return;
     lastExtras = extras || null;
     const list = isLeader ? (extras || []) : [];
     const signature = list.map(e => e.button + ':' + (e.label || '')).join('|');
 
-    if (el.extras.dataset.signature === signature) return;
-    el.extras.dataset.signature = signature;
-    el.extras.innerHTML = '';
+    containers.forEach(container => {
+        if (container.dataset.signature === signature) return;
+        container.dataset.signature = signature;
+        container.innerHTML = '';
 
-    if (!list.length) {
-        el.extras.classList.add('hidden');
-        return;
-    }
-    el.extras.classList.remove('hidden');
+        if (!list.length) {
+            container.classList.add('hidden');
+            return;
+        }
+        container.classList.remove('hidden');
 
-    list.forEach((e, i) => {
-        const btn = doc.createElement('button');
-        btn.type = 'button';
-        btn.className = 'arcade__btn arcade__btn--aux';
-        btn.setAttribute('data-btn', e.button);
-        btn.style.animationDelay = (i * 45) + 'ms';
-        btn.innerHTML = '<span>' + e.button + '</span><span class="arcade__aux-cap">' +
-            (e.label || '') + '</span>';
-        el.extras.appendChild(btn);
-        bindHoldButton(btn, e.button);
+        list.forEach((e, i) => {
+            const btn = doc.createElement('button');
+            btn.type = 'button';
+            btn.className = 'arcade__btn arcade__btn--aux';
+            btn.setAttribute('data-btn', e.button);
+            btn.style.animationDelay = (i * 45) + 'ms';
+            btn.innerHTML = '<span>' + e.button + '</span><span class="arcade__aux-cap">' +
+                (e.label || '') + '</span>';
+            container.appendChild(btn);
+            bindHoldButton(btn, e.button);
+        });
     });
+}
+
+/* ==========================================================================
+   Tactile Cross D-Pad & arcade buttons
+   Multi-touch support with pointer capture: slide thumb across directions or
+   tap individual wings with fluid 90-degree quadrant tracking and hysteresis.
+   ========================================================================== */
+
+let resetDpad = null;
+
+function setupDpad() {
+    const zone = doc.getElementById('dpad-zone');
+    const base = doc.getElementById('dpad-base');
+    const cross = doc.getElementById('dpad-cross');
+    if (!zone || !base || !cross) return;
+
+    const notchUp = zone.querySelector('.dpad-notch--up');
+    const notchDown = zone.querySelector('.dpad-notch--down');
+    const notchLeft = zone.querySelector('.dpad-notch--left');
+    const notchRight = zone.querySelector('.dpad-notch--right');
+
+    const keyUp = cross.querySelector('.dpad__key--up');
+    const keyDown = cross.querySelector('.dpad__key--down');
+    const keyLeft = cross.querySelector('.dpad__key--left');
+    const keyRight = cross.querySelector('.dpad__key--right');
+
+    let activePointerId = null;
+    let baseRect = null;
+    let currentDir = null;
+
+    function updateVisuals(dir) {
+        if (notchUp) notchUp.classList.toggle('is-active', dir === 'UP');
+        if (notchDown) notchDown.classList.toggle('is-active', dir === 'DOWN');
+        if (notchLeft) notchLeft.classList.toggle('is-active', dir === 'LEFT');
+        if (notchRight) notchRight.classList.toggle('is-active', dir === 'RIGHT');
+
+        if (keyUp) keyUp.classList.toggle('is-pressed', dir === 'UP');
+        if (keyDown) keyDown.classList.toggle('is-pressed', dir === 'DOWN');
+        if (keyLeft) keyLeft.classList.toggle('is-pressed', dir === 'LEFT');
+        if (keyRight) keyRight.classList.toggle('is-pressed', dir === 'RIGHT');
+
+        base.classList.toggle('is-active', !!dir);
+        cross.classList.toggle('is-active', !!dir);
+    }
+
+    function setDirection(newDir) {
+        if (newDir === currentDir) return;
+
+        if (currentDir) {
+            send({ action: 'btn', button: currentDir, state: 'up' });
+        }
+
+        currentDir = newDir;
+
+        if (currentDir) {
+            buzz(14);
+            send({ action: 'btn', button: currentDir, state: 'down' });
+        }
+
+        updateVisuals(currentDir);
+    }
+
+    function getDirectionFromVector(dx, dy, radius) {
+        const mag = Math.hypot(dx, dy) / (radius || 1);
+        if (mag < 0.16) {
+            // In the center hub deadzone
+            return null;
+        }
+
+        const angle = Math.atan2(dy, dx) * (180 / Math.PI); // -180 to 180
+
+        // 8 degree hysteresis to avoid jitter at boundary lines
+        const H = currentDir ? 8 : 0;
+
+        const upMin = -135 - (currentDir === 'UP' ? H : -H);
+        const upMax = -45 + (currentDir === 'UP' ? H : -H);
+        if (angle >= upMin && angle <= upMax) return 'UP';
+
+        const rightMin = -45 - (currentDir === 'RIGHT' ? H : -H);
+        const rightMax = 45 + (currentDir === 'RIGHT' ? H : -H);
+        if (angle >= rightMin && angle <= rightMax) return 'RIGHT';
+
+        const downMin = 45 - (currentDir === 'DOWN' ? H : -H);
+        const downMax = 135 + (currentDir === 'DOWN' ? H : -H);
+        if (angle >= downMin && angle <= downMax) return 'DOWN';
+
+        return 'LEFT';
+    }
+
+    function processPointer(clientX, clientY) {
+        if (!baseRect) baseRect = base.getBoundingClientRect();
+        const centerX = baseRect.left + baseRect.width / 2;
+        const centerY = baseRect.top + baseRect.height / 2;
+        const radius = Math.max(10, baseRect.width / 2);
+
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+
+        const dir = getDirectionFromVector(dx, dy, radius);
+        setDirection(dir);
+    }
+
+    function onPointerDown(e) {
+        if (activePointerId !== null) return;
+        e.preventDefault();
+
+        activePointerId = e.pointerId;
+        try { base.setPointerCapture(e.pointerId); } catch (err) {}
+
+        baseRect = base.getBoundingClientRect();
+        processPointer(e.clientX, e.clientY);
+    }
+
+    function onPointerMove(e) {
+        if (e.pointerId !== activePointerId) return;
+        e.preventDefault();
+        processPointer(e.clientX, e.clientY);
+    }
+
+    function onPointerUp(e) {
+        if (e && e.pointerId !== activePointerId) return;
+        if (e) e.preventDefault();
+
+        if (activePointerId !== null) {
+            try { base.releasePointerCapture(activePointerId); } catch (err) {}
+        }
+        activePointerId = null;
+        setDirection(null);
+    }
+
+    base.addEventListener('pointerdown', onPointerDown);
+    base.addEventListener('pointermove', onPointerMove);
+    base.addEventListener('pointerup', onPointerUp);
+    base.addEventListener('pointercancel', onPointerUp);
+    base.addEventListener('lostpointercapture', onPointerUp);
+
+    zone.addEventListener('keydown', (e) => {
+        let dir = null;
+        if (e.key === 'ArrowUp') dir = 'UP';
+        else if (e.key === 'ArrowDown') dir = 'DOWN';
+        else if (e.key === 'ArrowLeft') dir = 'LEFT';
+        else if (e.key === 'ArrowRight') dir = 'RIGHT';
+        if (!dir) return;
+
+        e.preventDefault();
+        setDirection(dir);
+    });
+
+    zone.addEventListener('keyup', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+            setDirection(null);
+        }
+    });
+
+    w.addEventListener('resize', () => {
+        baseRect = null;
+    });
+
+    resetDpad = () => {
+        onPointerUp(null);
+    };
 }
 
 /* ==========================================================================
@@ -772,6 +943,7 @@ function bindHoldButton(btn, button) {
     btn.addEventListener('lostpointercapture', () => btn.classList.remove('is-pressed'));
 }
 
+setupDpad();
 setupJoystick();
 
 doc.querySelectorAll('.arcade__btn[data-btn]').forEach(btn => {
@@ -779,6 +951,9 @@ doc.querySelectorAll('.arcade__btn[data-btn]').forEach(btn => {
 });
 
 function resetControls() {
+    if (typeof resetDpad === 'function') {
+        resetDpad();
+    }
     if (typeof resetJoystick === 'function') {
         resetJoystick();
     }

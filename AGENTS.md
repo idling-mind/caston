@@ -133,10 +133,11 @@ and scales proportionally across displays and aspect ratios:
 The TV acts as the **authoritative state machine** for every game. Whenever a game starts or changes phase, the TV sends a `set_layout` command through the server to either `"all"` controllers or a specific `player_id`.
 
 Currently supported layouts in `static/controller.html`:
-1. **`dpad`** (`#layout-dpad`): Cross D-Pad (`UP`, `DOWN`, `LEFT`, `RIGHT`) + Action buttons (`A`, `B`), plus optional shoulder buttons (`X`, `Y`) declared per-state via `setLayout(..., { extras: [{ button: 'X', label: 'Theme' }] })`. Supports simultaneous multi-touch via `setPointerCapture`.
-2. **`trivia`** (`#layout-trivia`): 2x2 grid of colored buzzer buttons (`0`, `1`, `2`, `3`) with dynamic option text injected via `state.options`.
-3. **`draw`** (`#layout-draw`): HTML5 `<canvas>` touch drawing pad that normalizes coordinates to `[0.0, 1.0]` and streams stroke vectors in real time, plus a secret word banner and Clear button.
-4. **`guess`** (`#layout-guess`): Text input field + Submit button for word-guessing games.
+1. **`dpad`** (`#layout-dpad`): Tactile Cross D-Pad (`UP`, `DOWN`, `LEFT`, `RIGHT`) + Action buttons (`A`, `B`), plus optional shoulder buttons (`X`, `Y`) declared per-state via `setLayout(..., { extras: [{ button: 'X', label: 'Theme' }] })`. Used for console lobby navigation and discrete grid games (e.g. Connect 4).
+2. **`joystick`** (`#layout-joystick`): Virtual 360° analog joystick + Action buttons (`A`, `B`), plus optional shoulder buttons (`X`, `Y`). Used for continuous physics/action games (e.g. Bumper Brawl).
+3. **`trivia`** (`#layout-trivia`): 2x2 grid of colored buzzer buttons (`0`, `1`, `2`, `3`) with dynamic option text injected via `state.options`.
+4. **`draw`** (`#layout-draw`): HTML5 `<canvas>` touch drawing pad that normalizes coordinates to `[0.0, 1.0]` and streams stroke vectors in real time, plus a secret word banner and Clear button.
+5. **`guess`** (`#layout-guess`): Text input field + Submit button for word-guessing games.
 
 ### 3.4 Dynamic Cache-Busting & Hot Invalidation
 - **Automated Asset Fingerprinting:** Mobile Safari/Chrome and Smart TV WebViews aggressively cache `.js` and `.css` files. `render_html_with_cache_busting()` in `app.py` dynamically injects `?v=<timestamp>` (the latest `mtime` of files in `static/`) into all `href` and `src` asset references. Any changes to game code or styling automatically force all clients to fetch fresh assets.
@@ -330,10 +331,13 @@ CastOn.registerGame({
 
 Switch phone layouts anytime with `ctx.controller.setLayout(layoutName, state)`:
 
-1. **`'dpad'`** — Virtual analog joystick / D-Pad + A and B arcade action buttons.
+1. **`'dpad'`** — Tactile Cross D-Pad (`UP`, `DOWN`, `LEFT`, `RIGHT`) + A and B arcade action buttons.
    - **Optional shoulder buttons**: pass `state.extras: [{ button: 'X', label: 'Shield' }, { button: 'Y', label: 'Bomb' }]`.
    - **Input payload**: `{"action": "btn", "button": "UP|DOWN|LEFT|RIGHT|A|B|X|Y", "state": "down|up"}`.
-2. **`'trivia'`** — 4 large arcade buzzer buttons (Red, Blue, Yellow, Green).
+2. **`'joystick'`** — Virtual 360° analog joystick + A and B arcade action buttons.
+   - **Optional shoulder buttons**: pass `state.extras: [{ button: 'X', label: 'Boost' }, { button: 'Y', label: 'Bomb' }]`.
+   - **Input payload**: `{"action": "joystick", "x": float, "y": float, "active": bool}` and synthesized `{"action": "btn", ...}`.
+3. **`'trivia'`** — 4 large arcade buzzer buttons (Red, Blue, Yellow, Green).
    - **Option labels**: pass `state.options: ['Choice A', 'Choice B', 'Choice C', 'Choice D']`.
    - **Input payload**: `{"action": "trivia_answer", "choice": 0|1|2|3}`.
 3. **`'draw'`** — Touch canvas with normalized vectors and secret prompt banner.

@@ -165,6 +165,65 @@
         <section id="layout-dpad" class="layout layout--dpad hidden">
             <div class="dpad-rig">
 
+                <div class="dpad-zone" id="dpad-zone" tabindex="0" role="group" aria-label="Directional Pad">
+                    <div class="dpad-base" id="dpad-base">
+                        <div class="dpad-track" aria-hidden="true"></div>
+                        <div class="dpad-notches" aria-hidden="true">
+                            <span class="dpad-notch dpad-notch--up" data-dir="UP"></span>
+                            <span class="dpad-notch dpad-notch--down" data-dir="DOWN"></span>
+                            <span class="dpad-notch dpad-notch--left" data-dir="LEFT"></span>
+                            <span class="dpad-notch dpad-notch--right" data-dir="RIGHT"></span>
+                        </div>
+                        <div class="dpad-cross" id="dpad-cross">
+                            <div class="dpad-cross__center" aria-hidden="true"></div>
+                            <button class="dpad__key dpad__key--up" data-btn="UP" type="button" aria-label="Up">
+                                <span class="dpad__arrow dpad__arrow--up" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6.5l-6 7h12z"/></svg>
+                                </span>
+                            </button>
+                            <button class="dpad__key dpad__key--down" data-btn="DOWN" type="button" aria-label="Down">
+                                <span class="dpad__arrow dpad__arrow--down" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.5l6-7H6z"/></svg>
+                                </span>
+                            </button>
+                            <button class="dpad__key dpad__key--left" data-btn="LEFT" type="button" aria-label="Left">
+                                <span class="dpad__arrow dpad__arrow--left" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 12l7-6v12z"/></svg>
+                                </span>
+                            </button>
+                            <button class="dpad__key dpad__key--right" data-btn="RIGHT" type="button" aria-label="Right">
+                                <span class="dpad__arrow dpad__arrow--right" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 12l-7 6V6z"/></svg>
+                                </span>
+                            </button>
+                            <div class="dpad__hub" aria-hidden="true">
+                                <span class="dpad__hub-dot"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arcade">
+                    <div class="arcade__cluster">
+                        <button class="arcade__btn arcade__btn--b" data-btn="B" type="button">B</button>
+                        <span class="arcade__cap">Back</span>
+                    </div>
+                    <div class="arcade__cluster arcade__cluster--primary">
+                        <button class="arcade__btn arcade__btn--a" data-btn="A" type="button">A</button>
+                        <span class="arcade__cap" id="dpad-hint-text">Action</span>
+                    </div>
+                </div>
+
+                <div class="arcade__shoulders" id="dpad-extras"></div>
+            </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- LAYOUT: JOYSTICK + ARCADE BUTTONS (Bumper Brawl)               -->
+        <!-- =============================================================== -->
+        <section id="layout-joystick" class="layout layout--joystick hidden">
+            <div class="dpad-rig">
+
                 <div class="joystick-zone" id="joystick-zone">
                     <div class="joystick-base" id="joystick-base">
                         <div class="joystick-track" aria-hidden="true"></div>
@@ -189,11 +248,11 @@
                     </div>
                     <div class="arcade__cluster arcade__cluster--primary">
                         <button class="arcade__btn arcade__btn--a" data-btn="A" type="button">A</button>
-                        <span class="arcade__cap" id="dpad-hint-text">Action</span>
+                        <span class="arcade__cap" id="joystick-hint-text">Action</span>
                     </div>
                 </div>
 
-                <div class="arcade__shoulders" id="dpad-extras"></div>
+                <div class="arcade__shoulders" id="joystick-extras"></div>
             </div>
         </section>
 

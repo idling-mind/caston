@@ -560,13 +560,15 @@ textarea {
    D-Pad + arcade buttons
    ========================================================================== */
 
-.layout--dpad { justify-content: center; }
+.layout--dpad,
+.layout--joystick { justify-content: center; }
 
 /* Everything below is sized off custom properties so the whole rig
    scales down cleanly on narrow phones instead of overflowing the viewport. */
 .dpad-rig {
     --joy-size: 200px;
     --joy-thumb: 80px;
+    --dpad-size: var(--joy-size, 200px);
     --btn-a: 88px;
     --btn-b: 68px;
 
@@ -591,6 +593,275 @@ textarea {
 }
 
 .arcade__shoulders.hidden { display: none; }
+
+/* ==========================================================================
+   Tactile Cross D-Pad
+   Themed to match the virtual joystick's circular recessed base, cardinal
+   notches, radial gradient surfaces, and glowing accent hub.
+   ========================================================================== */
+
+.dpad-zone {
+    position: relative;
+    width: var(--dpad-size, 200px);
+    height: var(--dpad-size, 200px);
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+}
+
+.dpad-base {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--card) 6%, transparent) 0%, color-mix(in srgb, var(--bg-base) 45%, transparent) 100%);
+    border: 2px solid var(--line);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.45), 0 10px 24px -10px rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dpad-base.is-active {
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+    box-shadow: inset 0 3px 14px rgba(0, 0, 0, 0.45), 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent), 0 12px 28px -8px rgba(0, 0, 0, 0.65);
+}
+
+/* Concentric ring track matching joystick */
+.dpad-track {
+    position: absolute;
+    inset: 18%;
+    border-radius: 50%;
+    border: 1px dashed color-mix(in srgb, var(--line) 45%, transparent);
+    pointer-events: none;
+}
+
+/* Cardinal directional notch indicators */
+.dpad-notches {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.dpad-notch {
+    position: absolute;
+    background: color-mix(in srgb, var(--card-ink) 25%, var(--line));
+    border-radius: 2px;
+    pointer-events: none;
+    transition: background 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.dpad-notch--up,
+.dpad-notch--down {
+    left: 50%;
+    width: 4px;
+    height: 10px;
+    transform: translateX(-50%);
+}
+
+.dpad-notch--up   { top: 8px; }
+.dpad-notch--down { bottom: 8px; }
+
+.dpad-notch--left,
+.dpad-notch--right {
+    top: 50%;
+    width: 10px;
+    height: 4px;
+    transform: translateY(-50%);
+}
+
+.dpad-notch--left  { left: 8px; }
+.dpad-notch--right { right: 8px; }
+
+/* Active directional notch glow */
+.dpad-notch.is-active {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+}
+.dpad-notch--up.is-active,
+.dpad-notch--down.is-active {
+    transform: translateX(-50%) scale(1.3);
+}
+.dpad-notch--left.is-active,
+.dpad-notch--right.is-active {
+    transform: translateY(-50%) scale(1.3);
+}
+
+/* D-Pad Cross assembly */
+.dpad-cross {
+    position: relative;
+    width: calc(var(--dpad-size, 200px) * 0.74);
+    height: calc(var(--dpad-size, 200px) * 0.74);
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.65));
+    transition: filter 0.15s ease;
+}
+
+.dpad-cross.is-active {
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 35%, transparent));
+}
+
+/* Center core backing plate */
+.dpad-cross__center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 32%;
+    height: 32%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--card) 95%, #ffffff) 0%, color-mix(in srgb, var(--card) 78%, #000000) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Directional wing buttons */
+.dpad__key {
+    position: absolute;
+    background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--card) 95%, #ffffff) 0%, color-mix(in srgb, var(--card) 78%, #000000) 100%);
+    border: 2px solid var(--card-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.75), inset 0 -3px 6px rgba(0, 0, 0, 0.35);
+    transition: transform 0.08s ease, filter 0.08s ease, border-color 0.08s ease, box-shadow 0.08s ease;
+    z-index: 2;
+    padding: 0;
+    margin: 0;
+}
+
+.dpad__key:focus-visible {
+    box-shadow: 0 0 0 3px var(--focus), inset 0 2px 3px rgba(255, 255, 255, 0.75);
+}
+
+/* Key geometries & rounded outer corners */
+.dpad__key--up,
+.dpad__key--down {
+    left: 50%;
+    width: 33%;
+    height: 51%;
+    transform: translateX(-50%);
+}
+
+.dpad__key--up {
+    top: 0;
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    border-bottom: none;
+    align-items: flex-start;
+    padding-top: 10px;
+}
+
+.dpad__key--down {
+    bottom: 0;
+    border-radius: 0 0 var(--r-md) var(--r-md);
+    border-top: none;
+    align-items: flex-end;
+    padding-bottom: 10px;
+}
+
+.dpad__key--left,
+.dpad__key--right {
+    top: 50%;
+    width: 51%;
+    height: 33%;
+    transform: translateY(-50%);
+}
+
+.dpad__key--left {
+    left: 0;
+    border-radius: var(--r-md) 0 0 var(--r-md);
+    border-right: none;
+    justify-content: flex-start;
+    padding-left: 10px;
+}
+
+.dpad__key--right {
+    right: 0;
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+    border-left: none;
+    justify-content: flex-end;
+    padding-right: 10px;
+}
+
+/* Active / pressed state on keys */
+.dpad__key.is-pressed {
+    filter: brightness(1.08);
+    border-color: color-mix(in srgb, var(--accent) 70%, var(--card-line));
+    box-shadow: inset 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.dpad__key--up.is-pressed    { transform: translateX(-50%) translateY(2px) scale(0.97); }
+.dpad__key--down.is-pressed  { transform: translateX(-50%) translateY(-2px) scale(0.97); }
+.dpad__key--left.is-pressed  { transform: translateY(-50%) translateX(2px) scale(0.97); }
+.dpad__key--right.is-pressed { transform: translateY(-50%) translateX(-2px) scale(0.97); }
+
+/* Directional Arrow Glyphs */
+.dpad__arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: color-mix(in srgb, var(--card-ink) 55%, transparent);
+    pointer-events: none;
+    transition: color 0.1s ease, transform 0.1s ease, filter 0.1s ease;
+}
+
+.dpad__arrow svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.dpad__key.is-pressed .dpad__arrow {
+    color: var(--accent);
+    filter: drop-shadow(0 0 6px var(--accent));
+    transform: scale(1.15);
+}
+
+/* Center concave hub with accent dot */
+.dpad__hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 34%;
+    height: 34%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--card-ink) 9%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--card-ink) 14%, transparent);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    z-index: 3;
+}
+
+.dpad__hub-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.8;
+    transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
+}
+
+.dpad-cross.is-active .dpad__hub-dot {
+    opacity: 1;
+    transform: scale(1.3);
+    box-shadow: 0 0 10px var(--accent);
+}
 
 /* ==========================================================================
    Virtual Joystick
@@ -1211,20 +1482,16 @@ textarea {
     .pad-header { padding-top: calc(10px + env(safe-area-inset-top)); padding-bottom: 8px; }
     .pad-stats { display: none; }
 
-    /* D-Pad on the left edge, buttons on the right — thumb-reach layout. */
+    /* Gamepad on the left edge, buttons on the right — thumb-reach layout. */
     .dpad-rig {
-        --dpad: 176px;
-        --key: 56px;
-        --key-off: 60px;
+        --joy-size: 176px;
+        --joy-thumb: 70px;
         --btn-a: 78px;
         --btn-b: 60px;
         justify-content: space-between;
         padding: 0 clamp(20px, 6vw, 56px);
         max-height: none;
     }
-
-    .dpad__hub { width: 34px; height: 34px; }
-    .dpad__arrow { font-size: 12px; }
     .arcade__cap { display: none; }
     .arcade__cluster { transform: none; }
     .arcade__cluster--primary { transform: none; }
