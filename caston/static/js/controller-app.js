@@ -140,7 +140,51 @@ function renderPresetAvatars(container, currentAvatar, onSelect) {
 
 let ws = null;
 let roomCode = '';
-const storedPid = localStorage.getItem('caston_pid') || '';
+let storedPid = localStorage.getItem('caston_pid') || '';
+let isDeliberatelyClosed = false;
+let isReconnecting = false;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 45;
+
+/* ---------- wake lock (prevent phone screen sleep) ----------------------- */
+
+let wakeLockSentinel = null;
+
+async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    if (doc.visibilityState !== 'visible') return;
+    if (wakeLockSentinel !== null && !wakeLockSentinel.released) return;
+
+    try {
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+        wakeLockSentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+        });
+    } catch (err) {
+        wakeLockSentinel = null;
+    }
+}
+
+/* ---------- heartbeat ping ----------------------------------------------- */
+
+let pingTimer = null;
+
+function startHeartbeat() {
+    stopHeartbeat();
+    pingTimer = setInterval(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            send({ action: 'ping' });
+        }
+    }, 15000);
+}
+
+function stopHeartbeat() {
+    if (pingTimer) {
+        clearInterval(pingTimer);
+        pingTimer = null;
+    }
+}
 
 /* ---------- haptics ------------------------------------------------------- */
 
@@ -181,6 +225,118 @@ function hideError() {
     if (el.error) el.error.classList.add('hidden');
 }
 
+function showReconnectingBanner() {
+    if (el.status) {
+        if (!el.status.dataset.origText) {
+            el.status.dataset.origText = el.status.textContent;
+        }
+        el.status.textContent = '⚡ Reconnecting to console...';
+        el.status.style.color = '#f59e0b';
+        el.status.style.fontWeight = '600';
+    }
+}
+
+function hideReconnectingBanner() {
+    if (el.status) {
+        el.status.style.color = '';
+        el.status.style.fontWeight = '';
+        if (el.status.dataset.origText) {
+            el.status.textContent = el.status.dataset.origText;
+            delete el.status.dataset.origText;
+        }
+    }
+}
+
+function scheduleReconnect() {
+    if (isDeliberatelyClosed) return;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+
+    reconnectAttempts++;
+    if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+        hideReconnectingBanner();
+        if (el.shell) el.shell.classList.add('hidden');
+        if (el.joinScreen) el.joinScreen.classList.remove('hidden');
+        showError('Connection lost. Please rejoin the room.');
+        return;
+    }
+
+    const delay = reconnectAttempts <= 2 ? 350 : (reconnectAttempts <= 5 ? 1000 : 2000);
+    reconnectTimer = setTimeout(() => {
+        attemptReconnect();
+    }, delay);
+}
+
+function attemptReconnect() {
+    if (isDeliberatelyClosed || !roomCode) return;
+    if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return;
+
+    isReconnecting = true;
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const currentName = (el.name ? el.name.value : '').trim() || localStorage.getItem('caston_name') || 'Player';
+    const currentPid = storedPid || localStorage.getItem('caston_pid') || '';
+    const currentAvatar = selectedAvatar || localStorage.getItem('caston_avatar') || '';
+    const avatarParam = (currentAvatar && currentAvatar.length <= 16) ? ('&avatar=' + encodeURIComponent(currentAvatar)) : '';
+    const url = proto + '//' + location.host + '/ws/controller/' + encodeURIComponent(roomCode) +
+        '?name=' + encodeURIComponent(currentName) + '&pid=' + encodeURIComponent(currentPid) + avatarParam;
+
+    try {
+        ws = new WebSocket(url);
+        attachWebSocketHandlers();
+    } catch (e) {
+        isReconnecting = false;
+        scheduleReconnect();
+    }
+}
+
+function attachWebSocketHandlers() {
+    if (!ws) return;
+
+    ws.onopen = () => {
+        isReconnecting = false;
+        reconnectAttempts = 0;
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+        }
+        if (el.joinBtn) el.joinBtn.disabled = false;
+        startHeartbeat();
+        requestWakeLock();
+        hideReconnectingBanner();
+    };
+
+    ws.onmessage = (event) => {
+        let msg;
+        try { msg = JSON.parse(event.data); } catch (e) { return; }
+        handleMessage(msg);
+    };
+
+    ws.onerror = () => {
+        if (el.joinBtn) el.joinBtn.disabled = false;
+        if (el.shell && el.shell.classList.contains('hidden')) {
+            showError('Connection problem — is the console still running?');
+        }
+    };
+
+    ws.onclose = () => {
+        stopHeartbeat();
+        if (el.joinBtn) el.joinBtn.disabled = false;
+
+        if (isDeliberatelyClosed) {
+            return;
+        }
+
+        // If we were already playing, keep the shell visible and auto-reconnect
+        if (el.shell && !el.shell.classList.contains('hidden') && roomCode) {
+            showReconnectingBanner();
+            scheduleReconnect();
+        } else {
+            if (el.shell) el.shell.classList.add('hidden');
+            if (el.joinScreen) el.joinScreen.classList.remove('hidden');
+            showError('Lost the connection to the console.');
+        }
+    };
+}
+
 function joinRoom() {
     const code = (el.code ? el.code.value : '').trim().toUpperCase();
     const name = (el.name ? el.name.value : '').trim() || 'Player';
@@ -193,52 +349,22 @@ function joinRoom() {
 
     hideError();
     roomCode = code;
+    isDeliberatelyClosed = false;
+    reconnectAttempts = 0;
     localStorage.setItem('caston_name', name);
     if (selectedAvatar) localStorage.setItem('caston_avatar', selectedAvatar);
 
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const avatarParam = (selectedAvatar && selectedAvatar.length <= 16) ? ('&avatar=' + encodeURIComponent(selectedAvatar)) : '';
-    const url = proto + '//' + location.host + '/ws/controller/' + encodeURIComponent(code) +
-        '?name=' + encodeURIComponent(name) + '&pid=' + encodeURIComponent(storedPid) + avatarParam;
-
-    try {
-        ws = new WebSocket(url);
-    } catch (e) {
-        showError('Could not open a connection to the console.');
-        return;
-    }
-
     if (el.joinBtn) el.joinBtn.disabled = true;
 
-    ws.onopen = () => {
-        if (el.joinBtn) el.joinBtn.disabled = false;
-    };
-
-    ws.onmessage = (event) => {
-        let msg;
-        try { msg = JSON.parse(event.data); } catch (e) { return; }
-        handleMessage(msg);
-    };
-
-    ws.onerror = () => {
-        if (el.joinBtn) el.joinBtn.disabled = false;
-        showError('Connection problem — is the console still running?');
-    };
-
-    ws.onclose = () => {
-        if (el.joinBtn) el.joinBtn.disabled = false;
-        // Only treat this as a dropped connection if we were already playing;
-        // a deliberate room_closed already moved us back to the join screen.
-        if (el.shell && !el.shell.classList.contains('hidden')) {
-            el.shell.classList.add('hidden');
-            el.joinScreen.classList.remove('hidden');
-            showError('Lost the connection to the console.');
-        }
-    };
+    attemptReconnect();
 }
 
 function handleMessage(msg) {
     switch (msg.type) {
+        case 'pong':
+            // Heartbeat response
+            break;
+
         case 'reload':
             location.reload();
             break;
@@ -334,6 +460,12 @@ function handleMessage(msg) {
 }
 
 function onRoomClosed() {
+    isDeliberatelyClosed = true;
+    stopHeartbeat();
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
     if (ws) {
         try { ws.close(); } catch (e) { /* already closing */ }
         ws = null;
@@ -347,8 +479,13 @@ function onRoomClosed() {
 
 function onJoined(msg) {
     const player = msg.player || {};
-    localStorage.setItem('caston_pid', player.id || '');
+    storedPid = player.id || '';
+    localStorage.setItem('caston_pid', storedPid);
     localStorage.setItem('caston_name', player.name || '');
+
+    isDeliberatelyClosed = false;
+    hideReconnectingBanner();
+    requestWakeLock();
 
     if (el.joinScreen) el.joinScreen.classList.add('hidden');
     if (el.shell) el.shell.classList.remove('hidden');
@@ -1514,6 +1651,38 @@ if (roomCode.length === 4) {
         el.name.focus();
     }
 }
+
+// Keep screen awake & auto-reconnect when phone unlocks or returns to tab
+doc.addEventListener('visibilitychange', () => {
+    if (doc.visibilityState === 'visible') {
+        requestWakeLock();
+        if (!isDeliberatelyClosed && roomCode && storedPid) {
+            if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+                attemptReconnect();
+            }
+        }
+    }
+});
+
+w.addEventListener('pageshow', () => {
+    requestWakeLock();
+    if (!isDeliberatelyClosed && roomCode && storedPid) {
+        if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+            attemptReconnect();
+        }
+    }
+});
+
+w.addEventListener('focus', () => {
+    requestWakeLock();
+});
+
+// Re-request wake lock on any user interaction with the controller
+['touchstart', 'mousedown', 'pointerdown'].forEach((evtType) => {
+    doc.addEventListener(evtType, () => {
+        requestWakeLock();
+    }, { passive: true });
+});
 
 // The controller is a one-shot page; closing the tab should free the slot.
 w.addEventListener('beforeunload', () => {

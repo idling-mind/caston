@@ -416,6 +416,7 @@ class SnakesAndLaddersGame extends CastOn.Game {
         this.playerState = {}; // playerId -> { pos: 1..100, finished: false, finishRank: null, score: 0 }
         this.turnOrder = [];
         this.turnIndex = 0;
+        this.activePlayerId = null;
         this.escapedRankCounter = 1;
         this.gameOver = false;
         this.winnerPodium = []; // Array of ranked player records
@@ -503,15 +504,18 @@ class SnakesAndLaddersGame extends CastOn.Game {
             }
         });
 
-        // Clean departed players
+        // Retain playerState records permanently during the game session!
+        // Deleting playerState was the root cause of scores and board positions being wiped
+        // or inherited by other players when a phone locked/disconnected.
         Object.keys(this.playerState).forEach(id => {
-            if (!participants[id]) {
-                delete this.playerState[id];
-            }
+            const p = participants[id];
+            this.playerState[id].disconnected = (!p || p.connected === false);
         });
 
         this.turnOrder = ids;
-        if (this.turnIndex >= this.turnOrder.length) {
+        if (this.activePlayerId && this.turnOrder.includes(this.activePlayerId)) {
+            this.turnIndex = this.turnOrder.indexOf(this.activePlayerId);
+        } else if (this.turnIndex >= this.turnOrder.length) {
             this.turnIndex = 0;
         }
     }
@@ -612,7 +616,7 @@ class SnakesAndLaddersGame extends CastOn.Game {
     setupNewTurn(keepCurrentPlayer = false) {
         if (this.gameOver) return;
 
-        const activeIds = this.turnOrder.filter(id => !this.playerState[id].finished);
+        const activeIds = this.turnOrder.filter(id => this.playerState[id] && !this.playerState[id].finished);
         if (activeIds.length <= 1) {
             this.checkGameEnd();
             return;
@@ -623,14 +627,19 @@ class SnakesAndLaddersGame extends CastOn.Game {
             let tries = 0;
             this.turnIndex = (this.turnIndex + 1) % this.turnOrder.length;
             while (tries < this.turnOrder.length) {
-                const currentId = this.turnOrder[this.turnIndex];
-                if (!this.playerState[currentId].finished) {
+                const candidateId = this.turnOrder[this.turnIndex];
+                if (this.playerState[candidateId] && !this.playerState[candidateId].finished) {
                     break;
                 }
                 this.turnIndex = (this.turnIndex + 1) % this.turnOrder.length;
                 tries++;
             }
         }
+
+        // Lock in the active player ID for the entire lifecycle of this turn
+        this.activePlayerId = this.turnOrder[this.turnIndex] || this.turnOrder[0];
+        const currentId = this.activePlayerId;
+        const player = this.getAllParticipants()[currentId];
 
         // Shuffle all 6 dice faces for fair mystery pick
         this.hiddenDiceFaces = [1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5);
@@ -641,19 +650,19 @@ class SnakesAndLaddersGame extends CastOn.Game {
         this.hopSteps = [];
         this.activeSpecialEvent = null;
 
-        const currentId = this.getCurrentPlayerId();
-        const player = this.getAllParticipants()[currentId];
-
-        // If bot's turn, schedule automated pick
-        if (player && player.__bot) {
-            this.playerState[currentId].botThinkUntil = performance.now() + 1100 + Math.random() * 500;
+        // If bot or temporarily disconnected player's turn, schedule automated pick
+        if (player && (player.__bot || player.connected === false)) {
+            const delay = player.__bot ? (1100 + Math.random() * 500) : 4000;
+            if (this.playerState[currentId]) {
+                this.playerState[currentId].botThinkUntil = performance.now() + delay;
+            }
         }
 
         this.updateControllerLayouts();
     }
 
     getCurrentPlayerId() {
-        return this.turnOrder[this.turnIndex] || this.turnOrder[0];
+        return this.activePlayerId || this.turnOrder[this.turnIndex] || this.turnOrder[0];
     }
 
     getCurrentPlayer() {
@@ -974,7 +983,7 @@ class SnakesAndLaddersGame extends CastOn.Game {
 
     /** Game ends when only ONE player remains on the board! */
     checkGameEnd() {
-        const activeRacers = this.turnOrder.filter(id => !this.playerState[id].finished);
+        const activeRacers = this.turnOrder.filter(id => this.playerState[id] && !this.playerState[id].finished);
 
         // If only 1 player remains, the game finishes!
         if (activeRacers.length <= 1 && this.turnOrder.length >= 2) {
@@ -984,14 +993,17 @@ class SnakesAndLaddersGame extends CastOn.Game {
             if (activeRacers.length === 1) {
                 const lastId = activeRacers[0];
                 const lastState = this.playerState[lastId];
-                lastState.finished = true;
-                lastState.finishRank = this.escapedRankCounter++;
-                lastState.score = Math.max(10, 1000 - (lastState.finishRank - 1) * 200);
+                if (lastState && !lastState.finished) {
+                    lastState.finished = true;
+                    lastState.finishRank = this.escapedRankCounter++;
+                    lastState.score = Math.max(10, 1000 - (lastState.finishRank - 1) * 200);
+                }
             }
 
-            // Build podium rows sorted by rank
+            // Build podium rows sorted by rank (including any players retained in playerState)
             const participants = this.getAllParticipants();
-            this.winnerPodium = this.turnOrder.map(id => {
+            const allKnownIds = Array.from(new Set([...this.turnOrder, ...Object.keys(this.playerState)]));
+            this.winnerPodium = allKnownIds.map(id => {
                 const p = participants[id] || {};
                 const st = this.playerState[id] || {};
                 return {
@@ -1000,10 +1012,13 @@ class SnakesAndLaddersGame extends CastOn.Game {
                     color: p.color || '#2563EB',
                     avatar: p.avatar || '🎮',
                     score: st.score || 0,
-                    rank: st.finishRank || 99,
+                    rank: st.finishRank || (100 - (st.pos || 0)),
                     is_vip: p.is_vip
                 };
-            }).sort((a, b) => a.rank - b.rank);
+            }).sort((a, b) => {
+                if (a.rank !== b.rank) return a.rank - b.rank;
+                return b.score - a.score;
+            });
 
             this.phase = 'game_over';
             this.spawnCelebrationConfetti();
@@ -1769,19 +1784,22 @@ class SnakesAndLaddersGame extends CastOn.Game {
         const tileGroups = {};
         this.turnOrder.forEach(id => {
             const pState = this.playerState[id];
+            if (!pState) return;
             if (!tileGroups[pState.pos]) tileGroups[pState.pos] = [];
             tileGroups[pState.pos].push(id);
         });
 
         this.turnOrder.forEach(id => {
             const pState = this.playerState[id];
+            if (!pState) return;
             const pInfo = participants[id] || {};
             const isTurn = (id === activeId);
+            const isOffline = (pInfo.connected === false || pState.disconnected);
 
             // Compute current animated position
             let coinX, coinY;
             let coinScale = 1.0;
-            let coinAlpha = 1.0;
+            let coinAlpha = isOffline ? 0.6 : 1.0;
 
             if (isTurn && this.phase === 'moving') {
                 // Hop interpolation
@@ -2257,14 +2275,16 @@ class SnakesAndLaddersGame extends CastOn.Game {
         const dt = Math.min(64, timestamp - this.lastFrame);
         this.lastFrame = timestamp;
 
-        // 1. Bot Automated Thinking
+        // 1. Bot or Disconnected Player Automated Thinking
         const currentId = this.getCurrentPlayerId();
         const currentPlayer = this.getAllParticipants()[currentId];
-        if (currentPlayer && currentPlayer.__bot && this.phase === 'pick_die') {
-            const botWait = this.playerState[currentId].botThinkUntil;
-            if (botWait > 0 && timestamp >= botWait) {
-                this.playerState[currentId].botThinkUntil = 0;
-                // Bot picks a random card
+        if (currentPlayer && (currentPlayer.__bot || currentPlayer.connected === false) && this.phase === 'pick_die') {
+            const autoWait = this.playerState[currentId] ? this.playerState[currentId].botThinkUntil : 0;
+            if (autoWait > 0 && timestamp >= autoWait) {
+                if (this.playerState[currentId]) {
+                    this.playerState[currentId].botThinkUntil = 0;
+                }
+                // Auto-pick a card so party game continues without stalling
                 this.chooseCard(Math.floor(Math.random() * 6));
             }
         }

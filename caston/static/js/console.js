@@ -236,9 +236,9 @@ function renderStrip() {
     }
 
     dom.strip.innerHTML = list.map(p => `
-        <span class="mini" style="--ring-color:${p.color}">
+        <span class="mini${p.connected === false ? ' is-away' : ''}" style="--ring-color:${p.color};${p.connected === false ? ' opacity:0.55;' : ''}">
             <span class="mini__avatar">${renderAvatar(p.avatar)}</span>
-            <span class="mini__name">${escapeHtml(p.name)}</span>
+            <span class="mini__name">${escapeHtml(p.name)}${p.connected === false ? ' (Away)' : ''}</span>
             ${p.is_vip ? '<span class="mini__crown">' + icon('crown') + '</span>' : ''}
         </span>
     `).join('');
@@ -266,11 +266,11 @@ function renderRoster() {
     }
 
     const seats = list.map((p, i) => `
-        <div class="roster__cell" style="--ring-color:${p.color}; animation-delay:${i * 45}ms">
+        <div class="roster__cell${p.connected === false ? ' is-away' : ''}" style="--ring-color:${p.color};${p.connected === false ? ' opacity:0.55;' : ''} animation-delay:${i * 45}ms">
             <span class="avatar">${renderAvatar(p.avatar)}</span>
             <span class="roster__namebar">
                 <span class="roster__name">${escapeHtml(p.name)}</span>
-                <span class="roster__role">${p.is_vip ? 'Leader' : 'Player'}</span>
+                <span class="roster__role">${p.connected === false ? 'Reconnecting…' : (p.is_vip ? 'Leader' : 'Player')}</span>
             </span>
             ${p.is_vip ? '<span class="roster__star">' + icon('crown') + '</span>' : ''}
         </div>`).join('');

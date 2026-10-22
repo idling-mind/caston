@@ -4,6 +4,7 @@ import random
 import string
 import time
 import re
+import asyncio
 import uvicorn
 from pathlib import Path
 from typing import Dict, Optional
@@ -97,13 +98,16 @@ class Room:
         self.vip_id: Optional[str] = None
         self.current_layout: str = "dpad"
         self.layout_state: dict = {}
+        self.disconnect_tasks: Dict[str, asyncio.Task] = {}
 
     def assign_vip(self):
         if not self.players:
             self.vip_id = None
             return
-        if self.vip_id not in self.players:
-            self.vip_id = next(iter(self.players.keys()))
+        # Prioritize currently connected players for VIP leader privileges
+        connected_pids = [pid for pid, p in self.players.items() if p.get("connected", True)]
+        if self.vip_id not in self.players or (connected_pids and self.vip_id not in connected_pids):
+            self.vip_id = connected_pids[0] if connected_pids else next(iter(self.players.keys()))
         for pid, pdata in self.players.items():
             pdata["is_vip"] = (pid == self.vip_id)
 
@@ -203,6 +207,9 @@ async def tv_ws_endpoint(ws: WebSocket):
                         pass
 
     except WebSocketDisconnect:
+        for task in room.disconnect_tasks.values():
+            task.cancel()
+        room.disconnect_tasks.clear()
         for c_ws in list(room.controllers.values()):
             try:
                 await c_ws.send_json({"type": "room_closed"})
@@ -223,11 +230,29 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
 
     room = rooms[code]
 
-    # Reconnect support if pid is known, otherwise create new player
-    if not pid or pid not in room.players:
-        idx = len(room.players)
+    # Reconnect support if pid is known in room.players
+    is_reconnect = bool(pid and pid in room.players)
+    if is_reconnect:
+        # Cancel any pending grace removal task
+        if pid in room.disconnect_tasks:
+            room.disconnect_tasks[pid].cancel()
+            del room.disconnect_tasks[pid]
+
+        room.players[pid]["connected"] = True
+        cleaned_name = name[:12].strip()
+        if cleaned_name:
+            room.players[pid]["name"] = cleaned_name
+        if avatar and len(avatar) <= 32:
+            room.players[pid]["avatar"] = avatar
+    else:
+        # Assign unique player ID
         pid = f"p_{random.randint(10000, 99999)}"
-        color = PLAYER_COLORS[idx % len(PLAYER_COLORS)]
+        # Pick a color not currently taken by an existing player if possible
+        used_colors = {p.get("color") for p in room.players.values()}
+        available_colors = [c for c in PLAYER_COLORS if c not in used_colors]
+        color = available_colors[0] if available_colors else PLAYER_COLORS[len(room.players) % len(PLAYER_COLORS)]
+
+        idx = len(room.players)
         default_avatar = AVATARS[idx % len(AVATARS)]
         chosen_avatar = avatar if (avatar and len(avatar) <= 32) else default_avatar
         room.players[pid] = {
@@ -236,12 +261,9 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
             "color": color,
             "avatar": chosen_avatar,
             "score": 0,
+            "connected": True,
             "is_vip": False
         }
-    else:
-        room.players[pid]["name"] = name[:12].strip() or room.players[pid]["name"]
-        if avatar and len(avatar) <= 32:
-            room.players[pid]["avatar"] = avatar
 
     room.controllers[pid] = ws
     room.assign_vip()
@@ -272,7 +294,16 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
     try:
         while True:
             data = await ws.receive_json()
-            action = data.get("action")
+            action = data.get("action") or data.get("type")
+
+            # Heartbeat keepalive ping from mobile controller
+            if action == "ping":
+                try:
+                    await ws.send_json({"type": "pong"})
+                except Exception:
+                    pass
+                continue
+
             if action == "update_profile":
                 new_name = (data.get("name") or "").strip()[:12]
                 new_avatar = (data.get("avatar") or "").strip()
@@ -302,12 +333,15 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
                 "data": data
             })
     except WebSocketDisconnect:
+        # Controller disconnected (screen lock, backgrounding, network blip)
         room.controllers.pop(pid, None)
-        room.players.pop(pid, None)
+        if pid in room.players:
+            room.players[pid]["connected"] = False
+
+        # Temporarily promote a connected player to VIP if the leader disconnected
         room.assign_vip()
-        if not room.players:
-            room.current_layout = "dpad"
-            room.layout_state = {}
+
+        # Notify TV and active controllers of disconnected status
         try:
             await room.tv_ws.send_json({
                 "type": "players_sync",
@@ -318,6 +352,38 @@ async def controller_ws_endpoint(ws: WebSocket, code: str, name: str = "Player",
                 await c_ws.send_json({"type": "vip_update", "is_vip": room.players[c_pid]["is_vip"]})
         except Exception:
             pass
+
+        # Grace period before permanent removal (60 seconds)
+        async def purge_player_after_grace(r_code: str, p_id: str):
+            try:
+                await asyncio.sleep(60)
+                if r_code in rooms:
+                    r = rooms[r_code]
+                    if p_id in r.players and not r.players[p_id].get("connected", True):
+                        r.players.pop(p_id, None)
+                        r.assign_vip()
+                        if not r.players:
+                            r.current_layout = "dpad"
+                            r.layout_state = {}
+                        try:
+                            await r.tv_ws.send_json({
+                                "type": "players_sync",
+                                "players": list(r.players.values()),
+                                "vip_id": r.vip_id
+                            })
+                            for c_pid, c_ws in list(r.controllers.items()):
+                                await c_ws.send_json({"type": "vip_update", "is_vip": r.players[c_pid]["is_vip"]})
+                        except Exception:
+                            pass
+            except asyncio.CancelledError:
+                pass
+            finally:
+                if r_code in rooms:
+                    rooms[r_code].disconnect_tasks.pop(p_id, None)
+
+        # Start background grace timer task
+        task = asyncio.create_task(purge_player_after_grace(code, pid))
+        room.disconnect_tasks[pid] = task
 
 if __name__ == "__main__":
     print("\n" + "="*58)
