@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    CastOn — mobile controller client
    One websocket, four switchable layouts, and reliable multi-touch arcs.
    ========================================================================== */
@@ -522,7 +522,7 @@ function onJoined(msg) {
    Layout switching
    ========================================================================== */
 
-const LAYOUT_IDS = ['dpad', 'joystick', 'trivia', 'draw', 'guess', 'dice'];
+const LAYOUT_IDS = ['dpad', 'joystick', 'trivia', 'draw', 'guess', 'dice', 'hangman'];
 let currentActiveLayout = null;
 
 function switchLayout(layout, state) {
@@ -629,6 +629,107 @@ function switchLayout(layout, state) {
                 el.guessInput.select();
             } catch (e) { /* focus is best-effort */ }
         }, 120);
+    }
+
+    if (layout === 'hangman') {
+        const role = state.role || 'guesser';
+        const pickerBox = doc.getElementById('hm-picker');
+        const masterBox = doc.getElementById('hm-master-view');
+        const guesserBox = doc.getElementById('hm-guesser-view');
+
+        if (pickerBox) pickerBox.classList.toggle('hidden', role !== 'master_pick');
+        if (masterBox) masterBox.classList.toggle('hidden', role !== 'master_view');
+        if (guesserBox) guesserBox.classList.toggle('hidden', role !== 'guesser');
+
+        if (role === 'master_pick') {
+            const choicesContainer = doc.getElementById('hm-word-choices');
+            if (choicesContainer && state.wordChoices) {
+                choicesContainer.innerHTML = state.wordChoices.map((c, i) => `
+                    <button class="hm-choice-btn" data-choice-idx="${i}" type="button">
+                        <div>
+                            <div class="hm-choice-word">${c.word}</div>
+                            <div class="hm-choice-meta">${c.category || 'General'}${c.hint ? ' · ' + c.hint : ''}</div>
+                        </div>
+                        <span class="hm-choice-diff">${c.difficulty || 'medium'}</span>
+                    </button>
+                `).join('');
+
+                choicesContainer.querySelectorAll('.hm-choice-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        const idx = Number(btn.getAttribute('data-choice-idx'));
+                        const chosen = state.wordChoices[idx];
+                        if (chosen) {
+                            buzz(40);
+                            send({ action: 'hm_pick_word', word: chosen.word, category: chosen.category, difficulty: chosen.difficulty, hint: chosen.hint });
+                        }
+                    };
+                });
+            }
+        } else if (role === 'master_view') {
+            const wordDisplay = doc.getElementById('hm-master-word-display');
+            const catDisplay = doc.getElementById('hm-master-cat-display');
+            const strikesLabel = doc.getElementById('hm-master-strikes-label');
+            const graveContainer = doc.getElementById('hm-master-graveyard');
+
+            if (wordDisplay) wordDisplay.textContent = state.word || '----';
+            if (catDisplay) catDisplay.textContent = 'Category: ' + (state.category || 'General');
+            if (strikesLabel) {
+                const strikesNum = doc.getElementById('hm-master-strikes-num');
+                if (strikesNum) {
+                    strikesNum.textContent = `${state.strikes || 0} / ${state.maxStrikes || 6}`;
+                } else {
+                    strikesLabel.textContent = `${state.strikes || 0} / ${state.maxStrikes || 6}`;
+                }
+            }
+
+            if (graveContainer) {
+                const wrong = state.wrongLetters || [];
+                if (!wrong.length) {
+                    graveContainer.innerHTML = '<span class="dim t-xs">None yet</span>';
+                } else {
+                    graveContainer.innerHTML = wrong.map(ch => `<span class="hm-grave-chip">${ch}</span>`).join('');
+                }
+            }
+        } else if (role === 'guesser') {
+            const isMyTurn = !!state.isMyTurn;
+            const turnName = doc.getElementById('hm-turn-name');
+            const turnAvatar = doc.getElementById('hm-turn-avatar');
+            const turnBadge = doc.getElementById('hm-turn-badge');
+            const titleEl = doc.getElementById('hm-guesser-title');
+            const catEl = doc.getElementById('hm-guesser-cat');
+            const keyboard = doc.getElementById('hm-keyboard');
+
+            if (turnName) turnName.textContent = isMyTurn ? 'Your Turn to Guess!' : ((state.turnPlayer && state.turnPlayer.name) ? `${state.turnPlayer.name}'s Turn` : 'Waiting...');
+            if (turnAvatar && state.turnPlayer && state.turnPlayer.avatar) {
+                renderAvatarToElement(turnAvatar, state.turnPlayer.avatar);
+            }
+            if (turnBadge) {
+                turnBadge.style.borderColor = isMyTurn ? 'var(--accent)' : 'transparent';
+                turnBadge.style.background = isMyTurn ? 'color-mix(in srgb, var(--accent) 25%, transparent)' : 'color-mix(in srgb, var(--card-ink) 6%, transparent)';
+            }
+            if (titleEl) titleEl.textContent = isMyTurn ? 'Tap a Letter or Solve' : 'Watching the board...';
+            if (catEl) catEl.textContent = 'Category: ' + (state.category || 'General');
+
+            if (keyboard) {
+                keyboard.classList.toggle('is-disabled', !isMyTurn);
+            }
+
+            const pickedMap = state.pickedLetters || {};
+            doc.querySelectorAll('.hm-key[data-letter]').forEach(btn => {
+                const ch = btn.getAttribute('data-letter');
+                const status = pickedMap[ch];
+                btn.classList.remove('is-picked', 'is-correct', 'is-wrong');
+                if (status === 'correct') {
+                    btn.classList.add('is-picked', 'is-correct');
+                } else if (status === 'wrong') {
+                    btn.classList.add('is-picked', 'is-wrong');
+                }
+                btn.disabled = !isMyTurn || !!status;
+            });
+
+            const solveForm = doc.getElementById('hm-solve-form');
+            if (solveForm) solveForm.classList.add('hidden');
+        }
     }
 }
 
@@ -1683,6 +1784,86 @@ w.addEventListener('focus', () => {
         requestWakeLock();
     }, { passive: true });
 });
+
+/* ==========================================================================
+   Hangman (1 vs Rest) Controller Event Handlers
+   ========================================================================== */
+
+doc.querySelectorAll('.hm-key[data-letter]').forEach(btn => {
+    btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (btn.disabled || btn.classList.contains('is-picked')) return;
+        buzz(35);
+        const letter = btn.getAttribute('data-letter');
+        send({ action: 'hm_guess_letter', letter: letter });
+    });
+});
+
+const hmSolveToggleBtn = doc.getElementById('hm-solve-toggle-btn');
+const hmSolveForm = doc.getElementById('hm-solve-form');
+const hmSolveInput = doc.getElementById('hm-solve-input');
+const hmSolveSubmitBtn = doc.getElementById('hm-solve-submit-btn');
+
+if (hmSolveToggleBtn && hmSolveForm) {
+    hmSolveToggleBtn.addEventListener('click', () => {
+        hmSolveForm.classList.toggle('hidden');
+        if (!hmSolveForm.classList.contains('hidden') && hmSolveInput) {
+            setTimeout(() => {
+                hmSolveInput.focus();
+                hmSolveInput.select();
+            }, 60);
+        }
+    });
+}
+
+function submitHmSolve() {
+    if (!hmSolveInput) return;
+    const text = hmSolveInput.value.trim();
+    if (!text) return;
+    buzz(40);
+    send({ action: 'hm_solve_word', word: text });
+    hmSolveInput.value = '';
+    if (hmSolveForm) hmSolveForm.classList.add('hidden');
+}
+
+if (hmSolveSubmitBtn) hmSolveSubmitBtn.addEventListener('click', submitHmSolve);
+if (hmSolveInput) {
+    hmSolveInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            submitHmSolve();
+        }
+    });
+}
+
+const hmCustomToggleBtn = doc.getElementById('hm-custom-toggle-btn');
+const hmCustomForm = doc.getElementById('hm-custom-form');
+const hmCustomWordInput = doc.getElementById('hm-custom-word-input');
+const hmCustomCatInput = doc.getElementById('hm-custom-cat-input');
+const hmCustomSubmitBtn = doc.getElementById('hm-custom-submit-btn');
+
+if (hmCustomToggleBtn && hmCustomForm) {
+    hmCustomToggleBtn.addEventListener('click', () => {
+        hmCustomForm.classList.toggle('hidden');
+        if (!hmCustomForm.classList.contains('hidden') && hmCustomWordInput) {
+            setTimeout(() => {
+                hmCustomWordInput.focus();
+            }, 60);
+        }
+    });
+}
+
+if (hmCustomSubmitBtn) {
+    hmCustomSubmitBtn.addEventListener('click', () => {
+        if (!hmCustomWordInput) return;
+        const w = hmCustomWordInput.value.trim();
+        const cat = hmCustomCatInput ? hmCustomCatInput.value.trim() : '';
+        if (!w) return;
+        buzz(40);
+        send({ action: 'hm_custom_word', word: w, category: cat || 'Custom' });
+        hmCustomWordInput.value = '';
+    });
+}
 
 // The controller is a one-shot page; closing the tab should free the slot.
 w.addEventListener('beforeunload', () => {

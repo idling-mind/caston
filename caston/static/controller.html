@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-theme="broadcast">
 <head>
     <meta charset="UTF-8">
@@ -395,6 +395,134 @@
             </div>
         </section>
 
+        <!-- =============================================================== -->
+        <!-- LAYOUT: HANGMAN (1 VS REST)                                     -->
+        <!-- =============================================================== -->
+        <section id="layout-hangman" class="layout layout--hangman hidden">
+            <!-- Sub-view 1: Word Master Picker -->
+            <div id="hm-picker" class="hm-card hidden">
+                <header class="hm-card__head">
+                    <span class="eyebrow is-accent">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="hm-icon-inline" aria-hidden="true"><path d="m14 12-8.5 8.5a2.12 2.12 0 1 1-3-3L11 9"/><path d="M15 13 9 7l4-4 6 6h3l-4 4z"/></svg>
+                        <span>YOU ARE THE WORD MASTER</span>
+                    </span>
+                    <h2 class="display t-md">Pick a Secret Word</h2>
+                    <p class="muted t-xs">Stump the room! Earn +150 pts for every wrong letter.</p>
+                </header>
+
+                <div class="hm-choices" id="hm-word-choices"></div>
+
+                <div class="hm-custom-box">
+                    <button id="hm-custom-toggle-btn" class="btn btn--ghost btn--block btn--sm" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hm-icon-inline" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <span>Or enter a custom secret word</span>
+                    </button>
+                    <div id="hm-custom-form" class="hm-custom-form hidden">
+                        <input id="hm-custom-word-input" class="input input--guess" type="text" maxlength="24"
+                               placeholder="Secret word or phrase" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                        <input id="hm-custom-cat-input" class="input" type="text" maxlength="20"
+                               placeholder="Category (e.g. Inside Joke, Movies)" autocomplete="off">
+                        <button id="hm-custom-submit-btn" class="btn btn--primary btn--block btn--md" type="button">
+                            <span>Set Custom Word</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-view 2: Word Master Live Dashboard -->
+            <div id="hm-master-view" class="hm-card hidden">
+                <header class="hm-card__head">
+                    <span class="eyebrow is-accent">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="hm-icon-inline" aria-hidden="true"><path d="m14 12-8.5 8.5a2.12 2.12 0 1 1-3-3L11 9"/><path d="M15 13 9 7l4-4 6 6h3l-4 4z"/></svg>
+                        <span>WORD MASTER · IN PLAY</span>
+                    </span>
+                    <h2 class="display t-md" id="hm-master-word-display">WORD</h2>
+                    <p class="muted t-xs" id="hm-master-cat-display">Category: General</p>
+                </header>
+
+                <div class="hm-stats-card">
+                    <div class="hm-stats-row">
+                        <span class="t-xs" style="color:rgba(255,255,255,0.7);font-weight:600">Gallows Strikes:</span>
+                        <span class="hm-strikes-pill" id="hm-master-strikes-label">
+                            <span id="hm-master-strikes-num">0 / 6</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hm-icon-inline" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.2 4.7 3 6v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3c1.8-1.3 3-3.5 3-6a7 7 0 0 0-7-7z"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><path d="M10 16v3M14 16v3"/></svg>
+                        </span>
+                    </div>
+                    <p class="t-xs" style="color:rgba(255,255,255,0.5);margin-top:6px;">Cheering for mistakes! +150 pts per wrong letter.</p>
+                </div>
+
+                <div class="hm-graveyard-box">
+                    <span class="eyebrow">Missed Letters</span>
+                    <div class="hm-graveyard-chips" id="hm-master-graveyard">
+                        <span class="dim t-xs" style="color:rgba(255,255,255,0.4)">None yet</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-view 3: Guesser View (A-Z Keypad + Solve) -->
+            <div id="hm-guesser-view" class="hm-card hidden">
+                <header class="hm-card__head">
+                    <div id="hm-turn-badge" class="hm-turn-badge">
+                        <div class="avatar avatar--sm" id="hm-turn-avatar">🦊</div>
+                        <span id="hm-turn-name" class="t-sm" style="font-weight:700">Sarah's Turn</span>
+                    </div>
+                    <h2 class="display t-md" id="hm-guesser-title">Pick a Letter</h2>
+                    <p class="muted t-xs" id="hm-guesser-cat">Category: Movies</p>
+                </header>
+
+                <!-- QWERTY Keyboard Rows -->
+                <div class="hm-keyboard" id="hm-keyboard">
+                    <div class="hm-kb-row">
+                        <button class="hm-key" data-letter="Q" type="button">Q</button>
+                        <button class="hm-key" data-letter="W" type="button">W</button>
+                        <button class="hm-key" data-letter="E" type="button">E</button>
+                        <button class="hm-key" data-letter="R" type="button">R</button>
+                        <button class="hm-key" data-letter="T" type="button">T</button>
+                        <button class="hm-key" data-letter="Y" type="button">Y</button>
+                        <button class="hm-key" data-letter="U" type="button">U</button>
+                        <button class="hm-key" data-letter="I" type="button">I</button>
+                        <button class="hm-key" data-letter="O" type="button">O</button>
+                        <button class="hm-key" data-letter="P" type="button">P</button>
+                    </div>
+                    <div class="hm-kb-row">
+                        <button class="hm-key" data-letter="A" type="button">A</button>
+                        <button class="hm-key" data-letter="S" type="button">S</button>
+                        <button class="hm-key" data-letter="D" type="button">D</button>
+                        <button class="hm-key" data-letter="F" type="button">F</button>
+                        <button class="hm-key" data-letter="G" type="button">G</button>
+                        <button class="hm-key" data-letter="H" type="button">H</button>
+                        <button class="hm-key" data-letter="J" type="button">J</button>
+                        <button class="hm-key" data-letter="K" type="button">K</button>
+                        <button class="hm-key" data-letter="L" type="button">L</button>
+                    </div>
+                    <div class="hm-kb-row">
+                        <button class="hm-key" data-letter="Z" type="button">Z</button>
+                        <button class="hm-key" data-letter="X" type="button">X</button>
+                        <button class="hm-key" data-letter="C" type="button">C</button>
+                        <button class="hm-key" data-letter="V" type="button">V</button>
+                        <button class="hm-key" data-letter="B" type="button">B</button>
+                        <button class="hm-key" data-letter="N" type="button">N</button>
+                        <button class="hm-key" data-letter="M" type="button">M</button>
+                    </div>
+                </div>
+
+                <!-- Solve Trigger & Form -->
+                <div class="hm-solve-area">
+                    <button id="hm-solve-toggle-btn" class="btn btn--solid btn--block btn--md" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="hm-icon-inline" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>Solve Full Word (+500 pts)</span>
+                    </button>
+                    <div id="hm-solve-form" class="hm-solve-form hidden">
+                        <div class="row" style="gap:8px;width:100%">
+                            <input id="hm-solve-input" class="input" type="text" maxlength="28"
+                                   placeholder="Type the full word..." autocomplete="off" autocapitalize="characters" spellcheck="false" style="flex:1">
+                            <button id="hm-solve-submit-btn" class="btn btn--primary" type="button">Solve</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <p class="pad-foot" id="pad-foot">Keep this page open — it is your controller.</p>
     </div>
 
@@ -490,6 +618,7 @@
         </div>
     </div>
 
+    <script src="/static/js/icons.js"></script>
     <script src="/static/js/controller-app.js"></script>
 </body>
 </html>

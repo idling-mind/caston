@@ -51,7 +51,9 @@
         grid: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.6" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.6" fill="currentColor"/>',
         dice: '<rect width="18" height="18" x="3" y="3" rx="3"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/><circle cx="16" cy="16" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="16" cy="8" r="1.5" fill="currentColor"/><circle cx="8" cy="16" r="1.5" fill="currentColor"/>',
         snake: '<path d="M6 19c0-2.5 2-4 5-4s5-2 5-4.5c0-2-1.5-3.5-3.5-3.5a3.5 3.5 0 0 0-3.5 3.5"/><path d="M12.5 7c.8-.8 1.5-1 2.5-1 1.7 0 3 1.3 3 3 0 2-1.5 3-3.5 3"/><circle cx="17" cy="8.5" r=".75" fill="currentColor"/><path d="M20 7.5l2-1M20 7.5l2 1"/>',
-        ladder: '<path d="M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10"/>'
+        ladder: '<path d="M7 2v20M17 2v20M7 6h10M7 10h10M7 14h10M7 18h10"/>',
+        skull: '<path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.2 4.7 3 6v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3c1.8-1.3 3-3.5 3-6a7 7 0 0 0-7-7z"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/><circle cx="15" cy="9" r="1.2" fill="currentColor"/><path d="M10 16v3M14 16v3M9 13a3 3 0 0 0 6 0"/>',
+        axe: '<path d="m14 12-8.5 8.5a2.12 2.12 0 1 1-3-3L11 9"/><path d="M15 13 9 7l4-4 6 6h3l-4 4z"/>'
     };
 
     /**

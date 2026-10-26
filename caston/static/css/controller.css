@@ -1638,3 +1638,343 @@ textarea {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.12); }
 }
+
+
+/* ==========================================================================
+   Hangman (Word Duel) Controller Layout & Theme
+   ========================================================================== */
+
+.layout--hangman {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.hm-card {
+    width: min(440px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px 20px;
+    border-radius: var(--r-xl);
+    background: rgba(9, 14, 34, 0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+.hm-card__head {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hm-card__head .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+}
+
+.hm-card__head .display {
+    color: #ffffff;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+}
+
+.hm-card .muted,
+.hm-card .dim,
+.hm-card__head p {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.hm-icon-inline {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: -2px;
+    flex-shrink: 0;
+}
+
+.hm-turn-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 auto 6px auto;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.hm-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.hm-choice-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--r-lg);
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    cursor: pointer;
+    touch-action: manipulation;
+    text-align: left;
+    transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.hm-choice-btn:active {
+    transform: scale(0.97);
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    border-color: var(--accent);
+}
+
+.hm-choice-word {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #ffffff;
+}
+
+.hm-choice-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 2px;
+}
+
+.hm-choice-diff {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.hm-custom-box {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hm-custom-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border-radius: var(--r-lg);
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.hm-custom-form .input {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.hm-custom-form .input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.hm-stats-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border-radius: var(--r-lg);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.hm-stats-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hm-strikes-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 800;
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.16);
+    padding: 4px 10px;
+    border-radius: var(--r-sm);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.hm-graveyard-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: var(--r-lg);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hm-graveyard-box .eyebrow {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.hm-graveyard-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 32px;
+    align-items: center;
+}
+
+.hm-grave-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm);
+    background: rgba(239, 68, 68, 0.22);
+    border: 1px solid rgba(239, 68, 68, 0.55);
+    color: #fca5a5;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: line-through;
+}
+
+/* Keyboard Styling */
+.hm-keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    user-select: none;
+    -webkit-user-select: none;
+    margin: 6px 0;
+}
+
+.hm-keyboard.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.hm-kb-row {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    width: 100%;
+}
+
+.hm-key {
+    flex: 1;
+    min-width: 0;
+    max-width: 38px;
+    height: 46px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: var(--r-sm);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 0.08s ease, background 0.1s ease, color 0.1s ease;
+}
+
+.hm-key:active {
+    transform: scale(0.92);
+    background: var(--accent);
+    color: #000000;
+}
+
+.hm-key.is-picked {
+    pointer-events: none;
+    cursor: default;
+}
+
+.hm-key.is-correct {
+    background: #10b981;
+    color: #ffffff;
+    border-color: #059669;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.hm-key.is-wrong {
+    background: rgba(239, 68, 68, 0.18);
+    color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(239, 68, 68, 0.35);
+    text-decoration: line-through;
+}
+
+.hm-solve-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.hm-solve-area .btn--solid {
+    background: color-mix(in srgb, var(--accent) 30%, rgba(255, 255, 255, 0.12));
+    border: 1px solid var(--accent);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.hm-solve-area .btn--solid:active {
+    background: var(--accent);
+    color: #000000;
+}
+
+.hm-solve-form {
+    padding-top: 4px;
+}
+
+.hm-solve-form .input {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+.hm-solve-form .input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
