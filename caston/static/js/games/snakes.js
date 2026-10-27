@@ -450,13 +450,39 @@ class SnakesAndLaddersGame extends CastOn.Game {
         this.lastFrame = performance.now();
 
         this.syncPlayers();
-        this.setupNewTurn(true);
-        this.updateControllerLayouts();
+        this.enterHowToPhase();
 
         this.ctx.sound.fanfare();
 
         this.loop = this.loop.bind(this);
         this.rafId = requestAnimationFrame(this.loop);
+    }
+
+    enterHowToPhase() {
+        this.phase = 'howto';
+        this.activePlayerId = this.turnOrder[0] || null;
+        this.hiddenDiceFaces = [1, 2, 3, 4, 5, 6];
+
+        this.ctx.controller.setLayout('dpad', {
+            title: 'Snakes & Ladders',
+            subtitle: 'Press A to Start Race!'
+        }, 'all');
+
+        this.ctx.setOverlay(T.howToPlay({
+            title: 'How to Play Snakes & Ladders',
+            subtitle: 'Race from Start Gate to Tile 100 · 6 Mystery Dice',
+            steps: [
+                { icon: '🚪', title: '1. Roll 1 to Enter', text: 'Everyone begins in the Start Gate. You must roll a 1 to step onto Tile 1 and enter the arena!' },
+                { icon: '🎲', title: '2. Pick a Mystery Die', text: 'On your turn, all 6 dice faces (1–6) are shuffled face-down. Use D-Pad & A to reveal one!' },
+                { icon: '🪜', title: '3. Ladders & Serpents', text: 'Climb golden ladders to shortcut up the board, but watch out for serpents that swallow you down!' },
+                { icon: '⚡', title: '4. Roll 6 for Bonus Turn', text: 'Rolling a 6 grants an immediate bonus roll. Reach Tile 100 on an exact roll to claim victory!' }
+            ],
+            controls: [
+                { key: 'D-Pad', label: 'Select Mystery Die' },
+                { key: 'A', label: 'Roll Die / Start' }
+            ],
+            footerText: 'Press A on your phone controller to start the race!'
+        }));
     }
 
     getThemeId() {
@@ -522,6 +548,7 @@ class SnakesAndLaddersGame extends CastOn.Game {
 
     onPlayersSync() {
         this.syncPlayers();
+        if (this.phase === 'howto') return;
         this.checkGameEnd();
         this.updateControllerLayouts();
     }
@@ -746,6 +773,14 @@ class SnakesAndLaddersGame extends CastOn.Game {
     /* ---------- Input Handling ----------------------------------------------- */
 
     onInput(playerId, data) {
+        if (this.phase === 'howto') {
+            if (data.action === 'btn' && data.state === 'down' && (data.button === 'A' || data.button === 'B')) {
+                this.ctx.setOverlay('');
+                this.setupNewTurn(true);
+                this.ctx.sound.chord([523, 659, 784], 100, 'triangle');
+            }
+            return;
+        }
         if (this.gameOver) {
             if (data.action === 'btn' && (data.button === 'A' || data.button === 'B') && data.state === 'down') {
                 if (playerId === this.ctx.vipId) {
@@ -1924,6 +1959,7 @@ class SnakesAndLaddersGame extends CastOn.Game {
     /* ---------- Right Sidebar (Mystery Dice & Turn Spotlight) ---------------- */
 
     drawSidebar(g, sidebar, s, now) {
+        const th = T.theme();
         const participants = this.getAllParticipants();
         const activeId = this.getCurrentPlayerId();
         const activePlayer = participants[activeId] || {};
@@ -1932,9 +1968,9 @@ class SnakesAndLaddersGame extends CastOn.Game {
         // 1. Turn Spotlight Panel
         const spotH = Math.max(120 * s, sidebar.h * 0.22);
         T.roundRect(g, sidebar.x, sidebar.y, sidebar.w, spotH, 12 * s);
-        g.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        g.fillStyle = th.panel || 'rgba(15, 23, 42, 0.85)';
         g.fill();
-        g.strokeStyle = colorMix(activePlayer.color || '#2563EB', 0.4);
+        g.strokeStyle = colorMix(activePlayer.color || th.accent || '#2563EB', 0.45);
         g.lineWidth = 1.5 * s;
         g.stroke();
 
@@ -2078,9 +2114,10 @@ class SnakesAndLaddersGame extends CastOn.Game {
         const cornerR = size * 0.16;
 
         if (!showFront) {
+            const th = T.theme();
             // === DIE BACK (HIDDEN SQUARE FACE) ===
             // Drop shadow
-            g.shadowColor = isHovered ? colorMix(activePlayer.color || '#2563EB', 0.65) : 'rgba(0,0,0,0.45)';
+            g.shadowColor = isHovered ? colorMix(activePlayer.color || th.accent || '#2563EB', 0.65) : 'rgba(0,0,0,0.45)';
             g.shadowBlur = isHovered ? 16 * s : 8 * s;
             g.shadowOffsetX = 0;
             g.shadowOffsetY = isHovered ? 6 * s : 4 * s;
@@ -2088,26 +2125,26 @@ class SnakesAndLaddersGame extends CastOn.Game {
             // Die Base Square
             T.roundRect(g, -hs, -hs, size, size, cornerR);
             const cardGrad = g.createLinearGradient(-hs, -hs, hs, hs);
-            cardGrad.addColorStop(0, '#1e293b');
-            cardGrad.addColorStop(1, '#0f172a');
+            cardGrad.addColorStop(0, th.bgA || '#1e293b');
+            cardGrad.addColorStop(1, th.bgBase || '#0f172a');
             g.fillStyle = cardGrad;
             g.fill();
 
             // Die Border
             g.lineWidth = isHovered ? 2.8 * s : 1.4 * s;
-            g.strokeStyle = isHovered ? (activePlayer.color || '#38bdf8') : 'rgba(255, 255, 255, 0.16)';
+            g.strokeStyle = isHovered ? (activePlayer.color || th.accent || '#38bdf8') : (th.boardBorder || 'rgba(255, 255, 255, 0.16)');
             g.stroke();
 
             // Inner square inset frame
             const innerPad = size * 0.09;
             T.roundRect(g, -hs + innerPad, -hs + innerPad, size - innerPad * 2, size - innerPad * 2, cornerR * 0.7);
-            g.strokeStyle = isHovered ? colorMix(activePlayer.color || '#38bdf8', 0.4) : 'rgba(255, 255, 255, 0.08)';
+            g.strokeStyle = isHovered ? colorMix(activePlayer.color || th.accent || '#38bdf8', 0.4) : 'rgba(255, 255, 255, 0.08)';
             g.lineWidth = 1 * s;
             g.stroke();
 
             // Big Question Mark in Center
             g.font = `800 ${Math.round(size * 0.38)}px "Space Grotesk", sans-serif`;
-            g.fillStyle = isHovered ? (activePlayer.color || '#38bdf8') : 'rgba(255, 255, 255, 0.45)';
+            g.fillStyle = isHovered ? (activePlayer.color || th.accent || '#38bdf8') : 'rgba(255, 255, 255, 0.55)';
             g.textAlign = 'center';
             g.textBaseline = 'middle';
             g.fillText('?', 0, -size * 0.05);
@@ -2228,10 +2265,11 @@ class SnakesAndLaddersGame extends CastOn.Game {
         const by = 24 * s;
 
         // Backdrop pill
+        const th = T.theme();
         T.roundRect(g, bx, by, bannerW, bannerH, 23 * s);
-        g.fillStyle = 'rgba(15, 23, 42, 0.94)';
+        g.fillStyle = th.panelSolid || 'rgba(15, 23, 42, 0.94)';
         g.fill();
-        g.strokeStyle = '#f59e0b';
+        g.strokeStyle = th.accent || '#f59e0b';
         g.lineWidth = 1.8 * s;
         g.stroke();
 
@@ -2408,15 +2446,15 @@ CastOn.registerGame({
             animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .celebration-card {
-            background: rgba(15, 23, 42, 0.95);
-            border: 2px solid var(--ring-color, #f59e0b);
-            border-radius: 20px;
+            background: var(--surface-glass, rgba(15, 23, 42, 0.92));
+            border: 2px solid var(--ring-color, var(--accent, #f59e0b));
+            border-radius: var(--r-xl, 18px);
             padding: 36px 48px;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px var(--ring-color, #f59e0b);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px var(--ring-color, var(--accent, #f59e0b));
             position: relative;
             max-width: 480px;
         }

@@ -92,6 +92,7 @@ class Room:
         self.vip_id: Optional[str] = None
         self.current_layout: str = "dpad"
         self.layout_state: dict = {}
+        self.theme: str = "broadcast"
         self.disconnect_tasks: Dict[str, asyncio.Task] = {}
 
     def assign_vip(self):
@@ -187,12 +188,15 @@ def create_app() -> FastAPI:
                 if msg_type == "set_layout":
                     room.current_layout = msg.get("layout", "dpad")
                     room.layout_state = msg.get("state", {})
+                    if msg.get("theme"):
+                        room.theme = str(msg.get("theme"))
                     target = msg.get("target", "all")
 
                     payload = {
                         "type": "layout_update",
                         "layout": room.current_layout,
-                        "state": room.layout_state
+                        "state": room.layout_state,
+                        "theme": room.theme
                     }
                     if target == "all":
                         for pid, c_ws in list(room.controllers.items()):
@@ -203,6 +207,19 @@ def create_app() -> FastAPI:
                     elif target in room.controllers:
                         try:
                             await room.controllers[target].send_json(payload)
+                        except Exception:
+                            pass
+
+                # TV updates console theme and syncs to all controllers
+                elif msg_type == "set_theme":
+                    room.theme = str(msg.get("theme") or "broadcast")
+                    payload = {
+                        "type": "theme_update",
+                        "theme": room.theme
+                    }
+                    for c_ws in list(room.controllers.values()):
+                        try:
+                            await c_ws.send_json(payload)
                         except Exception:
                             pass
 
@@ -290,6 +307,7 @@ def create_app() -> FastAPI:
             "player": room.players[pid],
             "layout": room.current_layout,
             "state": room.layout_state,
+            "theme": room.theme,
             "room_code": room.code
         })
 

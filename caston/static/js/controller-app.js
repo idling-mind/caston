@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    CastOn — mobile controller client
    One websocket, four switchable layouts, and reliable multi-touch arcs.
    ========================================================================== */
@@ -69,6 +69,15 @@ const PRESET_AVATARS = [
 let selectedAvatar = localStorage.getItem('caston_avatar') || PRESET_AVATARS[0];
 let modalAvatar = selectedAvatar;
 let playerColor = '#2563EB';
+
+function applyTheme(theme) {
+    if (!theme || typeof theme !== 'string') return;
+    doc.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('caston_theme', theme); } catch (_) {}
+}
+
+// Restore persisted console theme immediately on controller boot
+applyTheme(localStorage.getItem('caston_theme') || 'broadcast');
 
 function renderAvatarToElement(target, face) {
     if (!target) return;
@@ -375,7 +384,12 @@ function handleMessage(msg) {
             break;
 
         case 'joined':
+            if (msg.theme) applyTheme(msg.theme);
             onJoined(msg);
+            break;
+
+        case 'theme_update':
+            if (msg.theme) applyTheme(msg.theme);
             break;
 
         case 'vip_update':
@@ -403,6 +417,7 @@ function handleMessage(msg) {
             break;
 
         case 'layout_update':
+            if (msg.theme) applyTheme(msg.theme);
             switchLayout(msg.layout, msg.state || {});
             buzz(30);
             break;
@@ -522,7 +537,7 @@ function onJoined(msg) {
    Layout switching
    ========================================================================== */
 
-const LAYOUT_IDS = ['dpad', 'joystick', 'trivia', 'draw', 'guess', 'dice', 'hangman'];
+const LAYOUT_IDS = ['dpad', 'joystick', 'trivia', 'draw', 'guess', 'dice', 'hangman', 'cards'];
 let currentActiveLayout = null;
 
 function switchLayout(layout, state) {
@@ -556,6 +571,10 @@ function switchLayout(layout, state) {
     if (state.subtitle && layout !== 'draw') {
         const foot = doc.getElementById('pad-foot');
         if (foot) foot.textContent = state.subtitle;
+    }
+
+    if (layout === 'cards') {
+        renderCardsLayout(state);
     }
 
     if (layout === 'dice') {
@@ -1862,6 +1881,295 @@ if (hmCustomSubmitBtn) {
         buzz(40);
         send({ action: 'hm_custom_word', word: w, category: cat || 'Custom' });
         hmCustomWordInput.value = '';
+    });
+}
+
+/* ==========================================================================
+   Universal Card Games Controller Layout (#layout-cards)
+   ========================================================================== */
+
+let cardsSelectedIds = new Set();
+let cardsMasked = false;
+let cardsPendingWildId = null;
+let lastCardsState = {};
+
+const cardsRulesBtn = doc.getElementById('cards-rules-btn');
+const cardsRulesDrawer = doc.getElementById('cards-rules-drawer');
+const cardsRulesClose = doc.getElementById('cards-rules-close');
+const cardsPeekBtn = doc.getElementById('cards-peek-btn');
+const cardsSuitCancel = doc.getElementById('cards-suit-cancel');
+
+if (cardsRulesBtn && cardsRulesDrawer) {
+    cardsRulesBtn.addEventListener('click', () => {
+        buzz(20);
+        const hidden = cardsRulesDrawer.classList.toggle('hidden');
+        cardsRulesBtn.classList.toggle('is-active', !hidden);
+    });
+}
+if (cardsRulesClose && cardsRulesDrawer) {
+    cardsRulesClose.addEventListener('click', () => {
+        cardsRulesDrawer.classList.add('hidden');
+        if (cardsRulesBtn) cardsRulesBtn.classList.remove('is-active');
+    });
+}
+if (cardsPeekBtn) {
+    cardsPeekBtn.addEventListener('click', () => {
+        buzz(20);
+        cardsMasked = !cardsMasked;
+        const grid = doc.getElementById('cards-hand-grid');
+        if (grid) grid.classList.toggle('is-masked', cardsMasked);
+        cardsPeekBtn.innerHTML = cardsMasked ? '<span>👁️ Show Cards</span>' : '<span>🙈 Hide Cards</span>';
+        cardsPeekBtn.classList.toggle('is-active', cardsMasked);
+    });
+}
+if (cardsSuitCancel) {
+    cardsSuitCancel.addEventListener('click', () => {
+        cardsPendingWildId = null;
+        const picker = doc.getElementById('cards-suit-picker');
+        if (picker) picker.classList.add('hidden');
+    });
+}
+
+function escapeCardHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function renderCardsLayout(state) {
+    lastCardsState = state || {};
+    const eyebrowEl = doc.getElementById('cards-eyebrow');
+    const titleEl = doc.getElementById('cards-title');
+    const subEl = doc.getElementById('cards-subtitle');
+    const rulesListEl = doc.getElementById('cards-rules-list');
+    const tableInfoEl = doc.getElementById('cards-table-info');
+    const suitPickerEl = doc.getElementById('cards-suit-picker');
+    const handGridEl = doc.getElementById('cards-hand-grid');
+    const actionsEl = doc.getElementById('cards-actions');
+
+    if (eyebrowEl) eyebrowEl.textContent = state.eyebrow || 'CARD TABLE';
+    if (titleEl) titleEl.textContent = state.title || 'Your Hand';
+    if (subEl) subEl.textContent = state.subtitle || 'Tap a card or choose an action below.';
+
+    // Instructions / How to Play
+    const instructions = Array.isArray(state.instructions) ? state.instructions : [];
+    if (cardsRulesBtn) {
+        cardsRulesBtn.classList.toggle('hidden', instructions.length === 0);
+    }
+    if (rulesListEl) {
+        rulesListEl.innerHTML = instructions.map(line => `<li>${escapeCardHtml(line)}</li>`).join('');
+    }
+    if (cardsRulesDrawer && state.openRules !== undefined) {
+        cardsRulesDrawer.classList.toggle('hidden', !state.openRules);
+        if (cardsRulesBtn) cardsRulesBtn.classList.toggle('is-active', !!state.openRules);
+    }
+
+    // Secret Hand Peek toggle
+    if (cardsPeekBtn) {
+        cardsPeekBtn.classList.toggle('hidden', !state.secretHand);
+        if (!state.secretHand) {
+            cardsMasked = false;
+        }
+        cardsPeekBtn.innerHTML = cardsMasked ? '<span>👁️ Show Cards</span>' : '<span>🙈 Hide Cards</span>';
+    }
+
+    // Table Info Pill
+    if (tableInfoEl) {
+        if (state.tableInfo && (state.tableInfo.label || state.tableInfo.badge)) {
+            tableInfoEl.classList.remove('hidden');
+            tableInfoEl.innerHTML = `
+                <span>${escapeCardHtml(state.tableInfo.label || '')}</span>
+                ${state.tableInfo.badge ? `<span class="cards-table-info__badge">${escapeCardHtml(state.tableInfo.badge)}</span>` : ''}
+            `;
+        } else {
+            tableInfoEl.classList.add('hidden');
+        }
+    }
+
+    if (suitPickerEl) suitPickerEl.classList.add('hidden');
+    cardsPendingWildId = null;
+
+    const hand = Array.isArray(state.hand) ? state.hand : [];
+    const selectMode = state.selectMode || 'single'; // 'single' | 'multi' | 'none'
+    const validIds = new Set(hand.map(c => String(c.id)));
+    Array.from(cardsSelectedIds).forEach(id => {
+        if (!validIds.has(id)) cardsSelectedIds.delete(id);
+    });
+    if (selectMode !== 'multi') {
+        cardsSelectedIds.clear();
+    }
+
+    if (handGridEl) {
+        handGridEl.classList.toggle('is-masked', cardsMasked);
+        if (!hand.length) {
+            handGridEl.innerHTML = `<div class="cards-hand-empty">${escapeCardHtml(state.emptyText || 'Waiting for cards to be dealt…')}</div>`;
+        } else {
+            handGridEl.innerHTML = hand.map(c => {
+                const cid = String(c.id);
+                const isSelected = cardsSelectedIds.has(cid) || !!c.selected;
+                const isPlayable = c.playable !== false && !c.disabled;
+                const isColored = !!c.bgColor;
+                const cls = [
+                    'pcard',
+                    isColored ? 'pcard--colored' : '',
+                    isPlayable && selectMode !== 'none' ? 'is-playable' : '',
+                    !isPlayable && selectMode !== 'none' ? 'is-unplayable' : '',
+                    isSelected ? 'is-selected' : ''
+                ].filter(Boolean).join(' ');
+
+                const styleAttr = isColored
+                    ? `--pcard-bg:${c.bgColor};`
+                    : `--pcard-color:${c.color || '#0f172a'};`;
+
+                return `
+                    <button type="button" class="${cls}" data-card-id="${escapeCardHtml(cid)}"
+                            style="${styleAttr}" ${(!isPlayable && selectMode === 'single') ? 'disabled' : ''}>
+                        <span class="pcard__corner">
+                            <span class="pcard__rank">${escapeCardHtml(c.rank != null ? c.rank : '')}</span>
+                            <span class="pcard__suit-sm">${escapeCardHtml(c.suit || '')}</span>
+                        </span>
+                        <span class="pcard__center">
+                            <span>${escapeCardHtml(c.centerText || c.suit || c.rank || '')}</span>
+                            ${c.subText ? `<span class="pcard__sub">${escapeCardHtml(c.subText)}</span>` : ''}
+                        </span>
+                        <span class="pcard__foot">
+                            <span>${escapeCardHtml(c.footLeft || '')}</span>
+                            <span>${escapeCardHtml(c.footRight || c.rank || '')}</span>
+                        </span>
+                        ${isSelected ? '<span class="pcard__check">✓</span>' : ''}
+                    </button>
+                `;
+            }).join('');
+
+            handGridEl.querySelectorAll('.pcard[data-card-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (cardsMasked) {
+                        cardsMasked = false;
+                        handGridEl.classList.remove('is-masked');
+                        if (cardsPeekBtn) cardsPeekBtn.innerHTML = '<span>🙈 Hide Cards</span>';
+                        return;
+                    }
+                    const cid = btn.getAttribute('data-card-id');
+                    const cardObj = hand.find(item => String(item.id) === cid);
+                    if (!cardObj) return;
+
+                    if (selectMode === 'none') return;
+
+                    if (selectMode === 'multi') {
+                        if (cardObj.disabled) return;
+                        const maxSel = state.maxSelect || 4;
+                        if (cardsSelectedIds.has(cid)) {
+                            cardsSelectedIds.delete(cid);
+                        } else {
+                            if (cardsSelectedIds.size >= maxSel) {
+                                buzz(25);
+                                return;
+                            }
+                            cardsSelectedIds.add(cid);
+                        }
+                        buzz(25);
+                        renderCardsLayout(lastCardsState);
+                        return;
+                    }
+
+                    // Single-select play
+                    if (cardObj.playable === false || cardObj.disabled) {
+                        buzz(20);
+                        return;
+                    }
+                    buzz(35);
+                    if (cardObj.needsSuit) {
+                        openWildSuitPicker(cid, cardObj.suitOptions || state.suitOptions);
+                    } else {
+                        send({ action: 'card_play', cardId: cid });
+                    }
+                });
+            });
+        }
+    }
+
+    // Render Dynamic Actions
+    if (actionsEl) {
+        const actions = Array.isArray(state.actions) ? state.actions : [];
+        if (!actions.length) {
+            actionsEl.innerHTML = '';
+        } else {
+            actionsEl.innerHTML = actions.map((act, idx) => {
+                const styleCls = act.style ? ` cards-action-btn--${act.style}` : '';
+                let labelText = act.label || 'Action';
+                let isDisabled = !!act.disabled;
+                if (act.requireSelection) {
+                    const count = cardsSelectedIds.size;
+                    labelText = count > 0 ? `${act.label} (${count})` : act.label;
+                    if (count === 0) isDisabled = true;
+                }
+                return `
+                    <button type="button" class="cards-action-btn${styleCls}" data-act-idx="${idx}" ${isDisabled ? 'disabled' : ''}>
+                        <span>${escapeCardHtml(labelText)}</span>
+                        ${act.sublabel ? `<span class="cards-action-btn__sub">${escapeCardHtml(act.sublabel)}</span>` : ''}
+                    </button>
+                `;
+            }).join('');
+
+            actionsEl.querySelectorAll('.cards-action-btn[data-act-idx]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = Number(btn.getAttribute('data-act-idx'));
+                    const act = actions[idx];
+                    if (!act || btn.disabled) return;
+                    buzz(40);
+                    send({
+                        action: 'card_action',
+                        id: act.id,
+                        value: act.value,
+                        selectedIds: Array.from(cardsSelectedIds)
+                    });
+                    if (act.requireSelection) {
+                        cardsSelectedIds.clear();
+                    }
+                });
+            });
+        }
+    }
+}
+
+function openWildSuitPicker(cardId, customOptions) {
+    const picker = doc.getElementById('cards-suit-picker');
+    const grid = doc.getElementById('cards-suit-grid');
+    if (!picker || !grid) {
+        send({ action: 'card_play', cardId: cardId, suit: 'RED' });
+        return;
+    }
+    cardsPendingWildId = cardId;
+    const opts = (Array.isArray(customOptions) && customOptions.length) ? customOptions : [
+        { id: 'RED', label: 'Crimson', symbol: '♦', bg: '#e11d48' },
+        { id: 'BLUE', label: 'Royal', symbol: '♠', bg: '#2563eb' },
+        { id: 'YELLOW', label: 'Amber', symbol: '★', bg: '#d97706' },
+        { id: 'GREEN', label: 'Emerald', symbol: '♣', bg: '#059669' }
+    ];
+    grid.innerHTML = opts.map((o, i) => `
+        <button type="button" class="cards-suit-btn" data-suit-idx="${i}" style="background:${o.bg || '#2563eb'}">
+            <span>${escapeCardHtml(o.symbol || '')}</span>
+            <span>${escapeCardHtml(o.label || o.id)}</span>
+        </button>
+    `).join('');
+    picker.classList.remove('hidden');
+
+    grid.querySelectorAll('.cards-suit-btn[data-suit-idx]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = Number(btn.getAttribute('data-suit-idx'));
+            const chosen = opts[idx];
+            if (!chosen) return;
+            buzz(45);
+            picker.classList.add('hidden');
+            send({
+                action: 'card_play',
+                cardId: cardsPendingWildId,
+                suit: chosen.id
+            });
+            cardsPendingWildId = null;
+        });
     });
 }
 

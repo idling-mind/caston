@@ -98,8 +98,35 @@ class HangmanGame extends CastOn.Game {
         this.loop = this.loop.bind(this);
         this.rafId = requestAnimationFrame(this.loop);
 
-        // Begin first round
-        this.beginRound();
+        // Show How to Play screen first; start Round 1 when player presses A
+        this.enterHowToPhase();
+    }
+
+    enterHowToPhase() {
+        this.phase = 'howto';
+        this.clearTimers();
+
+        this.ctx.controller.setLayout('dpad', {
+            title: 'Hangman: Word Duel',
+            subtitle: 'Press A to Start Game!'
+        }, 'all');
+
+        this.ctx.setOverlay(T.howToPlay({
+            title: 'How to Play Hangman: Word Duel',
+            subtitle: `${this.totalRounds} Rounds · Asymmetric Executioner vs. The Mob`,
+            steps: [
+                { icon: '🪓', title: '1. The Executioner Picks', text: 'Each round, one player is the Executioner and chooses a secret word from the vault (or types a custom word).' },
+                { icon: '🔤', title: '2. Take Turns Guessing', text: 'Everyone else takes turns guessing letters (+100 pts per hit). Correct hits keep your turn alive!' },
+                { icon: '⚡', title: '3. Sudden Solve Bonus', text: 'Think you know the word? Tap Solve Full Word on your phone for a +500 pt sudden-solve bonus!' },
+                { icon: '💀', title: '4. 6 Strikes & You Hang', text: 'Every wrong guess adds a body part and gives the Executioner +150 pts (+500 bonus for a full 6-strike sweep).' }
+            ],
+            controls: [
+                { key: 'A–Z Keypad', label: 'Guess Letter on Phone' },
+                { key: 'Solve', label: 'Guess Full Word' },
+                { key: 'A', label: 'Start Game' }
+            ],
+            footerText: 'Press A on your phone controller to start Round 1!'
+        }));
     }
 
     initPlayers() {
@@ -343,6 +370,14 @@ class HangmanGame extends CastOn.Game {
     onInput(playerId, data) {
         if (!data) return;
         const action = data.action;
+
+        if (this.phase === 'howto') {
+            if (action === 'btn' && data.state === 'down' && (data.button === 'A' || data.button === 'B')) {
+                this.ctx.setOverlay('');
+                this.beginRound();
+            }
+            return;
+        }
 
         // Phase 1: Word Master picking word
         if (this.phase === 'picking' && playerId === this.masterId) {
@@ -648,6 +683,11 @@ class HangmanGame extends CastOn.Game {
             if (!this.order.includes(p.id)) this.order.push(p.id);
         });
 
+        if (this.phase === 'howto') {
+            this.totalRounds = this.calculateTotalRounds();
+            return;
+        }
+
         // If the word master disconnected during their turn, begin new round
         if (!this.getPlayer(this.masterId) && this.phase !== 'finished') {
             this.beginRound();
@@ -684,6 +724,12 @@ class HangmanGame extends CastOn.Game {
 
         // 1. Background Arena Backdrop
         this.ctx.graphics.arenaBackdrop(view);
+
+        if (this.phase === 'howto') {
+            g.restore();
+            this.rafId = requestAnimationFrame(this.loop);
+            return;
+        }
 
         // Apply screen shake on wrong guess
         if (this.shakeTimer > 0) {
@@ -1028,13 +1074,14 @@ class HangmanGame extends CastOn.Game {
 
     drawWordBoard(g, view) {
         const s = view.scale;
+        const th = T.theme();
         const startX = view.w * 0.44;
         const boardW = view.w * 0.52;
         const topY = 90 * s;
 
         // 1. Category & Difficulty Bar
-        g.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        g.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+        g.fillStyle = th.panel || 'rgba(255, 255, 255, 0.08)';
+        g.strokeStyle = th.boardBorder || 'rgba(255, 255, 255, 0.18)';
         g.lineWidth = 1.5 * s;
         const barH = 36 * s;
         T.roundRect(g, startX, topY, boardW, barH, 8 * s);
@@ -1042,7 +1089,7 @@ class HangmanGame extends CastOn.Game {
         g.stroke();
 
         g.font = `700 ${Math.round(12 * s)}px "Space Grotesk", sans-serif`;
-        g.fillStyle = '#38bdf8';
+        g.fillStyle = th.accent || '#38bdf8';
         g.textAlign = 'left';
         g.textBaseline = 'middle';
         g.fillText(`📂 CATEGORY: ${this.category.toUpperCase()}`, startX + 16 * s, topY + barH / 2);
@@ -1064,12 +1111,13 @@ class HangmanGame extends CastOn.Game {
 
     drawPickingSuspense(g, view, bx, by, bw) {
         const s = view.scale;
+        const th = T.theme();
         const master = this.getPlayer(this.masterId);
         const masterName = master ? master.name : 'The Executioner';
 
         const cardH = 280 * s;
-        g.fillStyle = 'rgba(255, 255, 255, 0.04)';
-        g.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        g.fillStyle = th.panel || 'rgba(255, 255, 255, 0.04)';
+        g.strokeStyle = th.boardBorder || 'rgba(255, 255, 255, 0.12)';
         g.lineWidth = 1.5 * s;
         T.roundRect(g, bx, by, bw, cardH, 14 * s);
         g.fill();
@@ -1104,15 +1152,16 @@ class HangmanGame extends CastOn.Game {
 
     drawWordTiles(g, view, bx, by, bw) {
         const s = view.scale;
+        const th = T.theme();
         const words = this.word.split(' ');
 
         // Compute layout grid for words & letters
         const cardH = 200 * s;
         const cardY = by;
 
-        g.fillStyle = 'rgba(255, 255, 255, 0.03)';
-        g.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-        g.lineWidth = 1 * s;
+        g.fillStyle = th.panel || 'rgba(255, 255, 255, 0.03)';
+        g.strokeStyle = th.boardBorder || 'rgba(255, 255, 255, 0.08)';
+        g.lineWidth = 1.5 * s;
         T.roundRect(g, bx, cardY, bw, cardH, 14 * s);
         g.fill();
         g.stroke();
@@ -1186,7 +1235,7 @@ class HangmanGame extends CastOn.Game {
                             g.stroke();
 
                             // Bottom underline glow
-                            g.fillStyle = 'var(--accent, #38bdf8)';
+                            g.fillStyle = th.accent || '#38bdf8';
                             T.roundRect(g, tx + 6 * s, ty + tileH - 6 * s, tileW - 12 * s, 3 * s, 1.5 * s);
                             g.fill();
                         }
@@ -1261,12 +1310,13 @@ class HangmanGame extends CastOn.Game {
 
     drawTurnActionBanner(g, view, bx, by, bw) {
         const s = view.scale;
+        const th = T.theme();
         const bannerH = 70 * s;
         const activeGuesser = this.getPlayer(this.activeGuesserId);
         const guesserName = activeGuesser ? activeGuesser.name : 'Someone';
 
-        g.fillStyle = 'color-mix(in srgb, var(--accent, #38bdf8) 14%, rgba(0,0,0,0.4))';
-        g.strokeStyle = 'color-mix(in srgb, var(--accent, #38bdf8) 45%, transparent)';
+        g.fillStyle = th.panel || 'rgba(15, 23, 42, 0.78)';
+        g.strokeStyle = th.boardBorder || 'rgba(56, 189, 248, 0.45)';
         g.lineWidth = 2 * s;
         T.roundRect(g, bx, by, bw, bannerH, 12 * s);
         g.fill();
@@ -1311,7 +1361,8 @@ class HangmanGame extends CastOn.Game {
         const by = (view.h - bh) / 2 + 20 * s;
 
         // Shadow backdrop
-        g.fillStyle = 'rgba(10, 15, 30, 0.92)';
+        const th = T.theme();
+        g.fillStyle = th.panelSolid || 'rgba(10, 15, 30, 0.92)';
         g.strokeStyle = this.roundWinner === 'master' ? '#ef4444' : '#10b981';
         g.lineWidth = 3 * s;
         T.roundRect(g, bx, by, bw, bh, 18 * s);

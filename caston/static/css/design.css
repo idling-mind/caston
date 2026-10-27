@@ -79,6 +79,11 @@ textarea {
     --line-strong: rgba(255, 255, 255, 0.28);
     --panel: rgba(12, 18, 38, 0.62);
     --panel-2: rgba(255, 255, 255, 0.06);
+    --surface-glass: color-mix(in srgb, var(--bg-base, #060b1d) 72%, transparent);
+    --surface-elevated: color-mix(in srgb, var(--bg-a, #122a72) 48%, var(--bg-base, #060b1d));
+    --surface-inset: color-mix(in srgb, var(--bg-base, #060b1d) 82%, transparent);
+    --border-accent: color-mix(in srgb, var(--accent) 48%, var(--line-strong));
+    --glow-accent: color-mix(in srgb, var(--accent) 26%, transparent);
     --card: #ffffff;
     --card-ink: #101526;
     --card-ink-2: rgba(16, 21, 38, 0.56);
@@ -105,7 +110,12 @@ textarea {
     --wave-3: #06b6d4;
     --wave-4: #8b5cf6;
     --wave-op: 0.9;
+    --panel: rgba(10, 20, 52, 0.68);
+    --surface-glass: rgba(8, 16, 44, 0.74);
+    --surface-elevated: rgba(16, 34, 88, 0.88);
+    --surface-inset: rgba(5, 10, 28, 0.76);
     --accent: var(--c-amber-lift);
+    --accent-ink: #1a1003;
     --focus: var(--c-amber-lift);
 }
 
@@ -119,8 +129,12 @@ textarea {
     --wave-3: #2fd0e8;
     --wave-4: #6d28d9;
     --wave-op: 0.95;
-    --panel: rgba(4, 10, 34, 0.55);
+    --panel: rgba(8, 18, 56, 0.64);
+    --surface-glass: rgba(7, 15, 48, 0.72);
+    --surface-elevated: rgba(20, 46, 122, 0.88);
+    --surface-inset: rgba(4, 9, 30, 0.78);
     --accent: var(--c-amber-lift);
+    --accent-ink: #1a1003;
     --focus: #ffffff;
 }
 
@@ -133,11 +147,14 @@ textarea {
     --wave-2: #06b6d4;
     --wave-3: #e11d48;
     --wave-4: #22d3ee;
-    --wave-op: 0.7;
-    --panel: rgba(6, 6, 20, 0.7);
-    --accent: #7c3aed;
-    --accent-ink: #ffffff;
-    --focus: #a78bfa;
+    --wave-op: 0.75;
+    --panel: rgba(10, 10, 28, 0.72);
+    --surface-glass: rgba(8, 8, 24, 0.78);
+    --surface-elevated: rgba(20, 18, 54, 0.9);
+    --surface-inset: rgba(4, 4, 12, 0.82);
+    --accent: #a78bfa;
+    --accent-ink: #0f0728;
+    --focus: #22d3ee;
 }
 
 /* --- sunset : warm rose → orange, light surfaces ------------------------ */
@@ -150,7 +167,10 @@ textarea {
     --wave-3: #7c2d8f;
     --wave-4: #ff8a3d;
     --wave-op: 0.9;
-    --panel: rgba(38, 6, 22, 0.5);
+    --panel: rgba(44, 10, 26, 0.64);
+    --surface-glass: rgba(40, 8, 24, 0.72);
+    --surface-elevated: rgba(88, 16, 44, 0.88);
+    --surface-inset: rgba(28, 6, 16, 0.78);
     --accent: #ffd166;
     --accent-ink: #301003;
     --focus: #ffd166;
@@ -165,8 +185,11 @@ textarea {
     --wave-2: #a78bfa;
     --wave-3: #38bdf8;
     --wave-4: #f472b6;
-    --wave-op: 0.85;
-    --panel: rgba(6, 24, 34, 0.58);
+    --wave-op: 0.88;
+    --panel: rgba(8, 28, 40, 0.64);
+    --surface-glass: rgba(7, 24, 36, 0.72);
+    --surface-elevated: rgba(14, 58, 78, 0.88);
+    --surface-inset: rgba(5, 16, 24, 0.78);
     --accent: #5eead4;
     --accent-ink: #04231f;
     --focus: #5eead4;

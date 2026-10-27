@@ -112,8 +112,35 @@ class SketchGuess {
         Object.keys(C.players).forEach(id => { this.scores[id] = 0; });
         this.buildWordDecks();
         this.buildOrder();
-        this.beginRound();
-        this.startClock();
+        this.enterHowToPhase();
+    }
+
+    enterHowToPhase() {
+        this.phase = 'howto';
+        this.accepting = false;
+        this.paintBoard();
+
+        C.setLayout('dpad', {
+            title: 'Sketch & Guess',
+            subtitle: 'Press A to Start Game!'
+        });
+
+        C.hud(T.howToPlay({
+            title: 'How to Play Sketch & Guess',
+            subtitle: `${this.totalRounds} Rounds · Take turns drawing & guessing`,
+            steps: [
+                { icon: '🎨', title: '1. The Artist Draws', text: 'Each round, one player receives a secret word on their phone and sketches it live on the TV canvas.' },
+                { icon: '💬', title: '2. Race to Guess', text: 'Everyone else types guesses on their phone. Faster correct guesses earn bigger speed bonuses!' },
+                { icon: '🗣️', title: '3. Verbal & Clue Assist', text: 'Letter clues appear over time, and the artist can also tap a player\'s name to credit a verbal guess.' },
+                { icon: '🏆', title: '4. Score Points', text: 'Both the solver and the artist score points when the word is cracked before the 60s timer runs out.' }
+            ],
+            controls: [
+                { key: 'Touch Pad', label: 'Draw on Phone' },
+                { key: 'Keyboard', label: 'Type Guesses' },
+                { key: 'A', label: 'Start Game' }
+            ],
+            footerText: 'Press A on your phone controller to start Round 1!'
+        }));
     }
 
     buildWordDecks() {
@@ -215,6 +242,11 @@ class SketchGuess {
             if (this.scores[id] === undefined) this.scores[id] = 0;
             if (!this.order.includes(id)) this.order.push(id);
         });
+
+        if (this.phase === 'howto') {
+            this.totalRounds = this.calculateTotalRounds();
+            return;
+        }
 
         if (!C.players[this.drawerId] && this.phase !== 'done') {
             this.beginRound();
@@ -447,6 +479,14 @@ class SketchGuess {
     }
 
     onInput(playerId, data) {
+        if (this.phase === 'howto') {
+            if (data.action === 'btn' && data.state === 'down' && (data.button === 'A' || data.button === 'B')) {
+                this.beginRound();
+                this.startClock();
+            }
+            return;
+        }
+
         if (playerId === this.drawerId) {
             if (data.action === 'draw_pad_init') {
                 if (typeof data.aspect === 'number' && data.aspect > 0) {
@@ -657,20 +697,43 @@ class SketchGuess {
     paintBoard() {
         const v = C.view;
         const g = C.ctx;
+        const scale = (v && v.scale) || C.scale || 1;
+        const b = this.getBoardRect();
+        const th = T.theme();
+
+        // Let the console's themed SVG wave background shine through around the drawing pad
+        T.arenaBackdrop(v);
+
+        if (this.phase === 'howto' || this.phase === 'done') return;
 
         g.save();
-        // Fill entire screen with the canvas paper color (#ffffff) for full-screen illusion
+        // Elevated board frame & shadow
+        g.shadowColor = 'rgba(0, 0, 0, 0.48)';
+        g.shadowBlur = 28 * scale;
+        g.shadowOffsetY = 10 * scale;
+        T.roundRect(g, b.x, b.y, b.w, b.h, 14 * scale);
         g.fillStyle = '#ffffff';
-        g.fillRect(0, 0, v.w, v.h);
+        g.fill();
+        g.shadowColor = 'transparent';
 
-        // Dot grid paper texture across the full screen
-        g.fillStyle = 'rgba(15, 23, 42, 0.055)';
-        const step = 26;
-        for (let x = step; x < v.w; x += step) {
-            for (let y = step; y < v.h; y += step) {
-                g.fillRect(x, y, 1.6, 1.6);
+        // Clip dot grid inside the drawing pad
+        g.save();
+        T.roundRect(g, b.x, b.y, b.w, b.h, 14 * scale);
+        g.clip();
+        g.fillStyle = 'rgba(15, 23, 42, 0.065)';
+        const step = Math.max(16, Math.round(24 * scale));
+        for (let x = b.x + step; x < b.x + b.w; x += step) {
+            for (let y = b.y + step; y < b.y + b.h; y += step) {
+                g.fillRect(x, y, 1.6 * scale, 1.6 * scale);
             }
         }
+        g.restore();
+
+        // Theme-accented board border
+        T.roundRect(g, b.x, b.y, b.w, b.h, 14 * scale);
+        g.lineWidth = 2.5 * scale;
+        g.strokeStyle = th.boardBorder || 'rgba(56, 189, 248, 0.45)';
+        g.stroke();
         g.restore();
     }
 

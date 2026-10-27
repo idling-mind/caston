@@ -39,16 +39,50 @@ T.circle = function (g, x, y, r) {
     g.arc(x, y, Math.max(1, r), 0, Math.PI * 2);
 };
 
-/** Draw the standard dark arena backdrop used by the canvas games. */
+/** Return the active console theme palette tokens for canvas rendering. */
+T.theme = function (id) {
+    if (CastOn.themePalette) return CastOn.themePalette(id);
+    if (CastOn.themeMeta) return CastOn.themeMeta(id);
+    return {
+        id: 'broadcast',
+        bgBase: '#060b1d',
+        bgA: '#122a72',
+        bgB: '#1b3fb0',
+        wave1: '#e11d48',
+        wave2: '#f59e0b',
+        wave3: '#06b6d4',
+        wave4: '#8b5cf6',
+        accent: '#fbbf24',
+        accentInk: '#1a1003',
+        panel: 'rgba(10, 20, 52, 0.78)',
+        panelSolid: '#0e1d4a',
+        boardFrame: 'rgba(18, 42, 114, 0.84)',
+        boardInset: 'rgba(6, 11, 29, 0.88)',
+        boardBorder: 'rgba(6, 182, 212, 0.48)',
+        tableCenter: 'rgba(20, 48, 124, 0.82)',
+        tableEdge: 'rgba(8, 16, 44, 0.92)',
+        tableRim: '#fbbf24'
+    };
+};
+
+/**
+ * Clear the canvas so the console's themed SVG wave background (.app-bg)
+ * shines through, with a soft radial edge vignette for foreground contrast.
+ */
 T.arenaBackdrop = function (view) {
     const g = CastOn.ctx;
+    g.save();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, g.canvas.width, g.canvas.height);
+    g.restore();
+
     const grad = g.createRadialGradient(
-        view.w / 2, view.h * 0.42, 0,
-        view.w / 2, view.h / 2, Math.max(view.w, view.h) * 0.75
+        view.w / 2, view.h * 0.46, Math.min(view.w, view.h) * 0.18,
+        view.w / 2, view.h / 2, Math.max(view.w, view.h) * 0.78
     );
-    grad.addColorStop(0, '#132552');
-    grad.addColorStop(0.55, '#0a1229');
-    grad.addColorStop(1, '#05080f');
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    grad.addColorStop(0.65, 'rgba(4, 8, 22, 0.14)');
+    grad.addColorStop(1, 'rgba(2, 6, 18, 0.36)');
     g.fillStyle = grad;
     g.fillRect(0, 0, view.w, view.h);
 };
@@ -192,6 +226,54 @@ T.card = function (contentHtml, opts) {
     return `
         <div class="scoreboard" style="max-width:${maxW};margin:auto;pointer-events:auto;">
             ${contentHtml}
+        </div>
+    `;
+};
+
+/**
+ * Universal Design System "How to Play" Rules Modal (No auto-countdown; starts on button press).
+ * @param {object} cfg
+ */
+T.howToPlay = function (cfg) {
+    const stepsHtml = (cfg.steps || []).map((st, idx) => `
+        <div class="howto-step">
+            <span class="howto-step__num">${idx + 1}</span>
+            <h4 class="howto-step__title">${esc(st.title)}</h4>
+            <p class="howto-step__desc">${esc(st.text)}</p>
+        </div>
+    `).join('');
+
+    const rightActionHtml = cfg.isMidGame
+        ? `<button type="button" class="howto-start-btn" data-howto-start="true"><span class="howto-start-btn__key">Y</span><span>Resume Game</span></button>`
+        : `<button type="button" class="howto-start-btn" data-howto-start="true"><span class="howto-start-btn__key">A</span><span>Start Game</span></button>`;
+
+    return `
+        <div class="howto-modal-wrap">
+            <div class="howto-card">
+                <div class="howto-head">
+                    <div class="howto-head__left">
+                        <p class="eyebrow is-accent">${esc(cfg.tagline || 'HOW TO PLAY · GAME BRIEFING')}</p>
+                        <h2 class="display t-xl" style="margin:0">${esc(cfg.title || 'Game Rules')}</h2>
+                        ${cfg.subtitle ? `<p class="muted t-sm" style="margin:2px 0 0">${esc(cfg.subtitle)}</p>` : ''}
+                    </div>
+                    ${rightActionHtml}
+                </div>
+                <div class="howto-grid">${stepsHtml}</div>
+                <div class="howto-controls">
+                    <div class="howto-controls__item">
+                        <span class="howto-controls__key">PHONE</span>
+                        <span>${esc(cfg.controls || 'Follow the prompts on your phone controller.')}</span>
+                    </div>
+                    <div class="howto-controls__item">
+                        <span class="howto-controls__key">GOAL</span>
+                        <span>${esc(cfg.scoring || 'Outscore your rivals to take the crown!')}</span>
+                    </div>
+                </div>
+                <div class="howto-foot">
+                    <span class="dim t-xs">${cfg.isMidGame ? 'Press Y on controller to close this rules guide' : 'Take your time reading the rules — no countdown timer!'}</span>
+                    <span class="hud-pill hud-pill--accent">${cfg.isMidGame ? 'Press Y to Resume' : 'Press A or Tap "▶ Start Game" on Phone to Begin'}</span>
+                </div>
+            </div>
         </div>
     `;
 };

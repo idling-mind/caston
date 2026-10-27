@@ -120,8 +120,33 @@ class FamilyTrivia {
         }
 
         C.chord([523, 659], 120, 'triangle');
-        this.beginQuestion();
-        this.startClock();
+        this.enterHowToPhase();
+    }
+
+    enterHowToPhase() {
+        this.phase = 'howto';
+        this.accepting = false;
+
+        C.setLayout('dpad', {
+            title: 'Family Trivia',
+            subtitle: 'Press A to Start Game!'
+        });
+
+        C.hud(T.howToPlay({
+            title: 'How to Play Family Trivia',
+            subtitle: `${this.order.length} Questions · Escalating Difficulty & Speed Bonus`,
+            steps: [
+                { icon: '❓', title: '1. Read the Question', text: 'Each question appears on the TV with 4 colored choices (A, B, C, D) and a 15-second timer.' },
+                { icon: '⚡', title: '2. Buzz In Fast', text: 'Tap your answer on your phone. Choices stay secret until everyone locks in or time expires!' },
+                { icon: '📈', title: '3. Escalating Stakes', text: 'Questions progress from Easy to Medium to Hard — worth up to +350 points per question!' },
+                { icon: '🏆', title: '4. Claim the Crown', text: 'Speed + accuracy wins. Highest total score after 10 questions takes the podium!' }
+            ],
+            controls: [
+                { key: 'A B C D', label: 'Tap Answer Buzzer on Phone' },
+                { key: 'A', label: 'Start Game' }
+            ],
+            footerText: 'Press A on your phone controller to start Question 1!'
+        }));
     }
 
     /* ---------- flow ----------------------------------------------------- */
@@ -201,6 +226,13 @@ class FamilyTrivia {
     /* ---------- input ---------------------------------------------------- */
 
     onInput(playerId, data) {
+        if (this.phase === 'howto') {
+            if (data.action === 'btn' && data.state === 'down' && (data.button === 'A' || data.button === 'B')) {
+                this.beginQuestion();
+                this.startClock();
+            }
+            return;
+        }
         if (!this.accepting || this.phase !== 'asking') return;
         if (data.action !== 'trivia_answer') return;
         if (this.answers[playerId] !== undefined) return;

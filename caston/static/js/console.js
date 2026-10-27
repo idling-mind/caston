@@ -14,11 +14,121 @@ const icon = (name, opts) => CastOn.icon(name, opts);
    ========================================================================== */
 
 const THEMES = [
-    { id: 'broadcast', label: 'Broadcast', ink: '#0b1533', swatch: 'linear-gradient(135deg,#1b3fb0,#e11d48 70%,#f59e0b)' },
-    { id: 'arcade',    label: 'Arcade',    ink: '#0a0f2e', swatch: 'linear-gradient(135deg,#2f6bff,#ff2e63)' },
-    { id: 'void',      label: 'Void',      ink: '#0b0620', swatch: 'linear-gradient(135deg,#7c3aed,#06b6d4)' },
-    { id: 'sunset',    label: 'Sunset',    ink: '#3a0d18', swatch: 'linear-gradient(135deg,#f0592b,#ffb020)' },
-    { id: 'candy',     label: 'Candy',     ink: '#062430', swatch: 'linear-gradient(135deg,#34d399,#6366f1)' }
+    {
+        id: 'broadcast',
+        label: 'Broadcast',
+        ink: '#0b1533',
+        swatch: 'linear-gradient(135deg,#1b3fb0,#e11d48 70%,#f59e0b)',
+        bgBase: '#060b1d',
+        bgA: '#122a72',
+        bgB: '#1b3fb0',
+        wave1: '#e11d48',
+        wave2: '#f59e0b',
+        wave3: '#06b6d4',
+        wave4: '#8b5cf6',
+        accent: '#fbbf24',
+        accentInk: '#1a1003',
+        panel: 'rgba(10, 20, 52, 0.78)',
+        panelSolid: '#0e1d4a',
+        boardFrame: 'rgba(18, 42, 114, 0.84)',
+        boardInset: 'rgba(6, 11, 29, 0.88)',
+        boardBorder: 'rgba(6, 182, 212, 0.48)',
+        tableCenter: 'rgba(20, 48, 124, 0.82)',
+        tableEdge: 'rgba(8, 16, 44, 0.92)',
+        tableRim: '#fbbf24'
+    },
+    {
+        id: 'arcade',
+        label: 'Arcade',
+        ink: '#0a0f2e',
+        swatch: 'linear-gradient(135deg,#2f6bff,#ff2e63)',
+        bgBase: '#050a20',
+        bgA: '#1d4ed8',
+        bgB: '#2f6bff',
+        wave1: '#ff2e63',
+        wave2: '#ffb020',
+        wave3: '#2fd0e8',
+        wave4: '#6d28d9',
+        accent: '#fbbf24',
+        accentInk: '#1a1003',
+        panel: 'rgba(8, 18, 56, 0.76)',
+        panelSolid: '#102468',
+        boardFrame: 'rgba(29, 78, 216, 0.82)',
+        boardInset: 'rgba(5, 10, 32, 0.88)',
+        boardBorder: 'rgba(47, 208, 232, 0.52)',
+        tableCenter: 'rgba(32, 76, 196, 0.82)',
+        tableEdge: 'rgba(8, 16, 48, 0.92)',
+        tableRim: '#ff2e63'
+    },
+    {
+        id: 'void',
+        label: 'Void',
+        ink: '#0b0620',
+        swatch: 'linear-gradient(135deg,#7c3aed,#06b6d4)',
+        bgBase: '#04040a',
+        bgA: '#12123a',
+        bgB: '#1f1b4d',
+        wave1: '#7c3aed',
+        wave2: '#06b6d4',
+        wave3: '#e11d48',
+        wave4: '#22d3ee',
+        accent: '#a78bfa',
+        accentInk: '#0f0728',
+        panel: 'rgba(10, 10, 28, 0.82)',
+        panelSolid: '#11102e',
+        boardFrame: 'rgba(31, 27, 77, 0.84)',
+        boardInset: 'rgba(4, 4, 12, 0.9)',
+        boardBorder: 'rgba(167, 139, 250, 0.5)',
+        tableCenter: 'rgba(34, 24, 78, 0.84)',
+        tableEdge: 'rgba(6, 6, 18, 0.92)',
+        tableRim: '#22d3ee'
+    },
+    {
+        id: 'sunset',
+        label: 'Sunset',
+        ink: '#3a0d18',
+        swatch: 'linear-gradient(135deg,#f0592b,#ffb020)',
+        bgBase: '#2a0a18',
+        bgA: '#b3123f',
+        bgB: '#f0592b',
+        wave1: '#ffb020',
+        wave2: '#ff2e63',
+        wave3: '#7c2d8f',
+        wave4: '#ff8a3d',
+        accent: '#ffd166',
+        accentInk: '#301003',
+        panel: 'rgba(44, 10, 26, 0.78)',
+        panelSolid: '#420d24',
+        boardFrame: 'rgba(124, 22, 54, 0.84)',
+        boardInset: 'rgba(34, 7, 19, 0.88)',
+        boardBorder: 'rgba(255, 209, 102, 0.5)',
+        tableCenter: 'rgba(116, 20, 50, 0.82)',
+        tableEdge: 'rgba(38, 8, 22, 0.92)',
+        tableRim: '#ffd166'
+    },
+    {
+        id: 'candy',
+        label: 'Candy',
+        ink: '#062430',
+        swatch: 'linear-gradient(135deg,#34d399,#6366f1)',
+        bgBase: '#071a20',
+        bgA: '#0e7490',
+        bgB: '#6366f1',
+        wave1: '#34d399',
+        wave2: '#a78bfa',
+        wave3: '#38bdf8',
+        wave4: '#f472b6',
+        accent: '#5eead4',
+        accentInk: '#04231f',
+        panel: 'rgba(8, 28, 40, 0.78)',
+        panelSolid: '#0b2c3d',
+        boardFrame: 'rgba(14, 94, 118, 0.84)',
+        boardInset: 'rgba(6, 20, 28, 0.88)',
+        boardBorder: 'rgba(94, 234, 212, 0.5)',
+        tableCenter: 'rgba(14, 88, 112, 0.82)',
+        tableEdge: 'rgba(7, 24, 34, 0.92)',
+        tableRim: '#5eead4'
+    }
 ];
 const THEME_KEY = 'caston_theme';
 
@@ -27,10 +137,15 @@ const themeMeta = (id) => THEMES.find(t => t.id === (id || themeId())) || THEMES
 const themeIndexOf = (id) => Math.max(0, THEMES.findIndex(t => t.id === (id || themeId())));
 
 function applyTheme(id) {
-    localStorage.setItem(THEME_KEY, id);
-    document.documentElement.dataset.theme = id;
+    const valid = themeMeta(id);
+    localStorage.setItem(THEME_KEY, valid.id);
+    document.documentElement.dataset.theme = valid.id;
     renderThemeSwitcher();
     redrawQr();
+    send({ type: 'set_theme', theme: valid.id });
+    if (state.game && typeof state.game.onThemeChange === 'function') {
+        try { state.game.onThemeChange(valid.id); } catch (_) {}
+    }
 }
 
 /* Cycling is the phone-friendly form of the switcher: one D-Pad button
@@ -178,6 +293,7 @@ function setLayout(layout, layoutState, target) {
         type: 'set_layout',
         layout: layout,
         state: layoutState || {},
+        theme: themeId(),
         target: target || 'all'
     });
 }
@@ -699,7 +815,10 @@ function connect() {
 
     // Publish the lobby layout (with its theme legends) as soon as the socket
     // is up, so controllers that join later receive it from the server.
-    ws.onopen = () => setLobbyLayout();
+    ws.onopen = () => {
+        send({ type: 'set_theme', theme: themeId() });
+        setLobbyLayout();
+    };
 
     ws.onmessage = (event) => {
         let msg;
@@ -839,7 +958,9 @@ CastOn.sound = {
     fanfare: () => chord([392, 523, 659, 784], 220, 'triangle')
 };
 CastOn.escapeHtml = escapeHtml;
+CastOn.themeId = themeId;
 CastOn.themeMeta = themeMeta;
+CastOn.themePalette = themeMeta;
 CastOn.fitCanvas = fitCanvas;
 CastOn.redrawQr = redrawQr;
 CastOn.renderAll = renderAll;
@@ -881,6 +1002,16 @@ function boot() {
         if (!isNaN(gIdx) && gIdx >= 0 && gIdx < CastOn.games.length) {
             launchGame(gIdx);
         }
+    }
+
+    if (dom.overlay) {
+        dom.overlay.addEventListener('click', (e) => {
+            const startBtn = e.target.closest('[data-howto-start="true"]');
+            if (startBtn && state.game && typeof state.game.onInput === 'function') {
+                const pid = state.vipId || Object.keys(state.players)[0] || 'tv';
+                state.game.onInput(pid, { action: 'btn', button: 'A', state: 'down' });
+            }
+        });
     }
 
     if (dom.grid) {

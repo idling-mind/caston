@@ -60,9 +60,11 @@ textarea {
     gap: 18px;
     padding: 26px 24px;
     border-radius: var(--r-lg);
-    background: var(--card);
-    color: var(--card-ink);
-    border: 1px solid var(--card-line);
+    background: var(--surface-glass);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    color: var(--ink);
+    border: 1.5px solid var(--border-accent);
     box-shadow: var(--shadow-pop);
 }
 
@@ -71,10 +73,10 @@ textarea {
     align-items: center;
     gap: 14px;
     padding-bottom: 18px;
-    border-bottom: 1px solid var(--card-line);
+    border-bottom: 1px solid var(--line);
 }
 
-.pad-card__head .eyebrow { color: var(--card-ink-2); }
+.pad-card__head .eyebrow { color: var(--accent); }
 
 .field { display: flex; flex-direction: column; gap: 8px; }
 
@@ -84,28 +86,28 @@ textarea {
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--card-ink-2);
+    color: var(--ink-2);
 }
 
 .input {
     width: 100%;
     padding: 15px 16px;
     border-radius: var(--r-sm);
-    background: color-mix(in srgb, var(--card-ink) 5%, transparent);
-    border: 1.5px solid var(--card-line);
-    color: var(--card-ink);
+    background: var(--surface-inset);
+    border: 1.5px solid var(--line-strong);
+    color: var(--ink);
     font-size: 17px;
     font-weight: 600;
     outline: none;
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.input::placeholder { color: color-mix(in srgb, var(--card-ink) 35%, transparent); }
+.input::placeholder { color: var(--ink-3); }
 
 .input:focus {
-    border-color: var(--c-blue);
-    background: var(--card);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-blue) 16%, transparent);
+    border-color: var(--accent);
+    background: var(--surface-elevated);
+    box-shadow: 0 0 0 4px var(--glow-accent);
 }
 
 .input--code {
@@ -116,7 +118,7 @@ textarea {
     letter-spacing: 0.34em;
     text-indent: 0.34em;
     text-transform: uppercase;
-    color: var(--c-blue);
+    color: var(--accent);
     padding: 14px 16px;
 }
 
@@ -488,9 +490,9 @@ textarea {
     gap: 16px;
     padding: 22px 20px;
     border-radius: var(--r-lg);
-    background: var(--card);
-    color: var(--card-ink);
-    border: 1px solid var(--card-line);
+    background: var(--surface-elevated);
+    color: var(--ink);
+    border: 1.5px solid var(--border-accent);
     box-shadow: var(--shadow-pop);
     overflow-y: auto;
     touch-action: auto;
@@ -502,10 +504,10 @@ textarea {
     justify-content: space-between;
     gap: 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid var(--card-line);
+    border-bottom: 1px solid var(--line);
 }
 
-.modal-card__head .eyebrow { color: var(--card-ink-2); margin-bottom: 2px; }
+.modal-card__head .eyebrow { color: var(--accent); margin-bottom: 2px; }
 
 .modal-card__body {
     display: flex;
@@ -517,7 +519,7 @@ textarea {
     display: flex;
     gap: 10px;
     padding-top: 14px;
-    border-top: 1px solid var(--card-line);
+    border-top: 1px solid var(--line);
 }
 
 .btn--icon {
@@ -1221,8 +1223,8 @@ textarea {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    background: var(--card);
-    border-bottom: 1px solid var(--card-line);
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--line-strong);
     border-radius: var(--r-md) var(--r-md) 0 0;
 }
 
@@ -1254,7 +1256,7 @@ textarea {
 
 .color-swatch.is-selected {
     transform: scale(1.12);
-    box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--swatch);
+    box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--swatch);
 }
 
 .draw-clear-btn {
@@ -1263,9 +1265,9 @@ textarea {
     border-radius: var(--r-sm);
     display: grid;
     place-items: center;
-    background: color-mix(in srgb, var(--card-ink) 7%, transparent);
-    color: var(--card-ink);
-    border: 1px solid var(--card-line);
+    background: var(--panel-2);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
     cursor: pointer;
     flex: none;
     padding: 0;
@@ -1313,8 +1315,8 @@ textarea {
     text-align: center;
     padding: 8px 16px;
     border-radius: var(--r-md);
-    background: var(--card);
-    border: 1px solid var(--card-line);
+    background: var(--surface-glass);
+    border: 1px solid var(--border-accent);
     box-shadow: var(--shadow-tile);
 }
 
@@ -1323,7 +1325,7 @@ textarea {
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--card-ink-2);
+    color: var(--ink-2);
 }
 
 .draw-secret__word {
@@ -1331,7 +1333,7 @@ textarea {
     font-size: 22px;
     font-weight: 700;
     letter-spacing: 0.16em;
-    color: var(--c-blue);
+    color: var(--accent);
     line-height: 1.15;
     margin-top: 1px;
 }
@@ -1344,9 +1346,9 @@ textarea {
     gap: 8px;
     padding: 0 16px;
     border-radius: var(--r-md);
-    background: color-mix(in srgb, var(--c-emerald) 18%, var(--card));
+    background: color-mix(in srgb, var(--c-emerald) 24%, var(--surface-glass));
     color: var(--c-emerald);
-    border: 1.5px solid color-mix(in srgb, var(--c-emerald) 55%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--c-emerald) 60%, transparent);
     font-family: var(--font-display);
     font-size: 13.5px;
     font-weight: 700;
@@ -1450,17 +1452,23 @@ textarea {
     gap: 12px;
     padding: 24px 22px;
     border-radius: var(--r-lg);
-    background: var(--card);
-    color: var(--card-ink);
-    border: 1px solid var(--card-line);
+    background: var(--surface-glass);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    color: var(--ink);
+    border: 1.5px solid var(--border-accent);
     box-shadow: var(--shadow-pop);
 }
 
-.guess-card .eyebrow { color: var(--card-ink-2); }
-.guess-card .muted { color: var(--card-ink-2); }
+.guess-card .eyebrow { color: var(--accent); }
+.guess-card .muted { color: var(--ink-2); }
 .guess-card .input { margin-top: 6px; }
 
-.guess-card .btn--solid { margin-top: 4px; }
+.guess-card .btn--solid {
+    margin-top: 4px;
+    background: var(--accent);
+    color: var(--accent-ink);
+}
 
 /* ==========================================================================
    Short viewports — compact the join form and lay the gamepad out across the
@@ -1537,9 +1545,11 @@ textarea {
     gap: 16px;
     padding: 22px 20px;
     border-radius: var(--r-xl);
-    background: var(--card);
-    color: var(--card-ink);
-    border: 1px solid var(--card-line);
+    background: var(--surface-glass);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    color: var(--ink);
+    border: 1.5px solid var(--border-accent);
     box-shadow: var(--shadow-pop);
 }
 
@@ -1573,9 +1583,9 @@ textarea {
     min-height: 96px;
     padding: 12px 8px;
     border-radius: var(--r-lg);
-    background: color-mix(in srgb, var(--accent) 12%, var(--card));
-    color: var(--card-ink);
-    border: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface-inset));
+    color: var(--ink);
+    border: 2px solid color-mix(in srgb, var(--accent) 42%, var(--line));
     box-shadow: var(--shadow-tile);
     cursor: pointer;
     touch-action: manipulation;
@@ -1599,12 +1609,12 @@ textarea {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--card-ink-2);
+    color: var(--ink-2);
 }
 
 .dice-btn.is-selected {
     background: var(--accent);
-    color: #ffffff;
+    color: var(--accent-ink);
     border-color: #ffffff;
     box-shadow: 0 0 16px var(--accent);
     transform: scale(1.04);
@@ -1612,7 +1622,7 @@ textarea {
 
 .dice-btn.is-selected .dice-btn__mark,
 .dice-btn.is-selected .dice-btn__label {
-    color: #ffffff;
+    color: var(--accent-ink);
 }
 
 .dice-btn.is-dimmed {
@@ -1626,8 +1636,8 @@ textarea {
     gap: 12px;
     padding: 14px 16px;
     border-radius: var(--r-md);
-    background: color-mix(in srgb, var(--card-ink) 6%, transparent);
-    border: 1px solid var(--card-line);
+    background: var(--surface-inset);
+    border: 1px solid var(--line-strong);
 }
 
 .pulse-avatar {
@@ -1662,12 +1672,12 @@ textarea {
     gap: 14px;
     padding: 22px 20px;
     border-radius: var(--r-xl);
-    background: rgba(9, 14, 34, 0.88);
+    background: var(--surface-glass);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    color: var(--ink);
+    border: 1.5px solid var(--border-accent);
+    box-shadow: var(--shadow-pop);
     max-height: 100%;
     overflow-y: auto;
 }
@@ -1690,7 +1700,7 @@ textarea {
 }
 
 .hm-card__head .display {
-    color: #ffffff;
+    color: var(--ink);
     font-size: 24px;
     letter-spacing: -0.01em;
 }
@@ -1698,7 +1708,7 @@ textarea {
 .hm-card .muted,
 .hm-card .dim,
 .hm-card__head p {
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--ink-2);
 }
 
 .hm-icon-inline {
@@ -1717,9 +1727,9 @@ textarea {
     margin: 0 auto 6px auto;
     padding: 6px 14px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
 }
 
 .hm-choices {
@@ -1736,9 +1746,9 @@ textarea {
     gap: 12px;
     padding: 14px 16px;
     border-radius: var(--r-lg);
-    background: rgba(255, 255, 255, 0.07);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: var(--surface-inset);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
     cursor: pointer;
     touch-action: manipulation;
     text-align: left;
@@ -1756,12 +1766,12 @@ textarea {
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.03em;
-    color: #ffffff;
+    color: var(--ink);
 }
 
 .hm-choice-meta {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--ink-2);
     margin-top: 2px;
 }
 
@@ -1790,18 +1800,18 @@ textarea {
     gap: 10px;
     padding: 14px;
     border-radius: var(--r-lg);
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--surface-inset);
+    border: 1px solid var(--line-strong);
 }
 
 .hm-custom-form .input {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
+    background: var(--panel-2);
+    border-color: var(--line-strong);
+    color: var(--ink);
 }
 
 .hm-custom-form .input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--ink-3);
 }
 
 .hm-stats-card {
@@ -1810,8 +1820,8 @@ textarea {
     gap: 8px;
     padding: 14px 16px;
     border-radius: var(--r-lg);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: var(--surface-inset);
+    border: 1px solid var(--line);
 }
 
 .hm-stats-row {
@@ -1840,12 +1850,12 @@ textarea {
     gap: 8px;
     padding: 12px 14px;
     border-radius: var(--r-lg);
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-inset);
+    border: 1px solid var(--line);
 }
 
 .hm-graveyard-box .eyebrow {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--ink-3);
     font-size: 10px;
     font-weight: 700;
 }
@@ -1910,9 +1920,9 @@ textarea {
     font-size: 17px;
     font-weight: 700;
     border-radius: var(--r-sm);
-    background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--panel-2);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
     cursor: pointer;
     touch-action: manipulation;
     transition: transform 0.08s ease, background 0.1s ease, color 0.1s ease;
@@ -1921,7 +1931,7 @@ textarea {
 .hm-key:active {
     transform: scale(0.92);
     background: var(--accent);
-    color: #000000;
+    color: var(--accent-ink);
 }
 
 .hm-key.is-picked {
@@ -1930,7 +1940,7 @@ textarea {
 }
 
 .hm-key.is-correct {
-    background: #10b981;
+    background: var(--c-emerald);
     color: #ffffff;
     border-color: #059669;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
@@ -1938,7 +1948,7 @@ textarea {
 
 .hm-key.is-wrong {
     background: rgba(239, 68, 68, 0.18);
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--ink-3);
     border-color: rgba(239, 68, 68, 0.35);
     text-decoration: line-through;
 }
@@ -1951,9 +1961,9 @@ textarea {
 }
 
 .hm-solve-area .btn--solid {
-    background: color-mix(in srgb, var(--accent) 30%, rgba(255, 255, 255, 0.12));
+    background: color-mix(in srgb, var(--accent) 30%, var(--panel-2));
     border: 1px solid var(--accent);
-    color: #ffffff;
+    color: var(--ink);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1962,7 +1972,7 @@ textarea {
 
 .hm-solve-area .btn--solid:active {
     background: var(--accent);
-    color: #000000;
+    color: var(--accent-ink);
 }
 
 .hm-solve-form {
@@ -1970,11 +1980,454 @@ textarea {
 }
 
 .hm-solve-form .input {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.22);
-    color: #ffffff;
+    background: var(--panel-2);
+    border-color: var(--line-strong);
+    color: var(--ink);
 }
 
 .hm-solve-form .input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--ink-3);
 }
+
+
+/* ==========================================================================
+   Universal Card Games Controller Layout (#layout-cards)
+   ========================================================================== */
+
+.layout--cards {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 10px 12px;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.cards-pad {
+    width: min(460px, 100%);
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 16px;
+    border-radius: var(--r-xl);
+    background: var(--surface-glass);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    color: var(--ink);
+    border: 1.5px solid var(--border-accent);
+    box-shadow: var(--shadow-pop);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.cards-pad__head {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: none;
+}
+
+.cards-pad__toprow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.cards-pad__tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cards-tool-btn {
+    padding: 4px 10px;
+    border-radius: var(--r-sm);
+    background: var(--panel-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cards-tool-btn:active,
+.cards-tool-btn.is-active {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+}
+
+.cards-pad__head .display {
+    color: var(--ink);
+    font-size: 20px;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.cards-pad__head .muted {
+    color: var(--ink-2);
+    margin: 0;
+}
+
+/* Collapsible How-to-Play Instructions Drawer */
+.cards-rules-drawer {
+    flex: none;
+    padding: 12px 14px;
+    border-radius: var(--r-md);
+    background: var(--surface-elevated);
+    border: 1px solid var(--accent);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    max-height: 170px;
+    overflow-y: auto;
+}
+
+.cards-rules-drawer__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.cards-rules-close {
+    background: transparent;
+    border: none;
+    color: var(--ink-2);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 6px;
+}
+
+.cards-rules-list {
+    margin: 0;
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--ink);
+}
+
+/* Table Context Pill */
+.cards-table-info {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--r-md);
+    background: var(--surface-inset);
+    border: 1px solid var(--line);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.cards-table-info__badge {
+    font-family: var(--font-display);
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: var(--r-sm);
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Wild Suit / Color Picker */
+.cards-suit-picker {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: var(--r-lg);
+    background: var(--surface-elevated);
+    border: 2px solid var(--accent);
+    text-align: center;
+}
+
+.cards-suit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.cards-suit-btn {
+    padding: 12px 10px;
+    border-radius: var(--r-md);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+    touch-action: manipulation;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.1s ease;
+}
+
+.cards-suit-btn:active {
+    transform: scale(0.95);
+}
+
+/* Hand Grid */
+.cards-hand-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cards-hand-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    margin: auto 0;
+}
+
+.cards-hand-empty {
+    text-align: center;
+    padding: 22px 14px;
+    color: var(--ink-2);
+    font-size: 13.5px;
+    border-radius: var(--r-lg);
+    border: 1px dashed var(--line-strong);
+    background: var(--surface-inset);
+}
+
+/* Individual Playing Card on Phone */
+.pcard {
+    position: relative;
+    width: 78px;
+    height: 112px;
+    border-radius: 10px;
+    background: linear-gradient(165deg, #ffffff 0%, #f1f5f9 100%);
+    color: var(--pcard-color, #0f172a);
+    border: 2.5px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+    padding: 6px 7px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    transition: transform 0.14s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+                box-shadow 0.14s ease,
+                border-color 0.14s ease,
+                opacity 0.14s ease;
+    box-sizing: border-box;
+}
+
+.pcard--colored {
+    background: linear-gradient(155deg, var(--pcard-bg, #2563eb) 0%, color-mix(in srgb, var(--pcard-bg, #2563eb) 72%, #000000) 100%);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+.pcard.is-playable {
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 0 2px var(--accent);
+}
+
+.pcard.is-selected {
+    transform: translateY(-10px) scale(1.05);
+    border-color: var(--c-emerald);
+    box-shadow: 0 14px 26px rgba(16, 185, 129, 0.45), 0 0 0 3px var(--c-emerald);
+    z-index: 3;
+}
+
+.pcard.is-unplayable {
+    opacity: 0.42;
+    filter: saturate(0.55);
+}
+
+.pcard:active:not(:disabled) {
+    transform: translateY(-4px) scale(0.97);
+}
+
+.pcard__corner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1;
+    font-family: var(--font-display);
+    font-weight: 800;
+}
+
+.pcard__rank {
+    font-size: 16px;
+    letter-spacing: -0.03em;
+}
+
+.pcard__suit-sm {
+    font-size: 12px;
+    margin-top: 1px;
+}
+
+.pcard__center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.05;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 26px;
+}
+
+.pcard__sub {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-top: 2px;
+}
+
+.pcard__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.85;
+}
+
+.pcard__check {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--c-emerald);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* Secret Hand Masked State (Privacy Mode on Couch) */
+.cards-hand-grid.is-masked .pcard {
+    background: repeating-linear-gradient(
+        135deg,
+        var(--bg-a) 0px,
+        var(--bg-a) 8px,
+        var(--bg-base) 8px,
+        var(--bg-base) 16px
+    );
+    color: transparent !important;
+    border-color: var(--line-strong);
+}
+
+.cards-hand-grid.is-masked .pcard * {
+    visibility: hidden;
+}
+
+.cards-hand-grid.is-masked .pcard::after {
+    content: "🂠";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 32px;
+    color: var(--ink-2);
+    visibility: visible;
+}
+
+/* Dynamic Action Bar */
+.cards-actions {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+    gap: 8px;
+    width: 100%;
+    padding-top: 4px;
+}
+
+.cards-action-btn {
+    padding: 12px 12px;
+    border-radius: var(--r-md);
+    border: 1.5px solid var(--line-strong);
+    background: var(--panel-2);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform 0.1s ease, background 0.12s ease, opacity 0.12s ease;
+}
+
+.cards-action-btn:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.cards-action-btn:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.cards-action-btn__sub {
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.cards-action-btn--primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: #ffffff;
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.cards-action-btn--danger {
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    color: #ffffff;
+    border-color: #fda4af;
+    box-shadow: 0 6px 18px rgba(244, 63, 94, 0.4);
+}
+
+.cards-action-btn--emerald {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+    border-color: #6ee7b7;
+}
+
+.cards-action-btn--amber {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0b1533;
+    border-color: #fde68a;
+}
+

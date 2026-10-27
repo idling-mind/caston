@@ -592,6 +592,7 @@ class BumperBrawl {
 
         this.running = true;
         this.ended = false;
+        this.phase = 'howto';
         this.startTime = performance.now();
         this.lastFrame = this.startTime;
         this.matchEndsAt = this.startTime + ROUND_MS;
@@ -606,16 +607,58 @@ class BumperBrawl {
         this.nextKnockCoinAt = this.startTime + 17000;
         this.nextLavaCoinAt = this.startTime + 26000;
 
+        this.spawnRegularOrbs(5);
+        this.sync();
+        this.enterHowToPhase();
+
+        this.draw = this.draw.bind(this);
+        requestAnimationFrame(this.draw);
+    }
+
+    enterHowToPhase() {
+        this.phase = 'howto';
+        C.setLayout('dpad', {
+            title: 'Bumper Brawl',
+            subtitle: 'Press A to Start Match!'
+        });
+
+        C.hud(T.howToPlay({
+            title: 'How to Play Bumper Brawl',
+            subtitle: '90-Second Arena Battle · Bump, Boost & Grab Power Coins',
+            steps: [
+                { icon: '🕹️', title: '1. Steer & Boost', text: 'Use the 360° Joystick to steer around the arena and press A to unleash a high-speed dash!' },
+                { icon: '💥', title: '2. Bump Rivals', text: 'Ram opponents to knock them back and score points. Knock them into Lava Walls for huge KOs!' },
+                { icon: '🪙', title: '3. Collect Orbs & Powerups', text: 'Grab golden energy orbs (+25 pts) and special coins: ❄️ Freeze, ⚡ Mega Knock, and 🔥 Lava Walls.' },
+                { icon: '🔥', title: '4. Survive Sudden Death', text: 'In the final 20 seconds, knockback doubles. Highest score when the clock hits 00:00 wins!' }
+            ],
+            controls: [
+                { key: 'Joystick', label: 'Steer 360°' },
+                { key: 'A', label: 'Dash Boost / Start' }
+            ],
+            footerText: 'Press A on your phone controller to launch the arena!'
+        }));
+    }
+
+    startMatch() {
+        if (this.phase !== 'howto') return;
+        const now = performance.now();
+        this.phase = 'play';
+        this.startTime = now;
+        this.lastFrame = now;
+        this.matchEndsAt = now + ROUND_MS;
+        this.nextFreezeCoinAt = now + 9000;
+        this.nextKnockCoinAt = now + 17000;
+        this.nextLavaCoinAt = now + 26000;
+        Object.values(this.entities).forEach(e => {
+            e.invulnerableUntil = now + 2500;
+        });
+
+        C.hud('');
         C.setLayout('joystick', {
             title: 'Bumper Brawl',
             subtitle: 'Joystick moves · A boosts · Grab special coins!'
         });
-
-        this.spawnRegularOrbs(5);
-        this.sync();
-
-        this.draw = this.draw.bind(this);
-        requestAnimationFrame(this.draw);
+        C.chord([523, 659, 784], 120, 'triangle');
     }
 
     getScale() {
@@ -794,6 +837,12 @@ class BumperBrawl {
     }
 
     onInput(id, data) {
+        if (this.phase === 'howto') {
+            if (data.action === 'btn' && data.state === 'down' && (data.button === 'A' || data.button === 'B')) {
+                this.startMatch();
+            }
+            return;
+        }
         if (this.ended) {
             if (data.action === 'btn' && data.button === 'A' && data.state === 'down') {
                 const vipId = (this.ctx && this.ctx.vipId) || C.vipId;
@@ -856,7 +905,7 @@ class BumperBrawl {
         const dt = Math.min(32, now - this.lastFrame);
         this.lastFrame = now;
 
-        if (!this.ended) this.step(dt, now);
+        if (!this.ended && this.phase !== 'howto') this.step(dt, now);
         this.render(g, view, now);
 
         if (this.ended) return;
@@ -1380,6 +1429,7 @@ class BumperBrawl {
 
         T.arenaBackdrop(view);
 
+        const th = T.theme();
         const isLava = this.lavaWallsEndsAt > now;
 
         // 1. Render Walkable Arena Floor
@@ -1393,9 +1443,9 @@ class BumperBrawl {
             floorGrad.addColorStop(0.7, 'rgba(25, 8, 8, 0.9)');
             floorGrad.addColorStop(1, 'rgba(10, 3, 3, 0.98)');
         } else {
-            floorGrad.addColorStop(0, 'rgba(22, 54, 120, 0.28)');
-            floorGrad.addColorStop(0.7, 'rgba(8, 16, 40, 0.88)');
-            floorGrad.addColorStop(1, 'rgba(4, 7, 20, 0.98)');
+            floorGrad.addColorStop(0, th.tableCenter || 'rgba(22, 54, 120, 0.45)');
+            floorGrad.addColorStop(0.7, th.panel || 'rgba(8, 16, 40, 0.85)');
+            floorGrad.addColorStop(1, th.bgBase || 'rgba(4, 7, 20, 0.94)');
         }
         g.fillStyle = floorGrad;
         g.fill(this.arena.arenaPath, 'evenodd');
@@ -1403,8 +1453,8 @@ class BumperBrawl {
         // Floor Grid Lines
         g.save();
         g.clip(this.arena.arenaPath, 'evenodd');
-        g.globalAlpha = isLava ? 0.12 : 0.08;
-        g.strokeStyle = isLava ? '#ff4500' : '#60a5fa';
+        g.globalAlpha = isLava ? 0.12 : 0.09;
+        g.strokeStyle = isLava ? '#ff4500' : (th.accent || '#60a5fa');
         g.lineWidth = Math.max(1, 1 * s);
         const gridStep = Math.max(16, Math.round(48 * s));
         for (let x = 0; x < view.w; x += gridStep) {
@@ -1425,11 +1475,11 @@ class BumperBrawl {
                 for (let i = 1; i < isl.length; i++) islPath.lineTo(isl[i].x, isl[i].y);
                 islPath.closePath();
 
-                g.fillStyle = 'rgba(6, 9, 18, 0.96)';
+                g.fillStyle = th.boardInset || 'rgba(6, 9, 18, 0.92)';
                 g.fill(islPath);
 
                 g.lineWidth = Math.max(1.5, 2.5 * s);
-                g.strokeStyle = isLava ? 'rgba(255, 69, 0, 0.65)' : 'rgba(56, 189, 248, 0.35)';
+                g.strokeStyle = isLava ? 'rgba(255, 69, 0, 0.65)' : (th.boardBorder || 'rgba(56, 189, 248, 0.35)');
                 g.stroke(islPath);
                 g.restore();
             }
@@ -1453,8 +1503,8 @@ class BumperBrawl {
         } else {
             g.lineWidth = Math.max(2, 4.5 * s);
             const isSudden = this.phase === 'sudden';
-            g.strokeStyle = isSudden ? 'rgba(244,63,94,0.95)' : 'rgba(56,189,248,0.9)';
-            g.shadowColor = isSudden ? '#f43f5e' : '#38bdf8';
+            g.strokeStyle = isSudden ? 'rgba(244,63,94,0.95)' : (th.accent || 'rgba(56,189,248,0.9)');
+            g.shadowColor = isSudden ? '#f43f5e' : (th.accent || '#38bdf8');
             g.shadowBlur = 20 * s;
             g.stroke(this.arena.arenaPath);
         }
@@ -1726,11 +1776,12 @@ class BumperBrawl {
 
         g.restore(); // restore screenShake translate
 
-        if (!this.ended) this.renderHud(g, view, now);
+        if (!this.ended && this.phase !== 'howto') this.renderHud(g, view, now);
     }
 
     renderHud(g, view, now) {
         const s = this.getScale();
+        const th = T.theme();
         const left = Math.max(0, Math.ceil((this.matchEndsAt - now) / 1000));
         const mm = String(Math.floor(left / 60)).padStart(2, '0');
         const ss = String(left % 60).padStart(2, '0');
@@ -1773,7 +1824,7 @@ class BumperBrawl {
             g.save();
             g.globalAlpha = Math.min(1, (t.expiresAt - now) / 400);
             T.roundRect(g, 28 * s, y - 10 * s, 290 * s, 22 * s, 6 * s);
-            g.fillStyle = 'rgba(6, 12, 28, 0.72)';
+            g.fillStyle = th.panel || 'rgba(6, 12, 28, 0.72)';
             g.fill();
             T.label(t.text, 36 * s, y + 1 * s, {
                 size: Math.max(8, Math.round(11 * s)), weight: 700, align: 'left', color: t.color
@@ -1790,9 +1841,9 @@ class BumperBrawl {
             const rw = 182 * s;
             const rx = view.w - rw - 28 * s;
             g.save();
-            g.globalAlpha = 0.9;
+            g.globalAlpha = 0.92;
             T.roundRect(g, rx, y - 12 * s, rw, 24 * s, 6 * s);
-            g.fillStyle = 'rgba(6, 10, 24, 0.65)';
+            g.fillStyle = th.panel || 'rgba(6, 10, 24, 0.65)';
             g.fill();
             g.fillStyle = r.color;
             g.fillRect(rx, y - 12 * s, 3 * s, 24 * s);

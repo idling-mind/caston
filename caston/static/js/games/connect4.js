@@ -75,16 +75,42 @@ class Connect4Game extends CastOn.Game {
         this.screenShake = 0;
 
         this.lastFrame = performance.now();
+        this.phase = 'howto';
 
         this.initBoardDimensions();
         this.resetBoard(false);
         this.syncPlayers();
-        this.updateControllerLayouts();
+        this.enterHowToPhase();
 
         this.ctx.sound.fanfare();
 
         this.loop = this.loop.bind(this);
         this.rafId = requestAnimationFrame(this.loop);
+    }
+
+    enterHowToPhase() {
+        this.phase = 'howto';
+        this.ctx.controller.setLayout('dpad', {
+            title: 'Connect 4',
+            subtitle: 'Press A to Start Match!'
+        }, 'all');
+
+        this.ctx.setOverlay(CastOn.tools.howToPlay({
+            title: 'How to Play Connect 4',
+            subtitle: '2–8 Players · Turn-Based Strategy or Blitz Chaos',
+            steps: [
+                { icon: '◀ ▶', title: '1. Aim Your Column', text: 'Use Left & Right on your D-Pad to aim your disc above any column on the giant grid.' },
+                { icon: '🔴', title: '2. Drop & Connect 4', text: 'Press A (or Down) to drop your disc. Connect 4 of your discs horizontally, vertically, or diagonally!' },
+                { icon: '🛡️', title: '3. Block Opponents', text: 'Cutting off an opponent\'s 3-in-a-row awards a +120 pt defensive block bonus.' },
+                { icon: '⚡', title: '4. Switch Modes Anytime', text: 'The room leader can press X to toggle between Turn-Based (10s shot clock) and simultaneous Blitz mode!' }
+            ],
+            controls: [
+                { key: '◀ ▶', label: 'Aim Column' },
+                { key: 'A / ▼', label: 'Drop Disc / Start' },
+                { key: 'X', label: 'Toggle Blitz Mode' }
+            ],
+            footerText: 'Press A on your phone controller to start the match!'
+        }));
     }
 
     getScale() {
@@ -193,7 +219,9 @@ class Connect4Game extends CastOn.Game {
 
     onPlayersSync() {
         this.syncPlayers();
-        this.updateControllerLayouts();
+        if (this.phase !== 'howto') {
+            this.updateControllerLayouts();
+        }
     }
 
     onResize(view) {
@@ -504,7 +532,7 @@ class Connect4Game extends CastOn.Game {
     }
 
     updateBotsAndTimers(now) {
-        if (this.winningLine || this.isDraw || this.ended) return;
+        if (this.phase === 'howto' || this.winningLine || this.isDraw || this.ended) return;
 
         const participants = this.getAllParticipants();
 
@@ -588,6 +616,21 @@ class Connect4Game extends CastOn.Game {
 
     onInput(playerId, data) {
         if (!this.running) return;
+
+        if (this.phase === 'howto') {
+            if (data.action === 'btn' && data.state === 'down' && (data.button === 'A' || data.button === 'B')) {
+                this.phase = 'play';
+                this.turnStartedAt = performance.now();
+                this.lastTickSec = -1;
+                Object.values(this.playerState).forEach(st => {
+                    st.botThinkUntil = performance.now() + 850;
+                });
+                this.ctx.setOverlay('');
+                this.updateControllerLayouts();
+                this.ctx.sound.chord([523, 659, 784], 100, 'triangle');
+            }
+            return;
+        }
 
         const isVip = !this.ctx.vipId || playerId === this.ctx.vipId;
         if (data.action === 'btn' && data.state === 'down' && isVip) {
@@ -786,6 +829,7 @@ class Connect4Game extends CastOn.Game {
      */
     drawTopHud(g, view, layout, now) {
         const s = layout.s;
+        const th = CastOn.tools.theme();
         const participants = this.getAllParticipants();
         const ids = Object.keys(participants);
         const padX = layout.boardX;
@@ -808,15 +852,15 @@ class Connect4Game extends CastOn.Game {
             modePillY,
             modePillW,
             modePillH,
-            isTurns ? 'rgba(37, 99, 235, 0.22)' : 'rgba(217, 119, 6, 0.22)',
-            isTurns ? '#3b82f6' : '#f59e0b',
+            isTurns ? (th.panel || 'rgba(37, 99, 235, 0.22)') : 'rgba(217, 119, 6, 0.22)',
+            isTurns ? (th.accent || '#3b82f6') : '#f59e0b',
             1.6 * s
         );
 
         this.ctx.graphics.label(modeLabel, padX + modePillW / 2, modePillY + modePillH / 2, {
             size: Math.round(12.5 * s),
             weight: 700,
-            color: isTurns ? '#93c5fd' : '#fde047'
+            color: isTurns ? (th.accent || '#93c5fd') : '#fde047'
         });
 
         /* =================================================================
@@ -897,8 +941,8 @@ class Connect4Game extends CastOn.Game {
                     turnY,
                     totalW,
                     turnH,
-                    isUrgent ? 'rgba(225, 29, 72, 0.25)' : 'rgba(15, 23, 42, 0.88)',
-                    isUrgent ? '#f43f5e' : (activeP.color || '#3b82f6'),
+                    isUrgent ? 'rgba(225, 29, 72, 0.25)' : (th.panel || 'rgba(15, 23, 42, 0.88)'),
+                    isUrgent ? '#f43f5e' : (activeP.color || th.accent || '#3b82f6'),
                     isUrgent ? 2 * s : 1.4 * s
                 );
 
@@ -1014,8 +1058,8 @@ class Connect4Game extends CastOn.Game {
                     cardY,
                     cardW,
                     cardH,
-                    isTurn ? 'rgba(30, 58, 138, 0.55)' : 'rgba(15, 23, 42, 0.78)',
-                    isTurn ? p.color : 'rgba(148, 163, 184, 0.28)',
+                    isTurn ? (th.boardFrame || 'rgba(30, 58, 138, 0.55)') : (th.panel || 'rgba(15, 23, 42, 0.78)'),
+                    isTurn ? p.color : (th.boardBorder || 'rgba(148, 163, 184, 0.28)'),
                     (isTurn ? 2 : 1.2) * s
                 );
 
@@ -1063,6 +1107,7 @@ class Connect4Game extends CastOn.Game {
      */
     drawBottomBar(g, view, layout) {
         const s = layout.s;
+        const th = CastOn.tools.theme();
         const totalBarH = layout.botBarH;
         const yTop = view.h - totalBarH;
         const pillH = 24 * s;
@@ -1071,7 +1116,7 @@ class Connect4Game extends CastOn.Game {
         const items = [
             { key: '◀ ▶', label: 'Aim Column' },
             { key: 'A', label: 'Drop Disc', accent: '#10b981' },
-            { key: 'X', label: this.mode === 'turns' ? 'Switch to Blitz' : 'Switch to Turn-Based', accent: '#38bdf8' },
+            { key: 'X', label: this.mode === 'turns' ? 'Switch to Blitz' : 'Switch to Turn-Based', accent: th.accent || '#38bdf8' },
             { key: 'Y', label: 'Reset Board' }
         ];
 
@@ -1098,8 +1143,8 @@ class Connect4Game extends CastOn.Game {
                 pillY,
                 m.fullPillW,
                 pillH,
-                'rgba(15, 23, 42, 0.72)',
-                'rgba(148, 163, 184, 0.28)',
+                th.panel || 'rgba(15, 23, 42, 0.72)',
+                th.boardBorder || 'rgba(148, 163, 184, 0.28)',
                 1.2 * s
             );
 
@@ -1270,6 +1315,7 @@ class Connect4Game extends CastOn.Game {
         this.ctx.graphics.arenaBackdrop(view);
 
         // 2. Top 3-Zone Dashboard & Column Drop Cursors
+        const th = CastOn.tools.theme();
         this.drawTopHud(g, view, layout, now);
         this.drawColumnCursors(g, layout, now);
 
@@ -1277,12 +1323,12 @@ class Connect4Game extends CastOn.Game {
         const frameR = 14 * s;
         this.ctx.graphics.roundRect(g, layout.boardX, layout.boardY, layout.boardW, layout.boardH, frameR);
         const boardGrad = g.createLinearGradient(layout.boardX, layout.boardY, layout.boardX, layout.boardY + layout.boardH);
-        boardGrad.addColorStop(0, 'rgba(30, 58, 138, 0.72)');
-        boardGrad.addColorStop(1, 'rgba(15, 23, 42, 0.88)');
+        boardGrad.addColorStop(0, th.boardFrame || 'rgba(30, 58, 138, 0.72)');
+        boardGrad.addColorStop(1, th.panel || 'rgba(15, 23, 42, 0.88)');
         g.fillStyle = boardGrad;
         g.fill();
 
-        g.strokeStyle = 'rgba(96, 165, 250, 0.35)';
+        g.strokeStyle = th.boardBorder || 'rgba(96, 165, 250, 0.35)';
         g.lineWidth = 2 * s;
         g.stroke();
 
@@ -1330,11 +1376,11 @@ class Connect4Game extends CastOn.Game {
                 const isFalling = hiddenGridCells.has(key);
 
                 this.ctx.graphics.circle(g, cx, cy, layout.slotR);
-                g.fillStyle = 'rgba(4, 9, 20, 0.86)';
+                g.fillStyle = th.boardInset || 'rgba(4, 9, 20, 0.86)';
                 g.fill();
 
                 this.ctx.graphics.circle(g, cx, cy, layout.slotR);
-                g.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+                g.strokeStyle = th.boardBorder || 'rgba(148, 163, 184, 0.22)';
                 g.lineWidth = 1.4 * s;
                 g.stroke();
 

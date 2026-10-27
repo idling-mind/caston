@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="broadcast">
 <head>
     <meta charset="UTF-8">
@@ -520,6 +520,56 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- LAYOUT: UNIVERSAL CARD HAND & CASINO CONTROLS                   -->
+        <!-- =============================================================== -->
+        <section id="layout-cards" class="layout layout--cards hidden">
+            <div class="cards-pad">
+                <header class="cards-pad__head">
+                    <div class="cards-pad__toprow">
+                        <span class="eyebrow is-accent" id="cards-eyebrow">CARD TABLE</span>
+                        <div class="cards-pad__tools">
+                            <button id="cards-peek-btn" class="cards-tool-btn hidden" type="button" aria-label="Toggle card privacy">
+                                <span>👁️ Hide Cards</span>
+                            </button>
+                            <button id="cards-rules-btn" class="cards-tool-btn" type="button" aria-label="How to Play">
+                                <span>📖 How to Play</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h2 class="display t-md" id="cards-title">Your Hand</h2>
+                    <p class="muted t-xs" id="cards-subtitle">Tap a card or choose an action below.</p>
+                </header>
+
+                <!-- Collapsible How-to-Play Instructions Drawer -->
+                <div id="cards-rules-drawer" class="cards-rules-drawer hidden">
+                    <div class="cards-rules-drawer__head">
+                        <span class="eyebrow is-accent">How to Play &amp; Scoring</span>
+                        <button id="cards-rules-close" class="cards-rules-close" type="button">✕</button>
+                    </div>
+                    <ul id="cards-rules-list" class="cards-rules-list"></ul>
+                </div>
+
+                <!-- Optional Table Status Pill (e.g. Dealer card, Active Suit, Pot, Target Rank) -->
+                <div id="cards-table-info" class="cards-table-info hidden"></div>
+
+                <!-- Wild Color / Suit Picker Overlay -->
+                <div id="cards-suit-picker" class="cards-suit-picker hidden">
+                    <p class="eyebrow is-accent" id="cards-suit-picker-title">Choose Wild Color / Suit</p>
+                    <div class="cards-suit-grid" id="cards-suit-grid"></div>
+                    <button id="cards-suit-cancel" class="btn btn--ghost btn--sm btn--block" type="button">Cancel</button>
+                </div>
+
+                <!-- Player's Interactive Card Hand -->
+                <div id="cards-hand-wrap" class="cards-hand-wrap">
+                    <div id="cards-hand-grid" class="cards-hand-grid"></div>
+                </div>
+
+                <!-- Dynamic Action Bar (Hit/Stand, Bet, Call Bluff, Draw, Confirm, etc.) -->
+                <div id="cards-actions" class="cards-actions"></div>
             </div>
         </section>
 
