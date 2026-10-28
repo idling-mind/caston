@@ -492,14 +492,26 @@ function renderLobbyTiles() {
         });
     });
 
-    // Auto-scroll the horizontal row to keep the focused game centered
+    // Auto-scroll the grid to keep the focused game visible
     const focusedEl = dom.grid.querySelector('.tile.is-focused');
     if (focusedEl) {
         requestAnimationFrame(() => {
             const gridRect = dom.grid.getBoundingClientRect();
             const elRect = focusedEl.getBoundingClientRect();
-            const targetLeft = dom.grid.scrollLeft + (elRect.left - gridRect.left) - (dom.grid.clientWidth - focusedEl.clientWidth) / 2;
-            dom.grid.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+            const offsetTop = elRect.top - gridRect.top;
+            const offsetBottom = elRect.bottom - gridRect.bottom;
+
+            if (offsetTop < 0) {
+                dom.grid.scrollTo({
+                    top: Math.max(0, dom.grid.scrollTop + offsetTop - 12),
+                    behavior: 'smooth'
+                });
+            } else if (offsetBottom > 0) {
+                dom.grid.scrollTo({
+                    top: dom.grid.scrollTop + offsetBottom + 12,
+                    behavior: 'smooth'
+                });
+            }
         });
     }
 }
@@ -510,12 +522,37 @@ function renderAll() {
     renderLobbyTiles();
 }
 
-function moveSelection(delta) {
+function moveGridSelection(dx, dy) {
     const n = CastOn.games.length;
     if (!n) return;
-    state.selected = (state.selected + delta + n) % n;
+    const COLS = 3;
+    let sel = state.selected;
+    if (dx !== 0) {
+        sel = (sel + dx + n) % n;
+    }
+    if (dy !== 0) {
+        const next = sel + dy * COLS;
+        if (next >= 0 && next < n) {
+            sel = next;
+        } else if (next >= n) {
+            if (sel < n - 1) {
+                sel = n - 1;
+            } else {
+                sel = sel % COLS;
+            }
+        } else if (next < 0) {
+            const bottomRowStart = Math.floor((n - 1) / COLS) * COLS;
+            const target = bottomRowStart + (sel % COLS);
+            sel = target < n ? target : n - 1;
+        }
+    }
+    state.selected = sel;
     renderLobbyTiles();
     tone(560, 70, 'sine');
+}
+
+function moveSelection(delta) {
+    moveGridSelection(delta, 0);
 }
 
 /* ==========================================================================
@@ -743,8 +780,10 @@ function onControllerInput(playerId, data) {
         if (playerId !== state.vipId) return;
         if (data.action !== 'btn' || data.state !== 'down') return;
 
-        if (data.button === 'LEFT' || data.button === 'UP') moveSelection(-1);
-        else if (data.button === 'RIGHT' || data.button === 'DOWN') moveSelection(1);
+        if (data.button === 'LEFT') moveGridSelection(-1, 0);
+        else if (data.button === 'RIGHT') moveGridSelection(1, 0);
+        else if (data.button === 'UP') moveGridSelection(0, -1);
+        else if (data.button === 'DOWN') moveGridSelection(0, 1);
         else if (data.button === 'X') cycleTheme(-1);
         else if (data.button === 'Y') cycleTheme(1);
         else if (data.button === 'A') {
@@ -1016,10 +1055,8 @@ function boot() {
 
     if (dom.grid) {
         dom.grid.addEventListener('wheel', (e) => {
-            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                dom.grid.scrollLeft += e.deltaY;
-                e.preventDefault();
-            }
+            dom.grid.scrollTop += e.deltaY;
+            e.preventDefault();
         }, { passive: false });
     }
 

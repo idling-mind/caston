@@ -99,8 +99,8 @@
             <!-- ============================================================= -->
             <section id="lobby-view" class="lobby">
 
-                <!-- Join + roster band at top -->
-                <section class="room-band">
+                <!-- Left sidebar: QR code in top left, player roster below that -->
+                <aside class="lobby__sidebar">
                     <div class="room-band__join">
                         <div class="plate plate--m">
                             <canvas id="qr-hero" width="116" height="116"
@@ -133,29 +133,32 @@
                         </div>
                         <div class="roster" id="roster"></div>
                     </div>
+                </aside>
+
+                <!-- Right main: Games occupy full height and >2/3 of the screen in a multi-row multi-column grid -->
+                <section class="lobby__main">
+                    <!-- Lineup header -->
+                    <div class="lobby__head">
+                        <div>
+                            <p class="eyebrow is-accent">Tonight's lineup</p>
+                            <h2 class="display lobby__title">Pick a game</h2>
+                        </div>
+                        <div class="lobby__hint">
+                            <span aria-hidden="true">👑</span>
+                            <span>The room leader steers with the phone D-Pad</span>
+                        </div>
+                    </div>
+
+                    <!-- Games multi-row multi-column grid -->
+                    <div class="tile-grid" id="game-grid"></div>
+
+                    <div class="legend">
+                        <span><kbd>▲ ▼ ◀ ▶</kbd> Move</span>
+                        <span><kbd>A</kbd> Play</span>
+                        <span><kbd>X</kbd> <kbd>Y</kbd> Theme</span>
+                        <span class="dim">Direct LAN routing · 0ms server lag</span>
+                    </div>
                 </section>
-
-                <!-- Lineup header -->
-                <div class="lobby__head">
-                    <div>
-                        <p class="eyebrow is-accent">Tonight's lineup</p>
-                        <h2 class="display lobby__title">Pick a game</h2>
-                    </div>
-                    <div class="lobby__hint">
-                        <span aria-hidden="true">👑</span>
-                        <span>The room leader steers with the phone D-Pad</span>
-                    </div>
-                </div>
-
-                <!-- Games row underneath -->
-                <div class="tile-grid" id="game-grid"></div>
-
-                <div class="legend">
-                    <span><kbd>◀ ▶</kbd> Change selection</span>
-                    <span><kbd>A</kbd> Start game</span>
-                    <span><kbd>X</kbd> <kbd>Y</kbd> Change theme</span>
-                    <span class="dim">Controller input is routed straight to the TV, so gameplay never waits on the server.</span>
-                </div>
             </section>
 
             <!-- ============================================================= -->
